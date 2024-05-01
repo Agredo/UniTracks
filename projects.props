@@ -1,0 +1,6 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<Project>
+	<PropertyGroup>
+		<UniTracksTargetFramework>net8.0</UniTracksTargetFramework>
+	</PropertyGroup>
+</Project>
