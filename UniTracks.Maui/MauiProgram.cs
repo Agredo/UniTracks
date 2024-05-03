@@ -1,4 +1,9 @@
-﻿using Microsoft.Extensions.Logging;
+﻿using CommunityToolkit.Maui;
+using CommunityToolkit.Maui.Markup;
+using DrawnUi.Maui.Draw;
+using Microcharts.Maui;
+using Microsoft.Extensions.Logging;
+using SkiaSharp.Views.Maui.Controls.Hosting;
 
 namespace UniTracks.Maui
 {
@@ -9,6 +14,11 @@ namespace UniTracks.Maui
             var builder = MauiApp.CreateBuilder();
             builder
                 .UseMauiApp<App>()
+                .UseMauiCommunityToolkit()
+                .UseMauiCommunityToolkitMarkup()
+                .UseMicrocharts()
+                .UseDrawnUi()
+                .UseSkiaSharp(true)
                 .ConfigureFonts(fonts =>
                 {
                     fonts.AddFont("OpenSans-Regular.ttf", "OpenSansRegular");

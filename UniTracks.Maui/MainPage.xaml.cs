@@ -1,24 +1,42 @@
-﻿namespace UniTracks.Maui
+﻿
+namespace UniTracks.Maui
 {
     public partial class MainPage : ContentPage
     {
-        int count = 0;
-
         public MainPage()
         {
             InitializeComponent();
+            Map.Map.Layers.Add(Mapsui.Tiling.OpenStreetMap.CreateTileLayer());
         }
 
-        private void OnCounterClicked(object sender, EventArgs e)
+        async void OnStartListening()
         {
-            count++;
+            try
+            {
+                Geolocation.LocationChanged += Geolocation_LocationChanged;
+                var request = new GeolocationListeningRequest(GeolocationAccuracy.Best);
+                var success = await Geolocation.StartListeningForegroundAsync(request);
 
-            if (count == 1)
-                CounterBtn.Text = $"Clicked {count} time";
-            else
-                CounterBtn.Text = $"Clicked {count} times";
+                string status = success
+                    ? "Started listening for foreground location updates"
+                    : "Couldn't start listening";
+            }
+            catch (Exception ex)
+            {
+                // Unable to start listening for location changes
+            }
+        }
 
-            SemanticScreenReader.Announce(CounterBtn.Text);
+        void Geolocation_LocationChanged(object sender, GeolocationLocationChangedEventArgs e)
+        {
+            var latituede = e.Location.Latitude;
+            var longitude = e.Location.Longitude;
+            Console.WriteLine($"Latitude: {latituede}, Longitude: {longitude}");
+        }
+
+        private void Button_Clicked(object sender, EventArgs e)
+        {
+            OnStartListening();
         }
     }
 
