@@ -1,14 +1,22 @@
 ﻿<?xml version="1.0" encoding="utf-8" ?>
-<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
-             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
-             xmlns:mapsui="clr-namespace:Mapsui.UI.Maui;assembly=Mapsui.UI.Maui"
-             x:Class="UniTracks.Maui.MainPage">
+<ContentPage
+    x:Class="UniTracks.Maui.MainPage"
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    xmlns:mapsui="clr-namespace:Mapsui.UI.Maui;assembly=Mapsui.UI.Maui"
+    xmlns:viewModels="clr-namespace:UniTracks.ViewModels;assembly=UniTracks.ViewModels"
+    x:DataType="viewModels:MainPageViewModel">
 
     <Grid>
-        <mapsui:MapControl x:Name="Map"
-                               HorizontalOptions="FillAndExpand" 
-                               VerticalOptions="FillAndExpand"/>
-        <Button Text="Start" Clicked="Button_Clicked"/>
+        <mapsui:MapControl
+            x:Name="Map"
+            HorizontalOptions="FillAndExpand"
+            VerticalOptions="FillAndExpand" />
+        <HorizontalStackLayout HorizontalOptions="End" VerticalOptions="End">
+            <Button Command="{Binding StartListeningCommand}" Text="Start" />
+            <Button Command="{Binding StopListeningCommand}" Text="Stop" />
+        </HorizontalStackLayout>
+
     </Grid>
 
 </ContentPage>

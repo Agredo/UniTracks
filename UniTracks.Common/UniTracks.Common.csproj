@@ -6,8 +6,4 @@
     <Nullable>enable</Nullable>
   </PropertyGroup>
 
-  <ItemGroup>
-    <ProjectReference Include="..\UniTracks.Common\UniTracks.Common.csproj" />
-  </ItemGroup>
-
 </Project>

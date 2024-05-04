@@ -1,11 +1,15 @@
 ﻿
+using UniTracks.ViewModels;
+
 namespace UniTracks.Maui
 {
     public partial class MainPage : ContentPage
     {
-        public MainPage()
+        public MainPage(MainPageViewModel mainPageViewModel)
         {
             InitializeComponent();
+            BindingContext = mainPageViewModel;
+
             Map.Map.Layers.Add(Mapsui.Tiling.OpenStreetMap.CreateTileLayer());
         }
 
@@ -37,6 +41,11 @@ namespace UniTracks.Maui
         private void Button_Clicked(object sender, EventArgs e)
         {
             OnStartListening();
+        }
+
+        private void EndButton_Clicked(object sender, EventArgs e)
+        {
+            Geolocation.StopListeningForeground();
         }
     }
 
