@@ -15,7 +15,7 @@ public partial class MainPageViewModel : ObservableObject
     [RelayCommand]
     public async Task StartListening()
     {
-        await LocationService.StartListening(gpsInfo =>{});
+        //await LocationService.StartListening(gpsInfo =>{});
     }
 
     [RelayCommand]

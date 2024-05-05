@@ -27,7 +27,9 @@ namespace UniTracks.Maui.Services.Location
                                                reading.Speed,
                                                reading.SpeedAccuracy);
 
-                    GpsDataStorageService.StoreData(gpsInformatoion);
+#if WINDOWS
+                    GpsDataStorageService?.StoreData(gpsInformatoion);
+#endif
                 });
         }
 
@@ -48,7 +50,9 @@ namespace UniTracks.Maui.Services.Location
                                                reading.Speed,
                                                reading.SpeedAccuracy);
 
-                    GpsDataStorageService.StoreData(gpsInformatoion);
+#if WINDOWS
+                    GpsDataStorageService?.StoreData(gpsInformatoion);
+#endif
                 });
         }
 

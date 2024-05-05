@@ -2,12 +2,20 @@
 using CommunityToolkit.Maui.Markup;
 using DrawnUi.Maui.Draw;
 using Microcharts.Maui;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Shiny;
+using Shiny.Locations;
 using SkiaSharp.Views.Maui.Controls.Hosting;
+using UniTracks.Core.Services;
+using UniTracks.Data.Repository;
+using UniTracks.Data.SQLite;
+using UniTracks.Maui.Services.IO;
 using UniTracks.Maui.Services.Location;
+using UniTracks.Services.Data;
 using UniTracks.Services.Location;
 using UniTracks.ViewModels;
+using FileSystem = UniTracks.Maui.Services.IO.FileSystem;
 
 namespace UniTracks.Maui
 {
@@ -32,13 +40,19 @@ namespace UniTracks.Maui
                     fonts.AddFont("OpenSans-Semibold.ttf", "OpenSansSemibold");
                 });
 
-            services.AddGps<Services.Location.GpsDelegate>();
+            services.AddGps<UniTracks.Maui.Services.Location.GpsDelegate>();
 
             //Pages
             services.AddTransient<MainPage, MainPageViewModel>();
 
             //Services
             services.AddSingleton<ILocationService, LocationService>();
+            services.AddSingleton<IGpsDataStorageService, GpsDataStorageService>();
+            services.AddSingleton<UniTracks.Services.IO.IFileSystem, FileSystem>();
+
+            //DBContext
+            services.AddDbContext<SqliteDBContext>();
+            services.AddSingleton(typeof(IGenericRepository<>), typeof(GenericRepository<>));
 
 
 
