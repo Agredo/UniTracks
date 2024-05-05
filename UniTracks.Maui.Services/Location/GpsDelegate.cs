@@ -3,23 +3,33 @@ using AndroidX.Core.App;
 #endif
 using Shiny;
 using Shiny.Locations;
+using System.Reactive.Linq;
 using UniTracks.Models.GPS;
+using UniTracks.Services.Data;
 using UniTracks.Services.Location;
 
 namespace UniTracks.Maui.Services.Location;
 
 public partial class GpsDelegate : Shiny.Locations.IGpsDelegate
 {
-    public GpsDelegate()
+    public IGpsDataStorageService GpsDataStorageService { get; }
+    public GpsDelegate(IGpsDataStorageService gpsDataStorageService)
     {
-
+        GpsDataStorageService = gpsDataStorageService;
     }
 
     public async Task OnReading(GpsReading reading)
     {
-        var latituede = reading.Position.Latitude;
-        var longitude = reading.Position.Longitude;
-        Console.WriteLine($"Latitude: {latituede}, Longitude: {longitude}");
+        var GPSInformatoion = new GPSInformatoion(new Models.GPS.Position(reading.Position.Latitude, reading.Position.Longitude),
+            reading.PositionAccuracy,
+            reading.Timestamp,
+            reading.Heading,
+            reading.HeadingAccuracy,
+            reading.Altitude,
+            reading.Speed,
+            reading.SpeedAccuracy);
+
+        await GpsDataStorageService.StoreData(GPSInformatoion);
     }
 }
 

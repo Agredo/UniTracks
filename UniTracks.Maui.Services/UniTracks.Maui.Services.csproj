@@ -26,6 +26,7 @@
 	</ItemGroup>
 
 	<ItemGroup>
+	  <ProjectReference Include="..\UniTracks.Core\UniTracks.Core.csproj" />
 	  <ProjectReference Include="..\UniTracks.ViewModels\UniTracks.ViewModels.csproj" />
 	</ItemGroup>
 

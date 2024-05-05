@@ -15,12 +15,7 @@ public partial class MainPageViewModel : ObservableObject
     [RelayCommand]
     public async Task StartListening()
     {
-        await LocationService.StartListening(gpsInfo =>
-        {
-            var latituede = gpsInfo.Position.Latitude;
-            var longitude = gpsInfo.Position.Longitude;
-            Console.WriteLine($"Latitude: {latituede}, Longitude: {longitude}");
-        });
+        await LocationService.StartListening(gpsInfo =>{});
     }
 
     [RelayCommand]

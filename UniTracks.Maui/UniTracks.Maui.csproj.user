@@ -3,7 +3,7 @@
   <PropertyGroup>
     <IsFirstTimeProjectOpen>False</IsFirstTimeProjectOpen>
     <ActiveDebugFramework>net8.0-ios</ActiveDebugFramework>
-    <ActiveDebugProfile>Agredos iPhone 12 mini</ActiveDebugProfile>
+    <ActiveDebugProfile>Lokales Gerät</ActiveDebugProfile>
     <SelectedPlatformGroup>LocalDevice</SelectedPlatformGroup>
     <DeveloperId>R63MXH8N84</DeveloperId>
     <DevelopmentTeamId>R63MXH8N84</DevelopmentTeamId>
