@@ -10,3 +10,4 @@
 *.vsidx
 
 **/.vs
+/UniTracks.Maui/UniTracks.Maui.csproj.user
