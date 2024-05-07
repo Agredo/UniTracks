@@ -15,6 +15,7 @@
         <HorizontalStackLayout HorizontalOptions="End" VerticalOptions="End">
             <Button Command="{Binding StartListeningCommand}" Text="Start" />
             <Button Command="{Binding StopListeningCommand}" Text="Stop" />
+            <Button Command="{Binding ShareDatabaseCommand}" Text="Share Database" />
         </HorizontalStackLayout>
 
     </Grid>

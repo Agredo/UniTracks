@@ -1,6 +1,8 @@
-﻿using UniTracks.Data.Repository;
+﻿using UniTracks.Data.LiteDB;
+using UniTracks.Data.Repository;
 using UniTracks.Data.SQLite;
 using UniTracks.Models.GPS;
+using UniTracks.Models.Location;
 using UniTracks.Services.Data;
 
 namespace UniTracks.Core.Services;
@@ -8,12 +10,14 @@ namespace UniTracks.Core.Services;
 public class GpsDataStorageService : IGpsDataStorageService
 {
 
-    public GpsDataStorageService(IGenericRepository<SqliteDBContext> sqliteRepository)
+    public GpsDataStorageService(IGenericRepository<SqliteDBContext> sqliteRepository, IGenericLiteDBRepository<ILiteDatabase> liteDBRepository)
     {
         SqliteRepository = sqliteRepository;
+        LiteDBRepository = liteDBRepository;
     }
 
     public IGenericRepository<SqliteDBContext> SqliteRepository { get; }
+    public IGenericLiteDBRepository<ILiteDatabase> LiteDBRepository { get; }
 
     public async Task StoreData(GPSInformatoion gpsInformatoion, Action<GPSInformatoion> action)
     {
@@ -41,6 +45,7 @@ public class GpsDataStorageService : IGpsDataStorageService
             Timestamp = gpsInformatoion.Timestamp
         };
 
-        await SqliteRepository.Context.Locations.AddAsync(location);
+        await SqliteRepository.Add<Location>(location);
+        await LiteDBRepository.Add<Location>(location);
     }
 }

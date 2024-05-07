@@ -6,6 +6,7 @@ using Microsoft.Extensions.Logging;
 using Shiny;
 using SkiaSharp.Views.Maui.Controls.Hosting;
 using UniTracks.Core.Services;
+using UniTracks.Data.LiteDB;
 using UniTracks.Data.Repository;
 using UniTracks.Data.SQLite;
 using UniTracks.Maui.Services.Location;
@@ -41,7 +42,7 @@ namespace UniTracks.Maui
                     fonts.AddFont("OpenSans-Regular.ttf", "OpenSansRegular");
                     fonts.AddFont("OpenSans-Semibold.ttf", "OpenSansSemibold");
                 });
-#if IOS
+#if !WINDOWS
             services.AddGps< Services.Location.GpsDelegate>();
 #endif
             //Pages
@@ -50,6 +51,8 @@ namespace UniTracks.Maui
             //DBContext
             services.AddDbContext<SqliteDBContext>();
             services.AddSingleton(typeof(IGenericRepository<>), typeof(GenericRepository<>));
+            services.AddSingleton<ILiteDatabase, LiteDatabase>();
+            services.AddSingleton(typeof(IGenericLiteDBRepository<>), typeof(GenericLiteDBRepository<>));
 
             //Services
             services.AddSingleton<UniTracks.Services.IO.IFileSystem, FileSystem>();
