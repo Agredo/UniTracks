@@ -19,6 +19,11 @@ public class GpsDataStorageService : IGpsDataStorageService
     public IGenericRepository<SqliteDBContext> SqliteRepository { get; }
     public IGenericLiteDBRepository<ILiteDatabase> LiteDBRepository { get; }
 
+    public async Task<List<Location>> getAll()
+    {
+        return (await SqliteRepository.GetAllAsync<Location>()).ToList();
+    }
+
     public async Task StoreData(GPSInformatoion gpsInformatoion, Action<GPSInformatoion> action)
     {
         var latituede = gpsInformatoion.Position.Latitude;

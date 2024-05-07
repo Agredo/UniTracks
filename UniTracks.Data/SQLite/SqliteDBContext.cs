@@ -16,16 +16,20 @@ namespace UniTracks.Data.SQLite;
 
 public class SqliteDBContext : DbContext
 {
-    public DbSet<User> Users { get; set; }
+    //public DbSet<User> Users { get; set; }
     public DbSet<Location> Locations { get; set; }
-    public DbSet<Trip> Trips { get; set; }
-    public DbSet<Weather> Weathers { get; set; }
-    public DbSet<HeartRate> HeartRates { get; set; }
-    public DbSet<Weight> Weights { get; set; }
+    //public DbSet<Trip> Trips { get; set; }
+    //public DbSet<Weather> Weathers { get; set; }
+    //public DbSet<HeartRate> HeartRates { get; set; }
+    //public DbSet<Weight> Weights { get; set; }
 
 
     public DbContext Context => this;
     public string DatabasePath { get; }
+
+    public SqliteDBContext()
+    {
+    }
 
     public SqliteDBContext(IFileSystem fileSystem)
     {

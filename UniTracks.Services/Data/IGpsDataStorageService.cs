@@ -11,4 +11,6 @@ public interface IGpsDataStorageService
 {
     Task StoreData(GPSInformatoion gpsInformatoion, Action<GPSInformatoion> action);
     Task StoreData(GPSInformatoion gpsInformatoion);
+
+    Task<List<Models.Location.Location>> getAll();
 }

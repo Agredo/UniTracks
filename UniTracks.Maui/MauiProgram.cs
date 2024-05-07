@@ -10,7 +10,6 @@ using UniTracks.Data.LiteDB;
 using UniTracks.Data.Repository;
 using UniTracks.Data.SQLite;
 using UniTracks.Maui.Services.Location;
-using UniTracks.Services.ApplicationModel.DataTransfer;
 using UniTracks.Services.Data;
 using UniTracks.Services.Location;
 using UniTracks.ViewModels;
