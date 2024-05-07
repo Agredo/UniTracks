@@ -9,10 +9,13 @@ using UniTracks.Core.Services;
 using UniTracks.Data.Repository;
 using UniTracks.Data.SQLite;
 using UniTracks.Maui.Services.Location;
+using UniTracks.Services.ApplicationModel.DataTransfer;
 using UniTracks.Services.Data;
 using UniTracks.Services.Location;
 using UniTracks.ViewModels;
 using FileSystem = UniTracks.Maui.Services.IO.FileSystem;
+using IShare = UniTracks.Services.ApplicationModel.DataTransfer.IShare;
+using Share = UniTracks.Maui.Services.ApplicationModel.DataTransfer.Share;
 
 namespace UniTracks.Maui
 {
@@ -52,6 +55,7 @@ namespace UniTracks.Maui
             services.AddSingleton<UniTracks.Services.IO.IFileSystem, FileSystem>();
             services.AddSingleton<ILocationService, LocationService>();
             services.AddSingleton<IGpsDataStorageService, GpsDataStorageService>();
+            services.AddSingleton<IShare, Share>();
 
 
 
