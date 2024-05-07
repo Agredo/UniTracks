@@ -12,7 +12,7 @@ namespace UniTracks.Maui.Services.Location
 
         public async Task StartListening(Action<GPSInformatoion> action)
         {
-            await GpsManager.StartListener(new GpsRequest(GpsBackgroundMode.Realtime, GpsAccuracy.Highest));
+            await GpsManager.StartListener(new GpsRequest(GpsBackgroundMode.Realtime, GpsAccuracy.Highest) );
 
             var subscription = GpsManager
                 .WhenReading()
@@ -27,9 +27,7 @@ namespace UniTracks.Maui.Services.Location
                                                reading.Speed,
                                                reading.SpeedAccuracy);
 
-#if WINDOWS
                     GpsDataStorageService?.StoreData(gpsInformatoion);
-#endif
                 });
         }
 
@@ -50,9 +48,7 @@ namespace UniTracks.Maui.Services.Location
                                                reading.Speed,
                                                reading.SpeedAccuracy);
 
-#if WINDOWS
                     GpsDataStorageService?.StoreData(gpsInformatoion);
-#endif
                 });
         }
 

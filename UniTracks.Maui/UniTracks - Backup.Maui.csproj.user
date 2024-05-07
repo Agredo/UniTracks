@@ -2,9 +2,10 @@
 <Project ToolsVersion="Current" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup>
     <IsFirstTimeProjectOpen>False</IsFirstTimeProjectOpen>
+<<<<<<< HEAD
     <ActiveDebugFramework>net8.0-ios</ActiveDebugFramework>
-    <ActiveDebugProfile>Lokales Gerät</ActiveDebugProfile>
-    <SelectedPlatformGroup>LocalDevice</SelectedPlatformGroup>
+    <ActiveDebugProfile>Remotegerät</ActiveDebugProfile>
+    <SelectedPlatformGroup>RemoteDevice</SelectedPlatformGroup>
     <DeveloperId>R63MXH8N84</DeveloperId>
     <DevelopmentTeamId>R63MXH8N84</DevelopmentTeamId>
     <TargetiOSDevice>&lt;?xml version="1.0" encoding="UTF-8"?&gt;
@@ -25,11 +26,14 @@
 &lt;/dict&gt;
 &lt;/plist&gt;
 </TargetiOSDevice>
-    <DefaultDevice>iPhone 15 iOS 17.4</DefaultDevice>
   </PropertyGroup>
   <PropertyGroup Condition="'$(TargetPlatformIdentifier)'=='iOS'">
     <RuntimeIdentifier>ios-arm64</RuntimeIdentifier>
     <PlatformTarget>arm64</PlatformTarget>
+=======
+    <ActiveDebugFramework>net8.0-windows10.0.19041.0</ActiveDebugFramework>
+    <ActiveDebugProfile>Windows Machine</ActiveDebugProfile>
+>>>>>>> parent of 2bed04f (The UniTracks project has undergone significant updates to enhance its GPS location services. The most notable changes include the addition of new packages, creation of new namespaces, and the introduction of new classes and interfaces.)
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Debug|net8.0-android|AnyCPU'">
     <DebuggerFlavor>ProjectDebugger</DebuggerFlavor>

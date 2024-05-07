@@ -2,15 +2,12 @@
 using CommunityToolkit.Maui.Markup;
 using DrawnUi.Maui.Draw;
 using Microcharts.Maui;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Shiny;
-using Shiny.Locations;
 using SkiaSharp.Views.Maui.Controls.Hosting;
 using UniTracks.Core.Services;
 using UniTracks.Data.Repository;
 using UniTracks.Data.SQLite;
-using UniTracks.Maui.Services.IO;
 using UniTracks.Maui.Services.Location;
 using UniTracks.Services.Data;
 using UniTracks.Services.Location;
@@ -23,6 +20,8 @@ namespace UniTracks.Maui
     {
         public static MauiApp CreateMauiApp()
         {
+            AppContext.SetSwitch("System.Reflection.NullabilityInfoContext.IsSupported", true);
+
             var builder = MauiApp.CreateBuilder();
             var services = builder.Services;
 
@@ -39,20 +38,20 @@ namespace UniTracks.Maui
                     fonts.AddFont("OpenSans-Regular.ttf", "OpenSansRegular");
                     fonts.AddFont("OpenSans-Semibold.ttf", "OpenSansSemibold");
                 });
-
-            services.AddGps<UniTracks.Maui.Services.Location.GpsDelegate>();
-
+#if IOS
+            services.AddGps< Services.Location.GpsDelegate>();
+#endif
             //Pages
             services.AddTransient<MainPage, MainPageViewModel>();
-
-            //Services
-            services.AddSingleton<ILocationService, LocationService>();
-            services.AddSingleton<IGpsDataStorageService, GpsDataStorageService>();
-            services.AddSingleton<UniTracks.Services.IO.IFileSystem, FileSystem>();
 
             //DBContext
             services.AddDbContext<SqliteDBContext>();
             services.AddSingleton(typeof(IGenericRepository<>), typeof(GenericRepository<>));
+
+            //Services
+            services.AddSingleton<UniTracks.Services.IO.IFileSystem, FileSystem>();
+            services.AddSingleton<ILocationService, LocationService>();
+            services.AddSingleton<IGpsDataStorageService, GpsDataStorageService>();
 
 
 

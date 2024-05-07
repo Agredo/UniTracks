@@ -29,6 +29,8 @@ public class SqliteDBContext : DbContext
     public SqliteDBContext(IFileSystem fileSystem)
     {
         DatabasePath = Path.Combine(fileSystem.AppDataDirectory, "LocalDB.db3");
+        SQLitePCL.Batteries.Init();
+        this.Database.MigrateAsync();
         this.Database.EnsureCreated();
     }
 
