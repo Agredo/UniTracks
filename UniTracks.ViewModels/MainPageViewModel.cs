@@ -1,5 +1,6 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using System.Collections.ObjectModel;
 using UniTracks.Common.Contants;
 using UniTracks.Data.LiteDB;
 using UniTracks.Data.Repository;
@@ -22,6 +23,9 @@ public partial class MainPageViewModel : ObservableObject
     public IGenericLiteDBRepository<ILiteDatabase> LiteDBRepository { get; }
     public string DatabasePath { get; }
     public string LiteDBDatabasePath { get; private set; }
+
+    [ObservableProperty]
+    public ObservableCollection<Location> locations = new ObservableCollection<Location>();
 
     public MainPageViewModel(ILocationService locationService, IShare share, IFileSystem fileSystem, IGpsDataStorageService gpsDataStorageService, IGenericRepository<SqliteDBContext> sqliteRepository, IGenericLiteDBRepository<ILiteDatabase> liteDBRepository)
     {
@@ -49,6 +53,12 @@ public partial class MainPageViewModel : ObservableObject
     public async Task StopListening()
     {
         LocationService.StopListening();
+
+        (await SqliteRepository.GetAllAsync<Location>()).ToList().ForEach(location =>
+        {
+            Locations.Add(location);
+        });
+        
     }
 
     [RelayCommand]
@@ -61,6 +71,8 @@ public partial class MainPageViewModel : ObservableObject
 
         sqliteLocations.ForEach(async x => Console.WriteLine($"SQLite {x.Timestamp} - {x.ID} - {x.Longitude} - {x.Latitude}"));
         liteDBLocations.ForEach(async x => Console.WriteLine($"LiteDB {x.Timestamp} - {x.ID} - {x.Longitude} - {x.Latitude}"));
+
+        Locations = new ObservableCollection<Location>(sqliteLocations);
 
         await Share.ShareFiles("Share Databases", new string[] { DatabasePath, LiteDBDatabasePath });
     }

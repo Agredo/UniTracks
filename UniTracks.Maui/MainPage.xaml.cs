@@ -10,7 +10,7 @@ public partial class MainPage : ContentPage
         InitializeComponent();
         BindingContext = mainPageViewModel;
 
-        Map.Map.Layers.Add(Mapsui.Tiling.OpenStreetMap.CreateTileLayer());
+        
     }
 
     //async void OnStartListening()
