@@ -11,5 +11,5 @@ public record Weight
     public Guid ID { get; set; }
     public double WeightValue { get; set; }
     public DateTimeOffset Timestamp { get; set; }
-    public User.User User { get; set; }
+    //public User.User User { get; set; }
 }

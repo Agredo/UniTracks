@@ -46,6 +46,7 @@ public partial class MainPageViewModel : ObservableObject
     [RelayCommand]
     public async Task StartListening()
     {
+        //var x = await GpsDataStorageService.getAll();
         await LocationService.StartListening();
     }
 

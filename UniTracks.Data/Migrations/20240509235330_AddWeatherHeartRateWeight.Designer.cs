@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using UniTracks.Data.SQLite;
 
@@ -10,9 +11,11 @@ using UniTracks.Data.SQLite;
 namespace UniTracks.Data.Migrations
 {
     [DbContext(typeof(SqliteDBContext))]
-    partial class SqliteDBContextModelSnapshot : ModelSnapshot
+    [Migration("20240509235330_AddWeatherHeartRateWeight")]
+    partial class AddWeatherHeartRateWeight
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "8.0.4");
@@ -41,9 +44,6 @@ namespace UniTracks.Data.Migrations
                     b.Property<DateTimeOffset>("Timestamp")
                         .HasColumnType("TEXT");
 
-                    b.Property<Guid?>("TripID")
-                        .HasColumnType("TEXT");
-
                     b.Property<double>("WindDirection")
                         .HasColumnType("REAL");
 
@@ -53,8 +53,6 @@ namespace UniTracks.Data.Migrations
                     b.HasKey("ID");
 
                     b.HasIndex("LocationID");
-
-                    b.HasIndex("TripID");
 
                     b.ToTable("Weathers");
                 });
@@ -230,10 +228,6 @@ namespace UniTracks.Data.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("UniTracks.Models.Trip.Trip", null)
-                        .WithMany("Weather")
-                        .HasForeignKey("TripID");
-
                     b.Navigation("Location");
                 });
 
@@ -263,8 +257,6 @@ namespace UniTracks.Data.Migrations
                     b.Navigation("HeartRates");
 
                     b.Navigation("Locations");
-
-                    b.Navigation("Weather");
 
                     b.Navigation("Weights");
                 });

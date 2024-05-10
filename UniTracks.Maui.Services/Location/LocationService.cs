@@ -33,23 +33,29 @@ namespace UniTracks.Maui.Services.Location
 
         public async Task StartListening()
         {
-            await GpsManager.StartListener(new GpsRequest(GpsBackgroundMode.Realtime, GpsAccuracy.Highest));
+            try
+            {
+                await GpsManager.StartListener(new GpsRequest(GpsBackgroundMode.Realtime, GpsAccuracy.Highest));
 
-            var subscription = GpsManager
-                .WhenReading()
-                .Subscribe(reading =>
-                {
-                    GPSInformatoion gpsInformatoion = new GPSInformatoion(new Models.GPS.Position(reading.Position.Latitude, reading.Position.Longitude),
-                                               reading.PositionAccuracy,
-                                               reading.Timestamp,
-                                               reading.Heading,
-                                               reading.HeadingAccuracy,
-                                               reading.Altitude,
-                                               reading.Speed,
-                                               reading.SpeedAccuracy);
+                var subscription = GpsManager
+                    .WhenReading()
+                    .Subscribe(reading =>
+                    {
+                        GPSInformatoion gpsInformatoion = new GPSInformatoion(new Models.GPS.Position(reading.Position.Latitude, reading.Position.Longitude),
+                                                   reading.PositionAccuracy,
+                                                   reading.Timestamp,
+                                                   reading.Heading,
+                                                   reading.HeadingAccuracy,
+                                                   reading.Altitude,
+                                                   reading.Speed,
+                                                   reading.SpeedAccuracy);
 
-                    GpsDataStorageService?.StoreData(gpsInformatoion);
-                });
+                        GpsDataStorageService?.StoreData(gpsInformatoion);
+                    });
+            }
+            catch(Exception ex)
+            {
+            }
         }
 
         public void StopListening()

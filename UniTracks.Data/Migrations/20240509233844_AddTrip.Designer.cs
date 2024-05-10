@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using UniTracks.Data.SQLite;
 
@@ -10,98 +11,14 @@ using UniTracks.Data.SQLite;
 namespace UniTracks.Data.Migrations
 {
     [DbContext(typeof(SqliteDBContext))]
-    partial class SqliteDBContextModelSnapshot : ModelSnapshot
+    [Migration("20240509233844_AddTrip")]
+    partial class AddTrip
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "8.0.4");
-
-            modelBuilder.Entity("UniTracks.Models.Environment.Weather", b =>
-                {
-                    b.Property<Guid>("ID")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("TEXT");
-
-                    b.Property<double>("CloudCover")
-                        .HasColumnType("REAL");
-
-                    b.Property<double>("Humidity")
-                        .HasColumnType("REAL");
-
-                    b.Property<Guid>("LocationID")
-                        .HasColumnType("TEXT");
-
-                    b.Property<double>("Pressure")
-                        .HasColumnType("REAL");
-
-                    b.Property<double>("Temperature")
-                        .HasColumnType("REAL");
-
-                    b.Property<DateTimeOffset>("Timestamp")
-                        .HasColumnType("TEXT");
-
-                    b.Property<Guid?>("TripID")
-                        .HasColumnType("TEXT");
-
-                    b.Property<double>("WindDirection")
-                        .HasColumnType("REAL");
-
-                    b.Property<double>("WindSpeed")
-                        .HasColumnType("REAL");
-
-                    b.HasKey("ID");
-
-                    b.HasIndex("LocationID");
-
-                    b.HasIndex("TripID");
-
-                    b.ToTable("Weathers");
-                });
-
-            modelBuilder.Entity("UniTracks.Models.Health.HeartRate", b =>
-                {
-                    b.Property<Guid>("ID")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("TEXT");
-
-                    b.Property<double>("Rate")
-                        .HasColumnType("REAL");
-
-                    b.Property<DateTimeOffset>("Timestamp")
-                        .HasColumnType("TEXT");
-
-                    b.Property<Guid?>("TripID")
-                        .HasColumnType("TEXT");
-
-                    b.HasKey("ID");
-
-                    b.HasIndex("TripID");
-
-                    b.ToTable("HeartRates");
-                });
-
-            modelBuilder.Entity("UniTracks.Models.Health.Weight", b =>
-                {
-                    b.Property<Guid>("ID")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("TEXT");
-
-                    b.Property<DateTimeOffset>("Timestamp")
-                        .HasColumnType("TEXT");
-
-                    b.Property<Guid?>("TripID")
-                        .HasColumnType("TEXT");
-
-                    b.Property<double>("WeightValue")
-                        .HasColumnType("REAL");
-
-                    b.HasKey("ID");
-
-                    b.HasIndex("TripID");
-
-                    b.ToTable("Weights");
-                });
 
             modelBuilder.Entity("UniTracks.Models.Location.Location", b =>
                 {
@@ -222,35 +139,6 @@ namespace UniTracks.Data.Migrations
                     b.ToTable("Trips");
                 });
 
-            modelBuilder.Entity("UniTracks.Models.Environment.Weather", b =>
-                {
-                    b.HasOne("UniTracks.Models.Location.Location", "Location")
-                        .WithMany()
-                        .HasForeignKey("LocationID")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("UniTracks.Models.Trip.Trip", null)
-                        .WithMany("Weather")
-                        .HasForeignKey("TripID");
-
-                    b.Navigation("Location");
-                });
-
-            modelBuilder.Entity("UniTracks.Models.Health.HeartRate", b =>
-                {
-                    b.HasOne("UniTracks.Models.Trip.Trip", null)
-                        .WithMany("HeartRates")
-                        .HasForeignKey("TripID");
-                });
-
-            modelBuilder.Entity("UniTracks.Models.Health.Weight", b =>
-                {
-                    b.HasOne("UniTracks.Models.Trip.Trip", null)
-                        .WithMany("Weights")
-                        .HasForeignKey("TripID");
-                });
-
             modelBuilder.Entity("UniTracks.Models.Location.Location", b =>
                 {
                     b.HasOne("UniTracks.Models.Trip.Trip", null)
@@ -260,13 +148,7 @@ namespace UniTracks.Data.Migrations
 
             modelBuilder.Entity("UniTracks.Models.Trip.Trip", b =>
                 {
-                    b.Navigation("HeartRates");
-
                     b.Navigation("Locations");
-
-                    b.Navigation("Weather");
-
-                    b.Navigation("Weights");
                 });
 #pragma warning restore 612, 618
         }

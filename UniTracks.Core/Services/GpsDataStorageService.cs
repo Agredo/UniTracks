@@ -3,6 +3,7 @@ using UniTracks.Data.Repository;
 using UniTracks.Data.SQLite;
 using UniTracks.Models.GPS;
 using UniTracks.Models.Location;
+using UniTracks.Models.Trip;
 using UniTracks.Services.Data;
 
 namespace UniTracks.Core.Services;
@@ -49,7 +50,6 @@ public class GpsDataStorageService : IGpsDataStorageService
             SpeedAccuracy = gpsInformatoion.SpeedAccuracy,
             Timestamp = gpsInformatoion.Timestamp
         };
-
         await SqliteRepository.Add<Location>(location);
         await LiteDBRepository.Add<Location>(location);
     }

@@ -12,5 +12,5 @@ public record HeartRate
     public Guid ID { get; set; }
     public double Rate { get; set; }
     public DateTimeOffset Timestamp { get; set; }
-    public User.User user { get; set; }
+    //public User.User user { get; set; }
 }
