@@ -5,6 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using UniTracks.Common.Contants;
+using UniTracks.Common.ExtensionMethods;
 using UniTracks.Models.Environment;
 using UniTracks.Models.Health;
 using UniTracks.Models.Location;
@@ -36,8 +37,7 @@ public class SqliteDBContext : DbContext
         DatabasePath = Path.Combine(fileSystem.AppDataDirectory, ApplicationConstants.SQliteDatabaseName);
         SQLitePCL.Batteries.Init();
 
-        this.Database.EnsureCreated();
-        this.Database.MigrateAsync();
+        this.Database.MigrateAsync().Await();
     }
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)

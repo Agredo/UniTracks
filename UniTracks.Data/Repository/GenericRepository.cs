@@ -16,16 +16,20 @@ public class GenericRepository<EDbContext> : IGenericRepository<EDbContext> wher
     {
         Context = context;
     }
-    public async Task Add<TEntity>(TEntity entity) where TEntity : class
+    public async Task<TEntity> Add<TEntity>(TEntity entity) where TEntity : class
     {
-        Context.Set<TEntity>().Add(entity);
+        TEntity e = Context.Set<TEntity>().Add(entity).Entity;
         await SaveChangesAsync();
+
+        return e;
     }
 
-    public async Task Update<TEntity>(TEntity entity) where TEntity : class
+    public async Task<TEntity> Update<TEntity>(TEntity entity) where TEntity : class
     {
-        Context.Update(entity);
+        TEntity e = Context.Update(entity).Entity;
         await SaveChangesAsync();
+
+        return e;
     }
 
     public async Task Delete<TEntity>(TEntity entity) where TEntity : class

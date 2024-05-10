@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -8,6 +9,7 @@ namespace UniTracks.Models.Environment;
 
 public record Weather
 {
+    [Key]
     public Guid ID { get; set; }
     public double Temperature { get; set; }
     public double Humidity { get; set; }
