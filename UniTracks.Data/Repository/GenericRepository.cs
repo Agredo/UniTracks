@@ -1,10 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Linq.Expressions;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace UniTracks.Data.Repository;
 
@@ -40,7 +35,8 @@ public class GenericRepository<EDbContext> : IGenericRepository<EDbContext> wher
 
     public virtual IEnumerable<TEntity> Get<TEntity>(
             Expression<Func<TEntity, bool>> filter = null,
-            Func<IQueryable<TEntity>, IOrderedQueryable<TEntity>> orderBy = null) where TEntity : class
+            Func<IQueryable<TEntity>, IOrderedQueryable<TEntity>> orderBy = null,
+            params Expression<Func<TEntity, object>>[] includes) where TEntity : class
     {
         IQueryable<TEntity> query = Context.Set<TEntity>();
 
@@ -48,13 +44,13 @@ public class GenericRepository<EDbContext> : IGenericRepository<EDbContext> wher
         {
             query = query.Where(filter);
         }
-
         if (orderBy != null)
         {
             return orderBy(query).ToList();
         }
         else
         {
+            query.IncludeMultiple(includes);
             return query.ToList();
         }
     }
@@ -64,9 +60,9 @@ public class GenericRepository<EDbContext> : IGenericRepository<EDbContext> wher
         return await Context.Set<TEntity>().FindAsync(id);
     }
 
-    public async Task<IEnumerable<TEntity>> GetAllAsync<TEntity>() where TEntity : class
+    public async Task<IEnumerable<TEntity>> GetAllAsync<TEntity>(params Expression<Func<TEntity, object>>[] includes) where TEntity : class
     {
-        return await Context.Set<TEntity>().ToListAsync();
+        return await Context.Set<TEntity>().IncludeMultiple(includes).ToListAsync();
     }
 
     public async Task<int> SaveChangesAsync()

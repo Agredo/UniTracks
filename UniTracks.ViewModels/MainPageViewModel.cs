@@ -125,7 +125,7 @@ public partial class MainPageViewModel : ObservableObject
 
     private async Task LocationfromLastTrip()
     {
-        List<Trip> trips = (await SqliteRepository.GetAllAsync<Trip>()).ToList();
+        List<Trip> trips = (await SqliteRepository.GetAllAsync<Trip>(trip => trip.Locations)).ToList();
 
         if (trips.Count > 0)
         {

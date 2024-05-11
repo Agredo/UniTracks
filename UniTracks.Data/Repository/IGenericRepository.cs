@@ -14,8 +14,8 @@ public interface IGenericRepository<EDbContext> where EDbContext : DbContext
 
     Task<TEntity> Add<TEntity>(TEntity entity) where TEntity : class;
     Task Delete<TEntity>(TEntity entity) where TEntity : class;
-    IEnumerable<TEntity> Get<TEntity>(Expression<Func<TEntity, bool>> filter = null, Func<IQueryable<TEntity>, IOrderedQueryable<TEntity>> orderBy = null) where TEntity : class;
-    Task<IEnumerable<TEntity>> GetAllAsync<TEntity>() where TEntity : class;
+    IEnumerable<TEntity> Get<TEntity>(Expression<Func<TEntity, bool>> filter = null, Func<IQueryable<TEntity>, IOrderedQueryable<TEntity>> orderBy = null, params Expression<Func<TEntity, object>>[] includes) where TEntity : class;
+    Task<IEnumerable<TEntity>> GetAllAsync<TEntity>(params Expression<Func<TEntity, object>>[] includes) where TEntity : class;
     Task<TEntity> GetByIdAsync<TEntity>(int id) where TEntity : class;
     Task<int> SaveChangesAsync();
     Task<TEntity> Update<TEntity>(TEntity entity) where TEntity : class;
