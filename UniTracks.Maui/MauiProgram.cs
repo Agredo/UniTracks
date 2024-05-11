@@ -10,9 +10,11 @@ using UniTracks.Data.LiteDB;
 using UniTracks.Data.Repository;
 using UniTracks.Data.SQLite;
 using UniTracks.Maui.Services.Location;
+using UniTracks.Maui.Views.Pages;
 using UniTracks.Services.Data;
 using UniTracks.Services.Location;
 using UniTracks.ViewModels;
+using UniTracks.ViewModels.Pages;
 using FileSystem = UniTracks.Maui.Services.IO.FileSystem;
 using IShare = UniTracks.Services.ApplicationModel.DataTransfer.IShare;
 using Share = UniTracks.Maui.Services.ApplicationModel.DataTransfer.Share;
@@ -46,6 +48,7 @@ namespace UniTracks.Maui
 #endif
             //Pages
             services.AddTransient<MainPage, MainPageViewModel>();
+            services.AddTransient<StartPage, StartPageViewModel>();
 
             //DBContext
             services.AddDbContext<SqliteDBContext>();

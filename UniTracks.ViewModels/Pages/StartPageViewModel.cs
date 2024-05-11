@@ -1,8 +1,6 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
-using GeoCoordinatePortable;
 using System.Collections.ObjectModel;
-using System.Linq;
 using UniTracks.Common.Contants;
 using UniTracks.Common.ExtensionMethods;
 using UniTracks.Data.LiteDB;
@@ -15,9 +13,9 @@ using UniTracks.Services.Data;
 using UniTracks.Services.IO;
 using UniTracks.Services.Location;
 
-namespace UniTracks.ViewModels;
+namespace UniTracks.ViewModels.Pages;
 
-public partial class MainPageViewModel : ObservableObject
+public partial class StartPageViewModel : ObservableObject
 {
     public ILocationService LocationService { get; }
     public IShare Share { get; }
@@ -29,18 +27,11 @@ public partial class MainPageViewModel : ObservableObject
     public string LiteDBDatabasePath { get; private set; }
 
     [ObservableProperty]
-    private int selectedViewModelIndex = 0;
-
-    [ObservableProperty]
-    private ObservableCollection<Location> locations = new ObservableCollection<Location>();
-
-    [ObservableProperty]
-    private ObservableCollection<Trip> trips = new ObservableCollection<Trip>();
-
+    public ObservableCollection<Location> locations = new ObservableCollection<Location>();
     [ObservableProperty]
     private string debugText;
 
-    public MainPageViewModel(ILocationService locationService, IShare share, IFileSystem fileSystem, IGpsDataStorageService gpsDataStorageService, IGenericRepository<SqliteDBContext> sqliteRepository, IGenericLiteDBRepository<ILiteDatabase> liteDBRepository)
+    public StartPageViewModel(ILocationService locationService, IShare share, IFileSystem fileSystem, IGpsDataStorageService gpsDataStorageService, IGenericRepository<SqliteDBContext> sqliteRepository, IGenericLiteDBRepository<ILiteDatabase> liteDBRepository)
     {
         LocationService = locationService;
         Share = share;
@@ -72,18 +63,12 @@ public partial class MainPageViewModel : ObservableObject
 
     private async Task LocationfromLastTrip()
     {
-        (await SqliteRepository.GetAllAsync<Trip>(trip => trip.Locations)).ToList().ForEach(trip =>
-        {
-            if (trip != null)
-            {
-                Trips.Add(trip);
-            }
-        });
+        List<Trip> trips = (await SqliteRepository.GetAllAsync<Trip>(trip => trip.Locations)).ToList();
 
-        if (Trips.Count > 0)
+        if (trips.Count > 0)
         {
             Locations.Clear();
-            Trip lastTrip = Trips.Last();
+            Trip lastTrip = trips.Last();
 
             Console.WriteLine($"Last Trip: {lastTrip.ID} {lastTrip.StartTime}");
             lastTrip.Locations?.ForEach(location =>

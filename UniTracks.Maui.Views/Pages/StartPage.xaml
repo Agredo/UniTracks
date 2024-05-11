@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage
+    x:Class="UniTracks.Maui.Views.Pages.StartPage"
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    xmlns:vm="clr-namespace:UniTracks.ViewModels.Pages;assembly=UniTracks.ViewModels"
+    Title="StartPage"
+    x:DataType="vm:StartPageViewModel">
+    <Grid>
+        <Label
+            HorizontalOptions="Start"
+            Text="{Binding DebugText}"
+            VerticalOptions="Start" />
+        <HorizontalStackLayout HorizontalOptions="End" VerticalOptions="End">
+            <Button Command="{Binding StartListeningCommand}" Text="Start" />
+            <Button Command="{Binding StopListeningCommand}" Text="Stop" />
+            <Button Command="{Binding ShareDatabaseCommand}" Text="Share DB" />
+            <Button Command="{Binding ImportDatabaseCommand}" Text="Import DB" />
+        </HorizontalStackLayout>
+    </Grid>
+</ContentPage>

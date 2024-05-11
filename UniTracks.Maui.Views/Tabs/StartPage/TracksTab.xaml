@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentView
+    x:Class="UniTracks.Maui.Views.Tabs.StartPage.TracksTab"
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    xmlns:tripModels="clr-namespace:UniTracks.Models.Trip;assembly=UniTracks.Models"
+    xmlns:views="clr-namespace:UniTracks.Maui.Views.Controls">
+
+    <Grid>
+        <CollectionView x:Name="TracksCollectionView" Background="White">
+            <CollectionView.ItemTemplate>
+                <DataTemplate x:DataType="tripModels:Trip">
+                    <Grid>
+                        <views:TrackCard Background="Red" TripDateTime="{Binding StartTime}" />
+                    </Grid>
+                </DataTemplate>
+            </CollectionView.ItemTemplate>
+        </CollectionView>
+    </Grid>
+</ContentView>
