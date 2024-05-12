@@ -1,9 +1,10 @@
 ﻿using Maui.BindableProperty.Generator.Core;
+using Microsoft.Maui.Platform;
 using UniTracks.Models.Trip;
 
 namespace UniTracks.Maui.Views.Controls;
 
-public partial class TripCard : ContentView
+public partial class TripCard : Microsoft.Maui.Controls.ContentView
 {
 	public TripCard()
 	{
@@ -30,7 +31,7 @@ public partial class TripCard : ContentView
     private double distance;
 
     [AutoBindable(OnChanged = nameof(DurationChanged))]
-    private double duration;
+    private TimeSpan duration;
 
     private void TripDateTimeChanged(DateTimeOffset newDateTimeOffset)
     {
@@ -45,26 +46,26 @@ public partial class TripCard : ContentView
 
     private void MaxSpeedChanged(double newMaxSpeed)
     {
-        MaxSpeedLabel.Text = $"↗️: {Math.Round(newMaxSpeed, 1)} m/s";
+        MaxSpeedLabel.Text = $"↗️{Math.Round(newMaxSpeed, 1)}m/s";
     }
 
     private void MinSpeedChanged(double newMinSpeed)
     {
-        MinSpeedLabel.Text = $"↘️: {Math.Round(newMinSpeed, 1)} m/s";
+        MinSpeedLabel.Text = $"↘️{Math.Round(newMinSpeed, 1)}m/s";
     }
 
     private void AverageChanged(double newAverageSpeed)
     {
-        AverageSpeedLabel.Text = $"∅: {Math.Round(newAverageSpeed, 1)} m/s";
+        AverageSpeedLabel.Text = $"∅{Math.Round(newAverageSpeed, 1)}m/s";
     }
 
     private void DistanceChanged(double newDistance)
     {
-        TripDistanceLabel.Text = $"🏁: {Math.Round(newDistance, 1)} m";
+        TripDistanceLabel.Text = $"🏁{Math.Round(newDistance, 1)}m";
     }
-    private void DurationChanged(double newDuration)
+    private void DurationChanged(TimeSpan newDuration)
     {
-        TripDurationLabel.Text = $"⏱️: {Math.Round(newDuration, 1)} s";
+        TripDurationLabel.Text = $"⏱️{newDuration.ToFormattedString("mm:ss")}min";
     }
 
     private void SetNameLabelText()
