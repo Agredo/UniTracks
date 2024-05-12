@@ -11,6 +11,9 @@
     <MauiXaml Update="Pages\StartPage.xaml">
       <SubType>Designer</SubType>
     </MauiXaml>
+    <MauiXaml Update="Pages\TripOverviewPage.xaml">
+      <SubType>Designer</SubType>
+    </MauiXaml>
     <MauiXaml Update="Tabs\StartPage\TracksTab.xaml">
       <SubType>Designer</SubType>
     </MauiXaml>

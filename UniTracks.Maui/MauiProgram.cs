@@ -10,9 +10,11 @@ using UniTracks.Data.LiteDB;
 using UniTracks.Data.Repository;
 using UniTracks.Data.SQLite;
 using UniTracks.Maui.Services.Location;
+using UniTracks.Maui.Services.Navigation;
 using UniTracks.Maui.Views.Pages;
 using UniTracks.Services.Data;
 using UniTracks.Services.Location;
+using UniTracks.Services.Navigation;
 using UniTracks.ViewModels;
 using UniTracks.ViewModels.Pages;
 using FileSystem = UniTracks.Maui.Services.IO.FileSystem;
@@ -49,6 +51,7 @@ namespace UniTracks.Maui
             //Pages
             services.AddTransient<MainPage, MainPageViewModel>();
             services.AddTransient<StartPage, StartPageViewModel>();
+            services.AddTransient<TripOverviewPage, TripOverviewViewModel>();
 
             //DBContext
             services.AddDbContext<SqliteDBContext>();
@@ -61,6 +64,8 @@ namespace UniTracks.Maui
             services.AddSingleton<ILocationService, LocationService>();
             services.AddSingleton<IGpsDataStorageService, GpsDataStorageService>();
             services.AddSingleton<IShare, Share>();
+            services.AddSingleton<UniTracks.Services.Navigation.INavigation, ShellNavigation>();
+            services.AddSingleton<INavigationRoutes, ShellNavigationRoutes>();
 
 
 

@@ -1,4 +1,6 @@
-﻿namespace UniTracks.Maui
+﻿using UniTracks.Maui.Views.Pages;
+
+namespace UniTracks.Maui
 {
     public partial class App : Application
     {
@@ -7,6 +9,8 @@
             InitializeComponent();
 
             MainPage = new AppShell();
+
+            Routing.RegisterRoute(nameof(TripOverviewPage), typeof(TripOverviewPage));
         }
     }
 }

@@ -7,7 +7,11 @@
     xmlns:views="clr-namespace:UniTracks.Maui.Views.Controls">
 
     <Grid>
-        <CollectionView x:Name="TracksCollectionView" Background="White">
+        <CollectionView
+            x:Name="TracksCollectionView"
+            Background="White"
+            SelectionChanged="TracksCollectionView_SelectionChanged"
+            SelectionMode="Single">
             <CollectionView.ItemTemplate>
                 <DataTemplate x:DataType="tripModels:Trip">
                     <Grid>

@@ -19,7 +19,10 @@
             Animate="True"
             SelectedIndex="{Binding SelectedViewModelIndex, Mode=TwoWay}">
             <Grid>
-                <tabViews:TracksTab Trips="{Binding Trips}" />
+                <tabViews:TracksTab
+                    SelectedTrip="{Binding SelectedTrip, Mode=TwoWay}"
+                    SelectionChaged="{Binding SelectedTripChangedCommand}"
+                    Trips="{Binding Trips}" />
                 <HorizontalStackLayout
                     HorizontalOptions="End"
                     Spacing="8"

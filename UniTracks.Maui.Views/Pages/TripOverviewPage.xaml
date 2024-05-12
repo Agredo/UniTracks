@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage
+    x:Class="UniTracks.Maui.Views.Pages.TripOverviewPage"
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    xmlns:controls="clr-namespace:UniTracks.Maui.Views.Controls;assembly=UniTracks.Maui.Views"
+    xmlns:models="clr-namespace:UniTracks.Models.Trip;assembly=UniTracks.Models"
+    xmlns:vm="clr-namespace:UniTracks.ViewModels.Pages;assembly=UniTracks.ViewModels"
+    Title="TripOverviewPage"
+    x:DataType="vm:TripOverviewViewModel">
+    <Grid>
+        <controls:MapView Locations="{Binding Locations}" />
+    </Grid>
+</ContentPage>

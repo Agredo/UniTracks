@@ -1,8 +1,6 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
-using GeoCoordinatePortable;
 using System.Collections.ObjectModel;
-using System.Linq;
 using UniTracks.Common.Contants;
 using UniTracks.Common.ExtensionMethods;
 using UniTracks.Data.LiteDB;
@@ -14,11 +12,15 @@ using UniTracks.Services.ApplicationModel.DataTransfer;
 using UniTracks.Services.Data;
 using UniTracks.Services.IO;
 using UniTracks.Services.Location;
+using UniTracks.Services.Navigation;
+using INavigation = UniTracks.Services.Navigation.INavigation;
 
 namespace UniTracks.ViewModels;
 
 public partial class MainPageViewModel : ObservableObject
 {
+    public Services.Navigation.INavigation Navigation { get; }
+    public INavigationRoutes NavigationRoutes { get; }
     public ILocationService LocationService { get; }
     public IShare Share { get; }
     public IFileSystem FileSystem { get; }
@@ -40,8 +42,13 @@ public partial class MainPageViewModel : ObservableObject
     [ObservableProperty]
     private string debugText;
 
-    public MainPageViewModel(ILocationService locationService, IShare share, IFileSystem fileSystem, IGpsDataStorageService gpsDataStorageService, IGenericRepository<SqliteDBContext> sqliteRepository, IGenericLiteDBRepository<ILiteDatabase> liteDBRepository)
+    [ObservableProperty]
+    private Trip selectedTrip;
+
+    public MainPageViewModel(INavigation navigation, INavigationRoutes navigationRoutes ,ILocationService locationService, IShare share, IFileSystem fileSystem, IGpsDataStorageService gpsDataStorageService, IGenericRepository<SqliteDBContext> sqliteRepository, IGenericLiteDBRepository<ILiteDatabase> liteDBRepository)
     {
+        Navigation = navigation;
+        NavigationRoutes = navigationRoutes;
         LocationService = locationService;
         Share = share;
         FileSystem = fileSystem;
@@ -75,8 +82,6 @@ public partial class MainPageViewModel : ObservableObject
         Trips.Clear();
         (await SqliteRepository.GetAllAsync<Trip>(trip => trip.Locations)).ToList().ForEach(trip =>
         {
-
-
             if (trip != null)
             {
                 Trips.Add(trip);
@@ -116,5 +121,16 @@ public partial class MainPageViewModel : ObservableObject
     public async Task ImportDatabase()
     {
 
+    }
+
+    partial void OnSelectedTripChanged(Trip? oldValue, Trip newValue)
+    {
+        Navigation.NavigateTo(NavigationRoutes.TripOverviewPage, newValue);
+    }
+
+    [RelayCommand]
+    private void SelectedTripChanged()
+    {
+        //Navigation.NavigateTo(NavigationRoutes.TripOverviewPage, SelectedTrip);
     }
 }
