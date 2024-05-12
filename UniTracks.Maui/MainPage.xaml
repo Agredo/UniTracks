@@ -3,6 +3,7 @@
     x:Class="UniTracks.Maui.MainPage"
     xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
     xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    xmlns:controls="clr-namespace:UniTracks.Maui.Views.Controls;assembly=UniTracks.Maui.Views"
     xmlns:pages="clr-namespace:UniTracks.Maui.Views.Pages;assembly=UniTracks.Maui.Views"
     xmlns:pagesViewModels="clr-namespace:UniTracks.ViewModels.Pages;assembly=UniTracks.ViewModels"
     xmlns:tabViews="clr-namespace:UniTracks.Maui.Views.Tabs.StartPage;assembly=UniTracks.Maui.Views"
@@ -16,22 +17,31 @@
         <tabs:ViewSwitcher
             x:Name="MainSwitcher"
             Animate="True"
-            SelectedIndex="{Binding SelectedViewModelIndex}">
-            <tabs:DelayedView>
-                <tabs:DelayedView.Content>
-                    <Grid>
-                        <tabViews:TracksTab Trips="{Binding Trips}" />
-                    </Grid>
-                </tabs:DelayedView.Content>
-            </tabs:DelayedView>
+            SelectedIndex="{Binding SelectedViewModelIndex, Mode=TwoWay}">
+            <Grid>
+                <tabViews:TracksTab Trips="{Binding Trips}" />
+                <HorizontalStackLayout
+                    HorizontalOptions="End"
+                    Spacing="8"
+                    VerticalOptions="End">
+                    <Button Command="{Binding StartListeningCommand}" Text="Start Trip" />
+                    <Button Command="{Binding StopListeningCommand}" Text="Stop Trip" />
+                </HorizontalStackLayout>
+            </Grid>
+
+            <controls:MapView />
         </tabs:ViewSwitcher>
 
         <tabs:TabHostView
             x:Name="MainTabsHost"
             Grid.Row="1"
             SelectedIndex="{Binding Source={x:Reference MainSwitcher}, Path=SelectedIndex, Mode=TwoWay}">
-            <tabs:BottomTabItem Label="Home" />
-            <tabs:BottomTabItem Label="Tracks" />
+            <tabs:BottomTabItem HeightRequest="80" Label="Home" />
+            <tabs:BottomTabItem HeightRequest="80" Label="Tracks">
+                <tabs:BottomTabItem.Badge>
+                    <tabs:BadgeView BackgroundColor="{StaticResource Tertiary}" Text="new" />
+                </tabs:BottomTabItem.Badge>
+            </tabs:BottomTabItem>
         </tabs:TabHostView>
     </Grid>
 

@@ -28,7 +28,7 @@ public partial class MainPageViewModel : ObservableObject
     public string DatabasePath { get; }
     public string LiteDBDatabasePath { get; private set; }
 
-    [ObservableProperty]
+    [ObservableProperty, ]
     private int selectedViewModelIndex = 0;
 
     [ObservableProperty]
@@ -72,8 +72,11 @@ public partial class MainPageViewModel : ObservableObject
 
     private async Task LocationfromLastTrip()
     {
+        Trips.Clear();
         (await SqliteRepository.GetAllAsync<Trip>(trip => trip.Locations)).ToList().ForEach(trip =>
         {
+
+
             if (trip != null)
             {
                 Trips.Add(trip);

@@ -8,6 +8,7 @@ public partial class TrackCard : ContentView
 	public TrackCard()
 	{
 		InitializeComponent();
+
 	}
 
 	[AutoBindable (OnChanged = nameof(TripDateTimeChanged))]
