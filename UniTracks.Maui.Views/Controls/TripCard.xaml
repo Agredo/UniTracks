@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <ContentView
-    x:Class="UniTracks.Maui.Views.Controls.TrackCard"
+    x:Class="UniTracks.Maui.Views.Controls.TripCard"
     xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
     xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml">
     <Border
@@ -27,41 +27,55 @@
                     WidthRequest="120" />
             </Border>
 
-            <Grid Grid.Column="1" RowDefinitions="Auto,Auto">
+            <Grid Grid.Column="1" RowDefinitions="Auto,Auto,Auto">
                 <Label
-                    x:Name="TracksNameLabel"
+                    x:Name="TripNameLabel"
                     Grid.Row="0"
                     FontSize="Medium"
                     TextColor="#3E5B2F" />
-                <VerticalStackLayout Grid.Row="1">
+                <Grid
+                    Grid.Row="1"
+                    ColumnDefinitions="*,*,*"
+                    HorizontalOptions="FillAndExpand"
+                    RowDefinitions="*,*,*"
+                    VerticalOptions="FillAndExpand">
                     <Label
-                        x:Name="TracksDateLabel"
-                        FontSize="Small"
+                        x:Name="TripDistanceLabel"
+                        Grid.Row="0"
+                        Grid.Column="0"
+                        FontSize="Micro"
                         TextColor="#3E5B2F" />
                     <Label
-                        x:Name="TracksDistanceLabel"
-                        FontSize="Small"
+                        x:Name="MaxSpeedLabel"
+                        Grid.Row="1"
+                        Grid.Column="0"
+                        FontSize="Micro"
                         TextColor="#3E5B2F" />
-                </VerticalStackLayout>
+                    <Label
+                        x:Name="MinSpeedLabel"
+                        Grid.Row="1"
+                        Grid.Column="1"
+                        FontSize="Micro"
+                        TextColor="#3E5B2F" />
+                    <Label
+                        x:Name="AverageSpeedLabel"
+                        Grid.Row="1"
+                        Grid.Column="2"
+                        FontSize="Micro"
+                        TextColor="#3E5B2F" />
+                    <Label
+                        x:Name="TripDurationLabel"
+                        Grid.Row="2"
+                        Grid.Column="0"
+                        FontSize="Micro"
+                        TextColor="#3E5B2F" />
+                </Grid>
 
-                <!--<HorizontalStackLayout x:Name="TagsVerticalStackLayout" Grid.Row="1">
-                    <BindableLayout.ItemTemplate>
-                        <DataTemplate x:DataType="models:Tag">
-                            <Border
-                                Padding="0"
-                                Background="#3E5B2F"
-                                StrokeThickness="0">
-                                <Border.StrokeShape>
-                                    <RoundRectangle CornerRadius="4,4,4,4" />
-                                </Border.StrokeShape>
-                                <Label
-                                    FontSize="Micro"
-                                    Text="{Binding Name}"
-                                    TextColor="White" />
-                            </Border>
-                        </DataTemplate>
-                    </BindableLayout.ItemTemplate>
-                </HorizontalStackLayout>-->
+                <Label
+                    x:Name="TripDateLabel"
+                    Grid.Row="2"
+                    FontSize="Micro"
+                    TextColor="#3E5B2F" />
 
             </Grid>
         </Grid>

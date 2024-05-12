@@ -1,5 +1,6 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using GeoCoordinatePortable;
 using System.Collections.ObjectModel;
 using UniTracks.Common.Contants;
 using UniTracks.Common.ExtensionMethods;
@@ -80,10 +81,23 @@ public partial class MainPageViewModel : ObservableObject
     private async Task LocationfromLastTrip()
     {
         Trips.Clear();
-        (await SqliteRepository.GetAllAsync<Trip>(trip => trip.Locations)).ToList().ForEach(trip =>
+        (await SqliteRepository.GetAllAsync<Trip>(trip => trip.Locations)).OrderByDescending(trip => trip.StartTime).ToList().ForEach(async trip =>
         {
             if (trip != null)
             {
+                //trip.MaxSpeed = trip.Locations.Max(x => x.Speed);
+                //trip.MinSpeed = trip.Locations.Min(x => x.Speed);
+                //trip.MaxAltitude = trip.Locations.Max(x => x.Altitude);
+                //trip.MinAltitude = trip.Locations.Min(x => x.Altitude);
+                //trip.MaxHeading = trip.Locations.Max(x => x.Heading);
+                //trip.MinHeading = trip.Locations.Min(x => x.Heading);
+                //trip.AverageSpeed = trip.Locations.Average(x => x.Speed);
+                //trip.EndTime = trip.Locations.Max(x => x.Timestamp);
+
+                //trip.Distance = calculateDistance(trip.Locations);
+
+                //trip = await SqliteRepository.Update<Trip>(trip);
+
                 Trips.Add(trip);
             }
         });
@@ -98,6 +112,22 @@ public partial class MainPageViewModel : ObservableObject
             {
                 Locations.Add(location);
             });
+        }
+
+        double calculateDistance(List<Location> locations)
+        {
+            double distance = 0;
+            for (int i = 0; i < locations.Count - 1; i++)
+            {
+                var location1 = locations[i];
+                var location2 = locations[i + 1];
+                GeoCoordinate coordinate1 = new GeoCoordinate(location1.Latitude, location1.Longitude);
+                GeoCoordinate coordinate2 = new GeoCoordinate(location2.Latitude, location2.Longitude);
+
+                distance += coordinate1.GetDistanceTo(coordinate2);
+            }
+
+            return distance;
         }
     }
 

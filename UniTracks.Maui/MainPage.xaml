@@ -19,7 +19,7 @@
             Animate="True"
             SelectedIndex="{Binding SelectedViewModelIndex, Mode=TwoWay}">
             <Grid>
-                <tabViews:TracksTab
+                <tabViews:TripsTab
                     SelectedTrip="{Binding SelectedTrip, Mode=TwoWay}"
                     SelectionChaged="{Binding SelectedTripChangedCommand}"
                     Trips="{Binding Trips}" />
@@ -39,12 +39,8 @@
             x:Name="MainTabsHost"
             Grid.Row="1"
             SelectedIndex="{Binding Source={x:Reference MainSwitcher}, Path=SelectedIndex, Mode=TwoWay}">
-            <tabs:BottomTabItem HeightRequest="80" Label="Home" />
-            <tabs:BottomTabItem HeightRequest="80" Label="Tracks">
-                <tabs:BottomTabItem.Badge>
-                    <tabs:BadgeView BackgroundColor="{StaticResource Tertiary}" Text="new" />
-                </tabs:BottomTabItem.Badge>
-            </tabs:BottomTabItem>
+            <tabs:BottomTabItem HeightRequest="48" Label="Home" />
+            <tabs:BottomTabItem HeightRequest="48" Label="Tracks" />
         </tabs:TabHostView>
     </Grid>
 

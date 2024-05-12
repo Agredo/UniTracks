@@ -34,10 +34,19 @@
 	</ItemGroup>
 
 	<ItemGroup>
+	  <Compile Update="Controls\TripCard.xaml.cs">
+	    <DependentUpon>TripCard.xaml</DependentUpon>
+	  </Compile>
+	  <Compile Update="Tabs\StartPage\TripsTab.xaml.cs">
+	    <DependentUpon>TripsTab.xaml</DependentUpon>
+	  </Compile>
+	</ItemGroup>
+
+	<ItemGroup>
 	  <MauiXaml Update="Controls\MapView.xaml">
 	    <Generator>MSBuild:Compile</Generator>
 	  </MauiXaml>
-	  <MauiXaml Update="Controls\TrackCard.xaml">
+	  <MauiXaml Update="Controls\TripCard.xaml">
 	    <Generator>MSBuild:Compile</Generator>
 	  </MauiXaml>
 	  <MauiXaml Update="Pages\StartPage.xaml">
@@ -46,7 +55,7 @@
 	  <MauiXaml Update="Pages\TripOverviewPage.xaml">
 	    <Generator>MSBuild:Compile</Generator>
 	  </MauiXaml>
-	  <MauiXaml Update="Tabs\StartPage\TracksTab.xaml">
+	  <MauiXaml Update="Tabs\StartPage\TripsTab.xaml">
 	    <Generator>MSBuild:Compile</Generator>
 	  </MauiXaml>
 	</ItemGroup>

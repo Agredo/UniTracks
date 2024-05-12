@@ -5,7 +5,7 @@
     <MauiXaml Update="Controls\MapView.xaml">
       <SubType>Designer</SubType>
     </MauiXaml>
-    <MauiXaml Update="Controls\TrackCard.xaml">
+    <MauiXaml Update="Controls\TripCard.xaml">
       <SubType>Designer</SubType>
     </MauiXaml>
     <MauiXaml Update="Pages\StartPage.xaml">
@@ -14,7 +14,7 @@
     <MauiXaml Update="Pages\TripOverviewPage.xaml">
       <SubType>Designer</SubType>
     </MauiXaml>
-    <MauiXaml Update="Tabs\StartPage\TracksTab.xaml">
+    <MauiXaml Update="Tabs\StartPage\TripsTab.xaml">
       <SubType>Designer</SubType>
     </MauiXaml>
   </ItemGroup>

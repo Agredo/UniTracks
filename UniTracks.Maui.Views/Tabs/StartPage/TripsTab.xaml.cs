@@ -4,9 +4,9 @@ using UniTracks.Models.Trip;
 
 namespace UniTracks.Maui.Views.Tabs.StartPage;
 
-public partial class TracksTab : ContentView
+public partial class TripsTab : ContentView
 {
-	public TracksTab()
+	public TripsTab()
 	{
 		InitializeComponent();
     }
