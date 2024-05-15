@@ -20,6 +20,12 @@ public partial class TripsTab : ContentView
     [AutoBindable(OnChanged = nameof(SelectionChangedCommandChanged), DefaultBindingMode = nameof(BindingMode.TwoWay))]
     private ICommand selectionChaged;
 
+    [AutoBindable(OnChanged = nameof(PullToRefreshCommandCommandChanged), DefaultBindingMode = nameof(BindingMode.TwoWay))]
+    private ICommand pullToRefresh;
+
+    [AutoBindable(OnChanged = nameof(IsRefreshingChanged), DefaultBindingMode = nameof(BindingMode.TwoWay))]
+    private bool isRefreshing;
+
     private void TripsChanged(ICollection<Trip> newTrips)
     {
 		TracksCollectionView.ItemsSource = newTrips;
@@ -39,5 +45,15 @@ public partial class TripsTab : ContentView
     {
         TracksCollectionView.SelectionChangedCommand = newCommand;
 		
+    }
+
+    private void PullToRefreshCommandCommandChanged(ICommand newCommand)
+    {
+        Refresh.Command = newCommand;
+    }
+
+    private void IsRefreshingChanged(bool newvalue)
+    {
+        Refresh.IsRefreshing = newvalue; 
     }
 }

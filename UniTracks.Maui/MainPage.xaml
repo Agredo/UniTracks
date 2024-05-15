@@ -8,37 +8,48 @@
     xmlns:pagesViewModels="clr-namespace:UniTracks.ViewModels.Pages;assembly=UniTracks.ViewModels"
     xmlns:tabViews="clr-namespace:UniTracks.Maui.Views.Tabs.StartPage;assembly=UniTracks.Maui.Views"
     xmlns:tabs="http://sharpnado.com"
+    xmlns:toolkit="http://schemas.microsoft.com/dotnet/2022/maui/toolkit"
     xmlns:viewModels="clr-namespace:UniTracks.ViewModels;assembly=UniTracks.ViewModels"
     x:DataType="viewModels:MainPageViewModel">
+
 
     <Grid RowDefinitions="*, Auto">
         <!--<controls:MapView Locations="{Binding Locations}" />-->
 
         <tabs:ViewSwitcher
-            x:Name="MainSwitcher"
+            x:Name="Switcher"
             Animate="True"
             SelectedIndex="{Binding SelectedViewModelIndex, Mode=TwoWay}">
-            <Grid>
-                <tabViews:TripsTab
-                    SelectedTrip="{Binding SelectedTrip, Mode=TwoWay}"
-                    SelectionChaged="{Binding SelectedTripChangedCommand}"
-                    Trips="{Binding Trips}" />
+
+            <tabViews:TripsTab
+                SelectedTrip="{Binding SelectedTrip, Mode=TwoWay}"
+                SelectionChaged="{Binding SelectedTripChangedCommand}"
+                Trips="{Binding Trips}" />
+            <ContentView>
                 <HorizontalStackLayout
-                    HorizontalOptions="End"
+                    HorizontalOptions="Center"
                     Spacing="8"
                     VerticalOptions="End">
                     <Button Command="{Binding StartListeningCommand}" Text="Start Trip" />
                     <Button Command="{Binding StopListeningCommand}" Text="Stop Trip" />
                 </HorizontalStackLayout>
-            </Grid>
+            </ContentView>
 
-            <controls:MapView />
+            <ContentView>
+                <HorizontalStackLayout
+                    HorizontalOptions="Center"
+                    Spacing="8"
+                    VerticalOptions="End">
+                    <Button Command="{Binding StartListeningCommand}" Text="Start Trip" />
+                    <Button Command="{Binding StopListeningCommand}" Text="Stop Trip" />
+                </HorizontalStackLayout>
+            </ContentView>
         </tabs:ViewSwitcher>
 
         <tabs:TabHostView
             x:Name="MainTabsHost"
             Grid.Row="1"
-            SelectedIndex="{Binding Source={x:Reference MainSwitcher}, Path=SelectedIndex, Mode=TwoWay}">
+            SelectedIndex="{Binding Source={x:Reference Switcher}, Path=SelectedIndex, Mode=TwoWay}">
             <tabs:BottomTabItem HeightRequest="48" Label="Home" />
             <tabs:BottomTabItem HeightRequest="48" Label="Tracks" />
         </tabs:TabHostView>

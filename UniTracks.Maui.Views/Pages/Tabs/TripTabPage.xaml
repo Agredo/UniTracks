@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage
+    x:Class="UniTracks.Maui.Views.Pages.Tabs.TripTabPage"
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    xmlns:tabViews="clr-namespace:UniTracks.Maui.Views.Tabs.StartPage;assembly=UniTracks.Maui.Views"
+    xmlns:viewModels="clr-namespace:UniTracks.ViewModels.Pages.Tabs;assembly=UniTracks.ViewModels"
+    Title="TripTabPage"
+    x:DataType="viewModels:TripTabPageViewModel">
+    <Grid>
+        <tabViews:TripsTab
+            IsRefreshing="{Binding RefreshIndicatorVisible}"
+            PullToRefresh="{Binding RefreshCommand}"
+            SelectedTrip="{Binding SelectedTrip, Mode=TwoWay}"
+            SelectionChaged="{Binding SelectedTripChangedCommand}"
+            Trips="{Binding Trips}" />
+    </Grid>
+</ContentPage>

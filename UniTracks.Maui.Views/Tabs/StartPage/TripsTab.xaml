@@ -14,30 +14,94 @@
     </ContentView.Resources>
 
     <Grid>
-        <CollectionView
-            x:Name="TracksCollectionView"
-            Background="White"
-            SelectionChanged="TracksCollectionView_SelectionChanged"
-            SelectionMode="Single">
-            <CollectionView.ItemTemplate>
-                <DataTemplate x:DataType="tripModels:Trip">
-                    <Grid>
-                        <views:TripCard
-                            AverageSpeed="{Binding AverageSpeed}"
-                            Distance="{Binding Distance}"
-                            MaxSpeed="{Binding MaxSpeed}"
-                            MinSpeed="{Binding MinSpeed}"
-                            TripDateTime="{Binding StartTime}">
-                            <views:TripCard.Duration>
-                                <MultiBinding Converter="{StaticResource DateTimeDifferenceConverter}">
-                                    <Binding Mode="OneWay" Path="EndTime" />
-                                    <Binding Mode="OneWay" Path="StartTime" />
-                                </MultiBinding>
-                            </views:TripCard.Duration>
-                        </views:TripCard>
-                    </Grid>
-                </DataTemplate>
-            </CollectionView.ItemTemplate>
-        </CollectionView>
+        <RefreshView x:Name="Refresh">
+            <CollectionView
+                x:Name="TracksCollectionView"
+                Background="White"
+                SelectionChanged="TracksCollectionView_SelectionChanged"
+                SelectionMode="Single">
+                <CollectionView.ItemsLayout>
+                    <GridItemsLayout
+                        HorizontalItemSpacing="4"
+                        Orientation="Horizontal"
+                        VerticalItemSpacing="4" />
+                </CollectionView.ItemsLayout>
+
+                <CollectionView.ItemTemplate>
+                    <DataTemplate x:DataType="tripModels:Trip">
+                        <Grid>
+                            <views:TripCard
+                                AverageSpeed="{Binding AverageSpeed}"
+                                Distance="{Binding Distance}"
+                                MaxSpeed="{Binding MaxSpeed}"
+                                MinSpeed="{Binding MinSpeed}"
+                                TripDateTime="{Binding StartTime}">
+                                <views:TripCard.Duration>
+                                    <MultiBinding Converter="{StaticResource DateTimeDifferenceConverter}">
+                                        <Binding Mode="OneWay" Path="EndTime" />
+                                        <Binding Mode="OneWay" Path="StartTime" />
+                                    </MultiBinding>
+                                </views:TripCard.Duration>
+                            </views:TripCard>
+                        </Grid>
+                    </DataTemplate>
+                </CollectionView.ItemTemplate>
+
+                <VisualStateManager.VisualStateGroups>
+                    <VisualStateGroup x:Name="DisplayStates">
+                        <VisualState x:Name="Display1">
+                            <VisualState.StateTriggers>
+                                <AdaptiveTrigger MinWindowWidth="0" />
+                            </VisualState.StateTriggers>
+                            <VisualState.Setters>
+                                <Setter Property="ItemsLayout">
+                                    <Setter.Value>
+                                        <GridItemsLayout
+                                            HorizontalItemSpacing="4"
+                                            Orientation="Vertical"
+                                            Span="1"
+                                            VerticalItemSpacing="4" />
+                                    </Setter.Value>
+                                </Setter>
+                            </VisualState.Setters>
+                        </VisualState>
+
+                        <VisualState x:Name="Display2">
+                            <VisualState.StateTriggers>
+                                <AdaptiveTrigger MinWindowWidth="640" />
+                            </VisualState.StateTriggers>
+                            <VisualState.Setters>
+                                <Setter Property="ItemsLayout">
+                                    <Setter.Value>
+                                        <GridItemsLayout
+                                            HorizontalItemSpacing="4"
+                                            Orientation="Vertical"
+                                            Span="2"
+                                            VerticalItemSpacing="4" />
+                                    </Setter.Value>
+                                </Setter>
+                            </VisualState.Setters>
+                        </VisualState>
+
+                        <VisualState x:Name="Display3">
+                            <VisualState.StateTriggers>
+                                <AdaptiveTrigger MinWindowWidth="960" />
+                            </VisualState.StateTriggers>
+                            <VisualState.Setters>
+                                <Setter Property="ItemsLayout">
+                                    <Setter.Value>
+                                        <GridItemsLayout
+                                            HorizontalItemSpacing="4"
+                                            Orientation="Vertical"
+                                            Span="1"
+                                            VerticalItemSpacing="4" />
+                                    </Setter.Value>
+                                </Setter>
+                            </VisualState.Setters>
+                        </VisualState>
+                    </VisualStateGroup>
+                </VisualStateManager.VisualStateGroups>
+            </CollectionView>
+        </RefreshView>
     </Grid>
 </ContentView>

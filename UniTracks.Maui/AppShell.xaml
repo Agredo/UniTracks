@@ -4,12 +4,23 @@
     xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
     xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
     xmlns:local="clr-namespace:UniTracks.Maui"
-    Shell.FlyoutBehavior="Disabled"
-    Title="UniTracks.Maui">
+    xmlns:tabPages="clr-namespace:UniTracks.Maui.Views.Pages.Tabs;assembly=UniTracks.Maui.Views"
+    Title="UniTracks.Maui"
+    Shell.FlyoutBehavior="Disabled">
 
-    <ShellContent
+    <TabBar>
+        <Tab Title="Trips" Icon="map.png">
+            <ShellContent Title="Trips" ContentTemplate="{DataTemplate tabPages:TripTabPage}" />
+        </Tab>
+        <Tab Title="Record" Icon="record.png">
+            <ShellContent Title="Record Trip" ContentTemplate="{DataTemplate tabPages:RecordTripTabPage}" />
+        </Tab>
+        <Tab Title="User" Icon="user.png" />
+    </TabBar>
+
+    <!--<ShellContent
         Title="Home"
         ContentTemplate="{DataTemplate local:MainPage}"
-        Route="MainPage" />
+        Route="MainPage" />-->
 
 </Shell>

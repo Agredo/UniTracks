@@ -65,20 +65,28 @@ public partial class TripCard : Microsoft.Maui.Controls.ContentView
     }
     private void DurationChanged(TimeSpan newDuration)
     {
-        TripDurationLabel.Text = $"⏱️{newDuration.ToFormattedString("mm:ss")}min";
+        try
+        {
+            TripDurationLabel.Text = $"⏱️{newDuration.ToFormattedString("mm:ss")}min";
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine(ex.Message);
+        }
+
     }
 
     private void SetNameLabelText()
     {
-        if (TripDateTime.Hour >= 6 && TripDateTime.Hour < 12)
+        if (TripDateTime.Hour >= 5 && TripDateTime.Hour < 11)
         {
             TripNameLabel.Text = "Morgen Trip";
         }
-        else if (TripDateTime.Hour >= 12 && TripDateTime.Hour < 18)
+        else if (TripDateTime.Hour >= 11 && TripDateTime.Hour < 14)
         {
             TripNameLabel.Text = "Mittags Trip";
         }
-        else if (TripDateTime.Hour >= 18 && TripDateTime.Hour < 21)
+        else if (TripDateTime.Hour >= 14 && TripDateTime.Hour < 18)
         {
             TripNameLabel.Text = "Nachmittags Trip";
         }

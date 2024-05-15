@@ -12,11 +12,13 @@ using UniTracks.Data.SQLite;
 using UniTracks.Maui.Services.Location;
 using UniTracks.Maui.Services.Navigation;
 using UniTracks.Maui.Views.Pages;
+using UniTracks.Maui.Views.Pages.Tabs;
 using UniTracks.Services.Data;
 using UniTracks.Services.Location;
 using UniTracks.Services.Navigation;
 using UniTracks.ViewModels;
 using UniTracks.ViewModels.Pages;
+using UniTracks.ViewModels.Pages.Tabs;
 using FileSystem = UniTracks.Maui.Services.IO.FileSystem;
 using IShare = UniTracks.Services.ApplicationModel.DataTransfer.IShare;
 using Share = UniTracks.Maui.Services.ApplicationModel.DataTransfer.Share;
@@ -46,12 +48,14 @@ namespace UniTracks.Maui
                     fonts.AddFont("OpenSans-Semibold.ttf", "OpenSansSemibold");
                 });
 #if !WINDOWS
-            services.AddGps< Services.Location.GpsDelegate>();
+            services.AddGps<Services.Location.GpsDelegate>();
 #endif
             //Pages
             services.AddTransient<MainPage, MainPageViewModel>();
             services.AddTransient<StartPage, StartPageViewModel>();
             services.AddTransient<TripOverviewPage, TripOverviewViewModel>();
+            services.AddTransient<RecordTripTabPage, RecordTripTabPageViewModel>();
+            services.AddTransient<TripTabPage, TripTabPageViewModel>();
 
             //DBContext
             services.AddDbContext<SqliteDBContext>();

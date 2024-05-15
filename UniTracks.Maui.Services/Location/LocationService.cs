@@ -5,14 +5,26 @@ using UniTracks.Services.Location;
 
 namespace UniTracks.Maui.Services.Location
 {
-    public class LocationService(IGpsManager gpsManager, IGpsDataStorageService gpsDataStorageService) : ILocationService
+    public class LocationService : ILocationService
     {
-        public IGpsManager GpsManager { get; } = gpsManager;
-        public IGpsDataStorageService GpsDataStorageService { get; } = gpsDataStorageService;
+        public IGpsManager GpsManager { get; }
+        public IGpsDataStorageService GpsDataStorageService { get; }
+
+#if WINDOWS
+        public LocationService()
+        {
+
+        }
+#endif
+        public LocationService(IGpsManager gpsManager, IGpsDataStorageService gpsDataStorageService)
+        {
+            GpsManager = gpsManager;
+            GpsDataStorageService = gpsDataStorageService;
+        }
 
         public async Task StartListening(Action<GPSInformatoion> action)
         {
-            await GpsManager.StartListener(new GpsRequest(GpsBackgroundMode.Realtime, GpsAccuracy.Highest) );
+            await GpsManager?.StartListener(new GpsRequest(GpsBackgroundMode.Realtime, GpsAccuracy.Highest) );
 
             var subscription = GpsManager
                 .WhenReading()
@@ -35,7 +47,7 @@ namespace UniTracks.Maui.Services.Location
         {
             try
             {
-                await GpsManager.StartListener(new GpsRequest(GpsBackgroundMode.Realtime, GpsAccuracy.Highest));
+                await GpsManager?.StartListener(new GpsRequest(GpsBackgroundMode.Realtime, GpsAccuracy.Highest));
 
                 var subscription = GpsManager
                     .WhenReading()
@@ -60,7 +72,7 @@ namespace UniTracks.Maui.Services.Location
 
         public void StopListening()
         {
-            GpsManager.StopListener();
+            GpsManager?.StopListener();
         }
     }
 }

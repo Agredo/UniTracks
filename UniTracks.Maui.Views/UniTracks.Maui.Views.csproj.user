@@ -11,7 +11,16 @@
     <MauiXaml Update="Pages\StartPage.xaml">
       <SubType>Designer</SubType>
     </MauiXaml>
+    <MauiXaml Update="Pages\Tabs\RecordTripTabPage.xaml">
+      <SubType>Designer</SubType>
+    </MauiXaml>
+    <MauiXaml Update="Pages\Tabs\TripTabPage.xaml">
+      <SubType>Designer</SubType>
+    </MauiXaml>
     <MauiXaml Update="Pages\TripOverviewPage.xaml">
+      <SubType>Designer</SubType>
+    </MauiXaml>
+    <MauiXaml Update="Tabs\StartPage\StartTripView.xaml">
       <SubType>Designer</SubType>
     </MauiXaml>
     <MauiXaml Update="Tabs\StartPage\TripsTab.xaml">

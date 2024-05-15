@@ -1,4 +1,5 @@
-﻿using System.Diagnostics.CodeAnalysis;
+﻿using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 
 namespace UniTracks.Maui.Views.Converter;
@@ -19,9 +20,24 @@ public class DateTimeDifferenceConverter : IMultiValueConverter
             return default;
         }
 
-        DateTimeOffset endDate = (DateTimeOffset)values[0];
-        DateTimeOffset startDate = (DateTimeOffset)values[1];
-       return (endDate - startDate);
+        DateTimeOffset endDate = default;
+        DateTimeOffset startDate = default;
+        try
+        {
+            endDate = (DateTimeOffset)values[0];
+            startDate = (DateTimeOffset)values[1];
+
+            TimeSpan timeSpan = (endDate - startDate);
+
+            return timeSpan;
+        }
+        catch (Exception ex)
+        {
+            Debug.WriteLine(ex.Message);
+        }
+
+
+        return (endDate - startDate);
     }
 
     /// <summary>

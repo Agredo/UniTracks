@@ -14,11 +14,10 @@ using UniTracks.Services.Data;
 using UniTracks.Services.IO;
 using UniTracks.Services.Location;
 using UniTracks.Services.Navigation;
-using INavigation = UniTracks.Services.Navigation.INavigation;
 
-namespace UniTracks.ViewModels;
+namespace UniTracks.ViewModels.Pages.Tabs;
 
-public partial class MainPageViewModel : ObservableObject
+public partial class TripTabPageViewModel : ObservableObject
 {
     public Services.Navigation.INavigation Navigation { get; }
     public INavigationRoutes NavigationRoutes { get; }
@@ -31,18 +30,6 @@ public partial class MainPageViewModel : ObservableObject
     public string DatabasePath { get; }
     public string LiteDBDatabasePath { get; private set; }
 
-    private int selectedViewModelIndex;
-    public int SelectedViewModelIndex { 
-        get 
-        { 
-            return selectedViewModelIndex;  
-        } 
-        set 
-        { 
-            selectedViewModelIndex = value;
-            SetProperty(ref selectedViewModelIndex, value);
-        }
-    }
 
     [ObservableProperty]
     private ObservableCollection<Location> locations = new ObservableCollection<Location>();
@@ -56,7 +43,10 @@ public partial class MainPageViewModel : ObservableObject
     [ObservableProperty]
     private Trip selectedTrip;
 
-    public MainPageViewModel(INavigation navigation, INavigationRoutes navigationRoutes ,ILocationService locationService, IShare share, IFileSystem fileSystem, IGpsDataStorageService gpsDataStorageService, IGenericRepository<SqliteDBContext> sqliteRepository, IGenericLiteDBRepository<ILiteDatabase> liteDBRepository)
+    [ObservableProperty]
+    private bool refreshIndicatorVisible;
+
+    public TripTabPageViewModel(INavigation navigation, INavigationRoutes navigationRoutes, ILocationService locationService, IShare share, IFileSystem fileSystem, IGpsDataStorageService gpsDataStorageService, IGenericRepository<SqliteDBContext> sqliteRepository, IGenericLiteDBRepository<ILiteDatabase> liteDBRepository)
     {
         Navigation = navigation;
         NavigationRoutes = navigationRoutes;
@@ -69,26 +59,10 @@ public partial class MainPageViewModel : ObservableObject
         DatabasePath = Path.Combine(FileSystem.AppDataDirectory, ApplicationConstants.SQliteDatabaseName);
         LiteDBDatabasePath = Path.Combine(FileSystem.AppDataDirectory, ApplicationConstants.LiteDBName);
 
-        StopListening().Await();
-
+        GetTrips().Await();
     }
 
-    [RelayCommand]
-    public async Task StartListening()
-    {
-        await LocationService.StartListening();
-    }
-
-    [RelayCommand]
-    public async Task StopListening()
-    {
-        LocationService.StopListening();
-
-        await LocationfromLastTrip();
-
-    }
-
-    private async Task LocationfromLastTrip()
+    private async Task GetTrips()
     {
         Trips.Clear();
         (await SqliteRepository.GetAllAsync<Trip>(trip => trip.Locations)).OrderByDescending(trip => trip.StartTime).ToList().ForEach(async trip =>
@@ -141,28 +115,6 @@ public partial class MainPageViewModel : ObservableObject
         }
     }
 
-    [RelayCommand]
-    public async Task ShareDatabase()
-    {
-        List<Models.Location.Location> sqliteLocations = (await SqliteRepository.GetAllAsync<Location>()).ToList();
-        List<Models.Location.Location> liteDBLocations = (await LiteDBRepository.GetAllAsync<Location>()).ToList();
-        Console.WriteLine($"Total SQLite Locations: {sqliteLocations.Count}");
-        Console.WriteLine($"Total LiteDB Locations: {liteDBLocations.Count}");
-
-        sqliteLocations.ForEach(async x => Console.WriteLine($"SQLite {x.Timestamp} - {x.ID} - {x.Longitude} - {x.Latitude}"));
-        liteDBLocations.ForEach(async x => Console.WriteLine($"LiteDB {x.Timestamp} - {x.ID} - {x.Longitude} - {x.Latitude}"));
-
-        await LocationfromLastTrip();
-
-        await Share.ShareFiles("Share Databases", new string[] { DatabasePath, LiteDBDatabasePath });
-    }
-
-    [RelayCommand]
-    public async Task ImportDatabase()
-    {
-
-    }
-
     partial void OnSelectedTripChanged(Trip? oldValue, Trip newValue)
     {
         Navigation.NavigateTo(NavigationRoutes.TripOverviewPage, newValue);
@@ -172,5 +124,12 @@ public partial class MainPageViewModel : ObservableObject
     private void SelectedTripChanged()
     {
         //Navigation.NavigateTo(NavigationRoutes.TripOverviewPage, SelectedTrip);
+    }
+
+    [RelayCommand]
+    private async Task Refresh()
+    {
+        await GetTrips();
+        RefreshIndicatorVisible = false;
     }
 }
