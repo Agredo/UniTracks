@@ -7,14 +7,14 @@
     xmlns:viewModels="clr-namespace:UniTracks.ViewModels.Pages.Tabs;assembly=UniTracks.ViewModels"
     Title="Record Trip"
     x:DataType="viewModels:RecordTripTabPageViewModel">
-    <Grid RowDefinitions="*,Auto">
+    <Grid Padding="0,0,0,12" RowDefinitions="*,Auto">
         <HorizontalStackLayout
             Grid.Row="1"
             HorizontalOptions="Center"
             Spacing="8"
             VerticalOptions="End">
-            <Button Command="{Binding StartListeningCommand}" Text="Start Trip" />
-            <Button Command="{Binding StopListeningCommand}" Text="Stop Trip" />
+            <ImageButton Command="{Binding StopListeningCommand}" Source="stop.png" />
+            <ImageButton Command="{Binding StartListeningCommand}" Source="play.png" />
             <Button Command="{Binding ShareDatabaseCommand}" Text="Share DB" />
         </HorizontalStackLayout>
     </Grid>
