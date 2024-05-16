@@ -2,6 +2,7 @@ using System.Collections.ObjectModel;
 using Location = UniTracks.Models.Location.Location;
 using Mapsui.UI.Maui;
 using Maui.BindableProperty.Generator.Core;
+using Mapsui;
 
 namespace UniTracks.Maui.Views.Controls;
 
@@ -70,6 +71,15 @@ public partial class MapView : ContentView
 
             ControlMapView.Pins.Add(startPin);
             ControlMapView.Pins.Add(endPin);
+
+            var minLat = locations.Min(l => l.Latitude);
+            var maxLat = locations.Max(l => l.Latitude);
+            var minLon = locations.Min(l => l.Longitude);
+            var maxLon = locations.Max(l => l.Longitude);
+
+            MRect rect = new MRect(minLat, minLon, maxLat, maxLon);
+
+            ControlMapView.Map.Navigator.ZoomToBox(rect);
         }
     }
 
