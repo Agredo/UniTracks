@@ -3,6 +3,9 @@ using Location = UniTracks.Models.Location.Location;
 using Mapsui.UI.Maui;
 using Maui.BindableProperty.Generator.Core;
 using Mapsui;
+using Mapsui.UI.Maui.Extensions;
+using Mapsui.Fetcher;
+using GeoCoordinatePortable;
 
 namespace UniTracks.Maui.Views.Controls;
 
@@ -12,6 +15,29 @@ public partial class MapView : ContentView
     {
         InitializeComponent();
         ControlMapView.Map.Layers.Add(Mapsui.Tiling.OpenStreetMap.CreateTileLayer());
+        ControlMapView.Loaded += ControlMapView_Loaded;
+    }
+
+    private void ControlMapView_Loaded(object? sender, EventArgs e)
+    {
+        var minLatitudeLocation = locations.OrderBy(x => x.Latitude).FirstOrDefault();
+        var maxLatitudeLocation = locations.OrderBy(x => x.Latitude).LastOrDefault();
+        var minLongitudeLocation = locations.OrderBy(x => x.Longitude).FirstOrDefault();
+        var maxLongitudeLocation = locations.OrderBy(x => x.Longitude).LastOrDefault();
+
+        if (minLatitudeLocation != null && maxLatitudeLocation != null && minLongitudeLocation != null && maxLongitudeLocation != null)
+        {
+            GeoCoordinate coordinate1 = new GeoCoordinate(maxLatitudeLocation.Latitude, maxLatitudeLocation.Longitude);
+            GeoCoordinate coordinate2 = new GeoCoordinate(maxLongitudeLocation.Latitude, maxLongitudeLocation.Longitude);
+
+            var centerLocation = new Position((minLongitudeLocation.Longitude + maxLongitudeLocation.Longitude) / 2, (minLatitudeLocation.Latitude + maxLatitudeLocation.Latitude) / 2);
+            double maxDistance = coordinate1.GetDistanceTo(coordinate2);
+            ControlMapView.Map.Navigator.CenterOnAndZoomTo(centerLocation.ToMapsui(), maxDistance + maxDistance * 0.25);
+
+            this.ForceLayout();
+
+            //ControlMapView.Map.Navigator.SetViewport(new Viewport(centerLocation.ToMapsui().X, centerLocation.ToMapsui().Y, maxDistance + maxDistance * 0.25, ControlMapView.Rotation, ControlMapView.Width, ControlMapView.Height));
+        } 
     }
 
     [AutoBindable(OnChanged = nameof(LocationChanged))]
@@ -19,6 +45,7 @@ public partial class MapView : ContentView
 
     private void LocationChanged(Collection<Location> newLocations)
     {
+        locations = newLocations;
         DrawLine(newLocations);
 
         AddStartAndEndPins(newLocations);
@@ -71,15 +98,6 @@ public partial class MapView : ContentView
 
             ControlMapView.Pins.Add(startPin);
             ControlMapView.Pins.Add(endPin);
-
-            var minLat = locations.Min(l => l.Latitude);
-            var maxLat = locations.Max(l => l.Latitude);
-            var minLon = locations.Min(l => l.Longitude);
-            var maxLon = locations.Max(l => l.Longitude);
-
-            MRect rect = new MRect(minLat, minLon, maxLat, maxLon);
-
-            ControlMapView.Map.Navigator.ZoomToBox(rect);
         }
     }
 

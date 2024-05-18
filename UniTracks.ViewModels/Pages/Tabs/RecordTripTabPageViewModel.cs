@@ -1,26 +1,16 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
-using GeoCoordinatePortable;
 using LiteDB;
-using Microsoft.EntityFrameworkCore.Storage;
-using System;
-using System.Collections.Generic;
-using System.Collections.ObjectModel;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using UniTracks.Common.Contants;
 using UniTracks.Common.ExtensionMethods;
-using UniTracks.Data.LiteDB;
 using UniTracks.Data.Repository;
 using UniTracks.Data.SQLite;
 using UniTracks.Models.Location;
-using UniTracks.Models.Trip;
+using UniTracks.Services.ApplicationModel;
 using UniTracks.Services.ApplicationModel.DataTransfer;
-using UniTracks.Services.Data;
-using UniTracks.Services.IO;
+using UniTracks.Services.ApplicationModel.Permissions;
 using UniTracks.Services.Location;
 using UniTracks.Services.Navigation;
+using UniTracks.ViewModels.Core.PermissionUtils;
 
 namespace UniTracks.ViewModels.Pages.Tabs;
 
@@ -30,15 +20,17 @@ public partial class RecordTripTabPageViewModel : ObservableObject
     public INavigationRoutes NavigationRoutes { get; }
     public ILocationService LocationService { get; }
     public IShare Share { get; }
+    public IPermissions Permissions { get; }
     public IGenericRepository<SqliteDBContext> SqliteRepository { get; }
     public string DatabasePath { get; private set; }
 
-    public RecordTripTabPageViewModel(INavigation navigation, INavigationRoutes navigationRoutes, ILocationService locationService, IShare share, IGenericRepository<SqliteDBContext> sqliteRepository)
+    public RecordTripTabPageViewModel(INavigation navigation, INavigationRoutes navigationRoutes, ILocationService locationService, IShare share, IPermissions permissions, IGenericRepository<SqliteDBContext> sqliteRepository)
     {   
         Navigation = navigation;
         NavigationRoutes = navigationRoutes;
         LocationService = locationService;
         Share = share;
+        Permissions = permissions;
         SqliteRepository = sqliteRepository;
 
         DatabasePath = sqliteRepository.Context.DatabasePath;
@@ -49,7 +41,12 @@ public partial class RecordTripTabPageViewModel : ObservableObject
     [RelayCommand]
     public async Task StartListening()
     {
-        await LocationService.StartListening();
+        PermissionStatus locationAlwaysPermissionStatus = await PermissionHelper.CheckAndRequestPermission(Permissions, Permission.LocationAlways);
+
+        if (locationAlwaysPermissionStatus is PermissionStatus.Granted)
+        {
+            await LocationService.StartListening();
+        }
     }
 
     [RelayCommand]

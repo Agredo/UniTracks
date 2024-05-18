@@ -13,6 +13,8 @@ using UniTracks.Maui.Services.Location;
 using UniTracks.Maui.Services.Navigation;
 using UniTracks.Maui.Views.Pages;
 using UniTracks.Maui.Views.Pages.Tabs;
+using UniTracks.Services.ApplicationModel;
+using UniTracks.Services.ApplicationModel.Permissions;
 using UniTracks.Services.Data;
 using UniTracks.Services.Location;
 using UniTracks.Services.Navigation;
@@ -70,6 +72,7 @@ namespace UniTracks.Maui
             services.AddSingleton<IShare, Share>();
             services.AddSingleton<UniTracks.Services.Navigation.INavigation, ShellNavigation>();
             services.AddSingleton<INavigationRoutes, ShellNavigationRoutes>();
+            services.AddSingleton<IPermissions, UniTracks.Maui.Services.ApplicationModel.Permissons>();
 
 
 
