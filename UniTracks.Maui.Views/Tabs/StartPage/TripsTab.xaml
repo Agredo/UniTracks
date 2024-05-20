@@ -13,11 +13,11 @@
         </ResourceDictionary>
     </ContentView.Resources>
 
-    <Grid>
+    <Grid BackgroundColor="{StaticResource AppBackgroundDark}">
         <RefreshView x:Name="Refresh">
             <CollectionView
                 x:Name="TracksCollectionView"
-                Background="White"
+                Background="Transparent"
                 SelectionChanged="TracksCollectionView_SelectionChanged"
                 SelectionMode="Single">
                 <CollectionView.ItemsLayout>

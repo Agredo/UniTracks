@@ -4,21 +4,30 @@
     xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
     xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml">
 
+    <ContentView.Resources>
+        <ResourceDictionary>
+            <Style TargetType="Label">
+                <Setter Property="TextColor" Value="{StaticResource Key=PrimaryDarkText}" />
+            </Style>
+        </ResourceDictionary>
+
+    </ContentView.Resources>
+
     <Border Padding="0" StrokeThickness="0">
         <Border.StrokeShape>
             <RoundRectangle CornerRadius="4,4,4,4" />
         </Border.StrokeShape>
-        <Border.Shadow>
+        <!--<Border.Shadow>
             <Shadow
                 Brush="Black"
                 Opacity="0.4"
                 Radius="15"
                 Offset="10,10" />
-        </Border.Shadow>
+        </Border.Shadow>-->
         <Grid
             Margin="4"
             Padding="4"
-            Background="White"
+            Background="{StaticResource Key=White}"
             ColumnDefinitions="132,*"
             ColumnSpacing="12">
             <Border
@@ -40,7 +49,7 @@
                     x:Name="TripNameLabel"
                     Grid.Row="0"
                     FontSize="Medium"
-                    TextColor="#3E5B2F" />
+                    TextColor="{StaticResource Key=PrimaryDarkText}" />
                 <Grid
                     Grid.Row="1"
                     ColumnDefinitions="*,*,*"
@@ -51,39 +60,35 @@
                         x:Name="TripDistanceLabel"
                         Grid.Row="0"
                         Grid.Column="0"
-                        FontSize="Micro"
-                        TextColor="#3E5B2F" />
+                        FontSize="Micro" />
                     <Label
-                        x:Name="MaxSpeedLabel"
+                        x:Name="TripDurationLabel"
+                        Grid.Row="0"
+                        Grid.Column="1"
+                        FontSize="Micro" />
+                    <Label
+                        x:Name="AverageSpeedLabel"
                         Grid.Row="1"
                         Grid.Column="0"
-                        FontSize="Micro"
-                        TextColor="#3E5B2F" />
+                        FontSize="Micro" />
                     <Label
                         x:Name="MinSpeedLabel"
                         Grid.Row="1"
                         Grid.Column="1"
-                        FontSize="Micro"
-                        TextColor="#3E5B2F" />
+                        FontSize="Micro" />
                     <Label
-                        x:Name="AverageSpeedLabel"
+                        x:Name="MaxSpeedLabel"
                         Grid.Row="1"
                         Grid.Column="2"
-                        FontSize="Micro"
-                        TextColor="#3E5B2F" />
-                    <Label
-                        x:Name="TripDurationLabel"
-                        Grid.Row="2"
-                        Grid.Column="0"
-                        FontSize="Micro"
-                        TextColor="#3E5B2F" />
+                        FontSize="Micro" />
                 </Grid>
 
                 <Label
                     x:Name="TripDateLabel"
                     Grid.Row="2"
+                    Grid.Column="0"
                     FontSize="Micro"
-                    TextColor="#3E5B2F" />
+                    VerticalOptions="End" />
 
             </Grid>
         </Grid>

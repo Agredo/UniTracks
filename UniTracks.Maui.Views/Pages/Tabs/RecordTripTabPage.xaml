@@ -3,6 +3,7 @@
     x:Class="UniTracks.Maui.Views.Pages.Tabs.RecordTripTabPage"
     xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
     xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    xmlns:draw="http://schemas.appomobi.com/drawnUi/2023/draw"
     xmlns:tabViews="clr-namespace:UniTracks.Maui.Views.Tabs.StartPage;assembly=UniTracks.Maui.Views"
     xmlns:viewModels="clr-namespace:UniTracks.ViewModels.Pages.Tabs;assembly=UniTracks.ViewModels"
     Title="Record Trip"
@@ -13,8 +14,22 @@
             HorizontalOptions="Center"
             Spacing="8"
             VerticalOptions="End">
-            <ImageButton Command="{Binding StopListeningCommand}" Source="stop.png" />
-            <ImageButton Command="{Binding StartListeningCommand}" Source="play.png" />
+            <!--<ImageButton Command="{Binding StopListeningCommand}" Source="stop.png" />
+            <ImageButton Command="{Binding StartListeningCommand}" Source="play.png" />-->
+
+            <draw:Canvas Gestures="Enabled" IsVisible="{OnPlatform Android=True, iOS=True, WinUI=False}">
+                <draw:SkiaButton
+                    x:Name="button"
+                    CommandTapped="{Binding StartListeningCommand}"
+                    IsClippedToBounds="True"
+                    Text="Hallo"
+                    TextColor="White">
+                    <draw:SkiaSvg
+                        Source="{Binding RecordIconSourceString}"
+                        TintColor="{Binding RecordIconColor}"
+                        WidthRequest="128" />
+                </draw:SkiaButton>
+            </draw:Canvas>
             <Button Command="{Binding ShareDatabaseCommand}" Text="Share DB" />
         </HorizontalStackLayout>
     </Grid>

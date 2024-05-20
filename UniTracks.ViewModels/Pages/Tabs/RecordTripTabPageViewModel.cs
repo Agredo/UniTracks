@@ -1,6 +1,8 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using LiteDB;
+using System.Runtime.CompilerServices;
+using UniTracks.Common.Contants;
 using UniTracks.Common.ExtensionMethods;
 using UniTracks.Data.Repository;
 using UniTracks.Data.SQLite;
@@ -24,6 +26,13 @@ public partial class RecordTripTabPageViewModel : ObservableObject
     public IGenericRepository<SqliteDBContext> SqliteRepository { get; }
     public string DatabasePath { get; private set; }
 
+    private string redColor = "#FF0000";
+    private string greenColor = "#00FF00";
+    private string blueColor = "#0000FF";
+    private string whiteColor = "#FFFFFF";
+
+    private bool isRecording = false;
+
     public RecordTripTabPageViewModel(INavigation navigation, INavigationRoutes navigationRoutes, ILocationService locationService, IShare share, IPermissions permissions, IGenericRepository<SqliteDBContext> sqliteRepository)
     {   
         Navigation = navigation;
@@ -34,18 +43,41 @@ public partial class RecordTripTabPageViewModel : ObservableObject
         SqliteRepository = sqliteRepository;
 
         DatabasePath = sqliteRepository.Context.DatabasePath;
+        RecordIconSourceString = $"{ApplicationConstants.RawIconBasePath}{ApplicationIconConstants.PlayIcon}";
+
+        RecordIconColor = whiteColor;
 
         StopListening().Await();
     }
 
+    [ObservableProperty]
+    private string recordIconSourceString;
+
+    [ObservableProperty]
+    private string recordIconColor;
+
     [RelayCommand]
     public async Task StartListening()
     {
-        PermissionStatus locationAlwaysPermissionStatus = await PermissionHelper.CheckAndRequestPermission(Permissions, Permission.LocationAlways);
-
-        if (locationAlwaysPermissionStatus is PermissionStatus.Granted)
+        if (isRecording)
         {
-            await LocationService.StartListening();
+            RecordIconColor = whiteColor;
+            RecordIconSourceString = $"{ApplicationConstants.RawIconBasePath}{ApplicationIconConstants.PlayIcon}";
+            isRecording = false;
+
+            LocationService.StopListening();
+        }
+        else
+        {
+            isRecording = true;
+            RecordIconColor = redColor;
+            RecordIconSourceString = $"{ApplicationConstants.RawIconBasePath}{ApplicationIconConstants.StopIcon}";
+            PermissionStatus locationAlwaysPermissionStatus = await PermissionHelper.CheckAndRequestPermission(Permissions, Permission.LocationAlways);
+
+            if (locationAlwaysPermissionStatus is PermissionStatus.Granted)
+            {
+                await LocationService.StartListening();
+            }
         }
     }
 
@@ -53,7 +85,7 @@ public partial class RecordTripTabPageViewModel : ObservableObject
     public async Task StopListening()
     {
         LocationService.StopListening();
-
+        RecordIconColor = whiteColor;
     }
 
     [RelayCommand]

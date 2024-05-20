@@ -8,5 +8,6 @@ public partial class RecordTripTabPage : ContentPage
 	{
 		InitializeComponent();
         BindingContext = viewModel;
-    }
+
+	}
 }

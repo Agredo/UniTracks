@@ -42,13 +42,13 @@ namespace UniTracks.Maui
                 .UseMauiCommunityToolkitMarkup()
                 .UseMicrocharts()
                 .UseShiny()
-                .UseDrawnUi()
                 .UseSkiaSharp(true)
                 .ConfigureFonts(fonts =>
                 {
                     fonts.AddFont("OpenSans-Regular.ttf", "OpenSansRegular");
                     fonts.AddFont("OpenSans-Semibold.ttf", "OpenSansSemibold");
-                });
+                })
+                .UseDrawnUi();
 #if !WINDOWS
             services.AddGps<Services.Location.GpsDelegate>();
 #endif
