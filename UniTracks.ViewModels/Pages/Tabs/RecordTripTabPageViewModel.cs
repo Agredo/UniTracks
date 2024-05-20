@@ -24,6 +24,7 @@ public partial class RecordTripTabPageViewModel : ObservableObject
     public IShare Share { get; }
     public IPermissions Permissions { get; }
     public IGenericRepository<SqliteDBContext> SqliteRepository { get; }
+    public IMainThread MainThread { get; }
     public string DatabasePath { get; private set; }
 
     private string redColor = "#FF0000";
@@ -33,7 +34,7 @@ public partial class RecordTripTabPageViewModel : ObservableObject
 
     private bool isRecording = false;
 
-    public RecordTripTabPageViewModel(INavigation navigation, INavigationRoutes navigationRoutes, ILocationService locationService, IShare share, IPermissions permissions, IGenericRepository<SqliteDBContext> sqliteRepository)
+    public RecordTripTabPageViewModel(INavigation navigation, INavigationRoutes navigationRoutes, ILocationService locationService, IShare share, IPermissions permissions, IGenericRepository<SqliteDBContext> sqliteRepository, IMainThread mainThread)
     {   
         Navigation = navigation;
         NavigationRoutes = navigationRoutes;
@@ -41,7 +42,7 @@ public partial class RecordTripTabPageViewModel : ObservableObject
         Share = share;
         Permissions = permissions;
         SqliteRepository = sqliteRepository;
-
+        MainThread = mainThread;
         DatabasePath = sqliteRepository.Context.DatabasePath;
         RecordIconSourceString = $"{ApplicationConstants.RawIconBasePath}{ApplicationIconConstants.PlayIcon}";
 
@@ -72,12 +73,16 @@ public partial class RecordTripTabPageViewModel : ObservableObject
             isRecording = true;
             RecordIconColor = redColor;
             RecordIconSourceString = $"{ApplicationConstants.RawIconBasePath}{ApplicationIconConstants.StopIcon}";
-            PermissionStatus locationAlwaysPermissionStatus = await PermissionHelper.CheckAndRequestPermission(Permissions, Permission.LocationAlways);
 
-            if (locationAlwaysPermissionStatus is PermissionStatus.Granted)
+            MainThread.BeginInvokeOnMainThread(async () =>
             {
-                await LocationService.StartListening();
-            }
+                PermissionStatus locationAlwaysPermissionStatus = await PermissionHelper.CheckAndRequestPermission(Permissions, Permission.LocationAlways);
+
+                if (locationAlwaysPermissionStatus is PermissionStatus.Granted)
+                {
+                    await LocationService.StartListening();
+                }
+            });
         }
     }
 

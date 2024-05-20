@@ -73,6 +73,7 @@ namespace UniTracks.Maui
             services.AddSingleton<UniTracks.Services.Navigation.INavigation, ShellNavigation>();
             services.AddSingleton<INavigationRoutes, ShellNavigationRoutes>();
             services.AddSingleton<IPermissions, UniTracks.Maui.Services.ApplicationModel.Permissons>();
+            services.AddSingleton<IMainThread, UniTracks.Maui.Services.ApplicationModel.MainThread>();
 
 
 

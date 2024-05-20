@@ -46,7 +46,14 @@ public partial class TripTabPageViewModel : ObservableObject
     [ObservableProperty]
     private bool refreshIndicatorVisible;
 
-    public TripTabPageViewModel(INavigation navigation, INavigationRoutes navigationRoutes, ILocationService locationService, IShare share, IFileSystem fileSystem, IGpsDataStorageService gpsDataStorageService, IGenericRepository<SqliteDBContext> sqliteRepository, IGenericLiteDBRepository<ILiteDatabase> liteDBRepository)
+    public TripTabPageViewModel(INavigation navigation, 
+        INavigationRoutes navigationRoutes, 
+        ILocationService locationService, 
+        IShare share, 
+        IFileSystem fileSystem, 
+        IGpsDataStorageService gpsDataStorageService, 
+        IGenericRepository<SqliteDBContext> sqliteRepository, 
+        IGenericLiteDBRepository<ILiteDatabase> liteDBRepository)
     {
         Navigation = navigation;
         NavigationRoutes = navigationRoutes;
