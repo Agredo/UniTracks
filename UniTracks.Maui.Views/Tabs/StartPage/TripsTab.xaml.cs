@@ -9,9 +9,15 @@ public partial class TripsTab : ContentView
 	public TripsTab()
 	{
 		InitializeComponent();
+        IsRefreshing = Refresh.IsRefreshing;
+
+        Refresh.Refreshing += async (s, e) =>
+        {
+            IsRefreshing = true;
+        };
     }
 
-	[AutoBindable(OnChanged = nameof(TripsChanged))]
+    [AutoBindable(OnChanged = nameof(TripsChanged))]
     private ICollection<Trip> trips;
 
     [AutoBindable(OnChanged = nameof(SelectedTripChanged))]
