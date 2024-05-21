@@ -1,15 +1,10 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
-using LiteDB;
-using System.Runtime.CompilerServices;
+using System.Diagnostics;
 using UniTracks.Common.Contants;
-using UniTracks.Common.ExtensionMethods;
-using UniTracks.Data.Repository;
-using UniTracks.Data.SQLite;
-using UniTracks.Models.Location;
 using UniTracks.Services.ApplicationModel;
-using UniTracks.Services.ApplicationModel.DataTransfer;
 using UniTracks.Services.ApplicationModel.Permissions;
+using UniTracks.Services.Dispatching;
 using UniTracks.Services.Location;
 using UniTracks.Services.Navigation;
 using UniTracks.ViewModels.Core.PermissionUtils;
@@ -21,10 +16,9 @@ public partial class RecordTripTabPageViewModel : ObservableObject
     public INavigation Navigation { get; }
     public INavigationRoutes NavigationRoutes { get; }
     public ILocationService LocationService { get; }
-    public IShare Share { get; }
     public IPermissions Permissions { get; }
-    public IGenericRepository<SqliteDBContext> SqliteRepository { get; }
     public IMainThread MainThread { get; }
+    public IDispatcher Dispatcher { get; }
     public string DatabasePath { get; private set; }
 
     private string redColor = "#FF0000";
@@ -34,21 +28,34 @@ public partial class RecordTripTabPageViewModel : ObservableObject
 
     private bool isRecording = false;
 
-    public RecordTripTabPageViewModel(INavigation navigation, INavigationRoutes navigationRoutes, ILocationService locationService, IShare share, IPermissions permissions, IGenericRepository<SqliteDBContext> sqliteRepository, IMainThread mainThread)
+    Stopwatch stopWatch = new Stopwatch();
+
+    EventHandler StopWatchEventHandler;
+
+    public RecordTripTabPageViewModel(INavigation navigation, INavigationRoutes navigationRoutes, ILocationService locationService, IPermissions permissions, IMainThread mainThread, IDispatcher dispatcher)
     {   
         Navigation = navigation;
         NavigationRoutes = navigationRoutes;
         LocationService = locationService;
-        Share = share;
         Permissions = permissions;
-        SqliteRepository = sqliteRepository;
         MainThread = mainThread;
-        DatabasePath = sqliteRepository.Context.DatabasePath;
+        Dispatcher = dispatcher;
         RecordIconSourceString = $"{ApplicationConstants.RawIconBasePath}{ApplicationIconConstants.PlayIcon}";
-
         RecordIconColor = whiteColor;
 
-        StopListening().Await();
+        StopWatchEventHandler = (sender, e) =>
+        {
+            MainThread.BeginInvokeOnMainThread(() =>
+            {
+                StopWatchTime = stopWatch.Elapsed.ToString(@"hh\:mm\:ss\.fff");
+            });
+
+        };
+
+        Dispatcher.CreateTimer(TimeSpan.FromMilliseconds(100));
+        Dispatcher.AddEventHandler(StopWatchEventHandler);
+
+        StopListening();
     }
 
     [ObservableProperty]
@@ -57,9 +64,13 @@ public partial class RecordTripTabPageViewModel : ObservableObject
     [ObservableProperty]
     private string recordIconColor;
 
+    [ObservableProperty]
+    private string stopWatchTime = "00:00:000";
+
     [RelayCommand]
-    public async Task StartListening()
+    public void StartListening()
     {
+
         if (isRecording)
         {
             RecordIconColor = whiteColor;
@@ -67,12 +78,18 @@ public partial class RecordTripTabPageViewModel : ObservableObject
             isRecording = false;
 
             LocationService.StopListening();
+            
+            Dispatcher.StopTimer();
+            stopWatch.Stop();
         }
         else
         {
             isRecording = true;
             RecordIconColor = redColor;
             RecordIconSourceString = $"{ApplicationConstants.RawIconBasePath}{ApplicationIconConstants.StopIcon}";
+
+            stopWatch.Restart();
+            Dispatcher.StartTimer();
 
             MainThread.BeginInvokeOnMainThread(async () =>
             {
@@ -87,25 +104,13 @@ public partial class RecordTripTabPageViewModel : ObservableObject
     }
 
     [RelayCommand]
-    public async Task StopListening()
+    public void StopListening()
     {
         LocationService.StopListening();
+        Dispatcher.StopTimer();
+        stopWatch.Stop();
+        
+
         RecordIconColor = whiteColor;
-    }
-
-    [RelayCommand]
-    public async Task ShareDatabase()
-    {
-        List<Models.Location.Location> sqliteLocations = (await SqliteRepository.GetAllAsync<Location>()).ToList();
-        //List<Models.Location.Location> liteDBLocations = (await LiteDBRepository.GetAllAsync<Location>()).ToList();
-        Console.WriteLine($"Total SQLite Locations: {sqliteLocations.Count}");
-        //Console.WriteLine($"Total LiteDB Locations: {liteDBLocations.Count}");
-
-        sqliteLocations.ForEach(async x => Console.WriteLine($"SQLite {x.Timestamp} - {x.ID} - {x.Longitude} - {x.Latitude}"));
-        //liteDBLocations.ForEach(async x => Console.WriteLine($"LiteDB {x.Timestamp} - {x.ID} - {x.Longitude} - {x.Latitude}"));
-
-        //await LocationfromLastTrip();
-
-        await Share.ShareFiles("Share Databases", new string[] { DatabasePath });
     }
 }

@@ -14,8 +14,8 @@ using UniTracks.Maui.Services.Navigation;
 using UniTracks.Maui.Views.Pages;
 using UniTracks.Maui.Views.Pages.Tabs;
 using UniTracks.Services.ApplicationModel;
-using UniTracks.Services.ApplicationModel.Permissions;
 using UniTracks.Services.Data;
+using UniTracks.Services.Dispatching;
 using UniTracks.Services.Location;
 using UniTracks.Services.Navigation;
 using UniTracks.ViewModels;
@@ -58,6 +58,7 @@ namespace UniTracks.Maui
             services.AddTransient<TripOverviewPage, TripOverviewViewModel>();
             services.AddTransient<RecordTripTabPage, RecordTripTabPageViewModel>();
             services.AddTransient<TripTabPage, TripTabPageViewModel>();
+            services.AddTransient<UserPage, UserPagevViewModel>();
 
             //DBContext
             services.AddDbContext<SqliteDBContext>();
@@ -74,6 +75,7 @@ namespace UniTracks.Maui
             services.AddSingleton<INavigationRoutes, ShellNavigationRoutes>();
             services.AddSingleton<IPermissions, UniTracks.Maui.Services.ApplicationModel.Permissons>();
             services.AddSingleton<IMainThread, UniTracks.Maui.Services.ApplicationModel.MainThread>();
+            services.AddSingleton<UniTracks.Services.Dispatching.IDispatcher, UniTracks.Maui.Services.Dispatching.Dispatcher>();
 
 
 

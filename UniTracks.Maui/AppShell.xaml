@@ -16,7 +16,7 @@
             <ShellContent Title="Record Trip" ContentTemplate="{DataTemplate tabPages:RecordTripTabPage}" />
         </Tab>
         <Tab Title="User" Icon="user.png">
-            <ShellContent Title="User" ContentTemplate="{DataTemplate tabPages:RecordTripTabPage}" />
+            <ShellContent Title="User" ContentTemplate="{DataTemplate tabPages:UserPage}" />
         </Tab>
     </TabBar>
 

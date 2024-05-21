@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage
+    x:Class="UniTracks.Maui.Views.Pages.Tabs.UserPage"
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    xmlns:viewModels="clr-namespace:UniTracks.ViewModels.Pages.Tabs;assembly=UniTracks.ViewModels"
+    Title="UserPage"
+    x:DataType="viewModels:UserPagevViewModel">
+    <Grid Padding="0,0,0,12" RowDefinitions="*,Auto">
+
+        <HorizontalStackLayout
+            Grid.Row="1"
+            HorizontalOptions="Center"
+            Spacing="8"
+            VerticalOptions="End">
+            <Button Command="{Binding ShareDatabaseCommand}" Text="Share DB" />
+        </HorizontalStackLayout>
+    </Grid>
+</ContentPage>

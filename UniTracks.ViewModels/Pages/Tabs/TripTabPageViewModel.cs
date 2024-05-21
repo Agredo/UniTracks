@@ -72,23 +72,10 @@ public partial class TripTabPageViewModel : ObservableObject
     private async Task GetTrips()
     {
         Trips.Clear();
-        (await SqliteRepository.GetAllAsync<Trip>(trip => trip.Locations)).OrderByDescending(trip => trip.StartTime).ToList().ForEach(async trip =>
+        (await SqliteRepository.GetAllAsync<Trip>(trip => trip.Locations)).OrderByDescending(trip => trip.StartTime).ToList().ForEach(trip =>
         {
             if (trip != null)
             {
-                //trip.MaxSpeed = trip.Locations.Max(x => x.Speed);
-                //trip.MinSpeed = trip.Locations.Min(x => x.Speed);
-                //trip.MaxAltitude = trip.Locations.Max(x => x.Altitude);
-                //trip.MinAltitude = trip.Locations.Min(x => x.Altitude);
-                //trip.MaxHeading = trip.Locations.Max(x => x.Heading);
-                //trip.MinHeading = trip.Locations.Min(x => x.Heading);
-                //trip.AverageSpeed = trip.Locations.Average(x => x.Speed);
-                //trip.EndTime = trip.Locations.Max(x => x.Timestamp);
-
-                //trip.Distance = calculateDistance(trip.Locations);
-
-                //trip = await SqliteRepository.Update<Trip>(trip);
-
                 Trips.Add(trip);
             }
         });

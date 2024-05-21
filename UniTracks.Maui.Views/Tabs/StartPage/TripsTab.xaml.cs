@@ -11,7 +11,7 @@ public partial class TripsTab : ContentView
 		InitializeComponent();
         IsRefreshing = Refresh.IsRefreshing;
 
-        Refresh.Refreshing += async (s, e) =>
+        Refresh.Refreshing += (s, e) =>
         {
             IsRefreshing = true;
         };

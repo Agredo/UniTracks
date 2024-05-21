@@ -9,6 +9,14 @@
     Title="Record Trip"
     x:DataType="viewModels:RecordTripTabPageViewModel">
     <Grid Padding="0,0,0,12" RowDefinitions="*,Auto">
+        <Label
+            Grid.Row="0"
+            FontSize="48"
+            HorizontalOptions="Center"
+            Text="{Binding StopWatchTime}"
+            TextColor="White"
+            VerticalOptions="Center" />
+
         <HorizontalStackLayout
             Grid.Row="1"
             HorizontalOptions="Center"
@@ -17,7 +25,13 @@
             <!--<ImageButton Command="{Binding StopListeningCommand}" Source="stop.png" />
             <ImageButton Command="{Binding StartListeningCommand}" Source="play.png" />-->
 
-            <draw:Canvas Gestures="Enabled" IsVisible="{OnPlatform Android=True, iOS=True, WinUI=False}">
+            <draw:Canvas
+                Gestures="Enabled"
+                HeightRequest="128"
+                IsVisible="{OnPlatform Android=True,
+                                       iOS=True,
+                                       WinUI=False}"
+                WidthRequest="128">
                 <draw:SkiaButton
                     x:Name="button"
                     CommandTapped="{Binding StartListeningCommand}"
@@ -30,7 +44,6 @@
                         WidthRequest="128" />
                 </draw:SkiaButton>
             </draw:Canvas>
-            <Button Command="{Binding ShareDatabaseCommand}" Text="Share DB" />
         </HorizontalStackLayout>
     </Grid>
 </ContentPage>
