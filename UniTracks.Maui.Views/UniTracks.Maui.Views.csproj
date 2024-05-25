@@ -19,10 +19,9 @@
 	</PropertyGroup>
 
 	<ItemGroup>
-		<PackageReference Include="AppoMobi.Maui.DrawnUi" Version="1.2.0.95" />
+		<PackageReference Include="AppoMobi.Maui.DrawnUi" Version="1.2.2.5" />
 		<PackageReference Include="CommunityToolkit.Maui.Markup" Version="4.0.0" />
 		<PackageReference Include="M.BindableProperty.Generator" Version="0.11.1" />
-		<PackageReference Include="Mapsui.Maui" Version="4.1.6" />
 		<PackageReference Include="Microcharts.Maui" Version="1.0.0" />
 		<PackageReference Include="Microsoft.Maui.Controls" Version="8.0.40" />
 		<PackageReference Include="Microsoft.Maui.Controls.Compatibility" Version="8.0.40" />
@@ -44,6 +43,9 @@
 
 	<ItemGroup>
 	  <MauiXaml Update="Controls\MapView.xaml">
+	    <Generator>MSBuild:Compile</Generator>
+	  </MauiXaml>
+	  <MauiXaml Update="Controls\Popups\UserCreationPopup.xaml">
 	    <Generator>MSBuild:Compile</Generator>
 	  </MauiXaml>
 	  <MauiXaml Update="Controls\TripCard.xaml">

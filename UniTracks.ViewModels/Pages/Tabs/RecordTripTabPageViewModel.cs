@@ -2,11 +2,15 @@
 using CommunityToolkit.Mvvm.Input;
 using System.Diagnostics;
 using UniTracks.Common.Contants;
+using UniTracks.Data.Repository;
+using UniTracks.Data.SQLite;
+using UniTracks.Models.User;
 using UniTracks.Services.ApplicationModel;
 using UniTracks.Services.ApplicationModel.Permissions;
 using UniTracks.Services.Dispatching;
 using UniTracks.Services.Location;
 using UniTracks.Services.Navigation;
+using UniTracks.ViewModels.Controls.Popups;
 using UniTracks.ViewModels.Core.PermissionUtils;
 
 namespace UniTracks.ViewModels.Pages.Tabs;
@@ -14,11 +18,13 @@ namespace UniTracks.ViewModels.Pages.Tabs;
 public partial class RecordTripTabPageViewModel : ObservableObject
 {
     public INavigation Navigation { get; }
+    public IPopupNavigation PopupNavigation { get; }
     public INavigationRoutes NavigationRoutes { get; }
     public ILocationService LocationService { get; }
     public IPermissions Permissions { get; }
     public IMainThread MainThread { get; }
     public IDispatcher Dispatcher { get; }
+    public IGenericRepository<SqliteDBContext> SqliteRepository { get; }
     public string DatabasePath { get; private set; }
 
     private string redColor = "#FF0000";
@@ -32,14 +38,23 @@ public partial class RecordTripTabPageViewModel : ObservableObject
 
     EventHandler StopWatchEventHandler;
 
-    public RecordTripTabPageViewModel(INavigation navigation, INavigationRoutes navigationRoutes, ILocationService locationService, IPermissions permissions, IMainThread mainThread, IDispatcher dispatcher)
+    public RecordTripTabPageViewModel(INavigation navigation, 
+        IPopupNavigation popupNavigation, 
+        INavigationRoutes navigationRoutes, 
+        ILocationService locationService, 
+        IPermissions permissions, 
+        IMainThread mainThread, 
+        IDispatcher dispatcher,
+        IGenericRepository<SqliteDBContext> sqliteRepository)
     {   
         Navigation = navigation;
+        PopupNavigation = popupNavigation;
         NavigationRoutes = navigationRoutes;
         LocationService = locationService;
         Permissions = permissions;
         MainThread = mainThread;
         Dispatcher = dispatcher;
+        SqliteRepository = sqliteRepository;
         RecordIconSourceString = $"{ApplicationConstants.RawIconBasePath}{ApplicationIconConstants.PlayIcon}";
         RecordIconColor = whiteColor;
 
@@ -68,8 +83,16 @@ public partial class RecordTripTabPageViewModel : ObservableObject
     private string stopWatchTime = "00:00:000";
 
     [RelayCommand]
-    public void StartListening()
+    public async Task StartListening()
     {
+
+        if (!(await SqliteRepository.GetAllAsync<User>()).Any())
+        {
+            await MainThread.InvokeOnMainThreadAsync(async () =>
+            {
+                await PopupNavigation.ShowPopupAsync<UserCreationPopupViewModel>();
+            });
+        }
 
         if (isRecording)
         {

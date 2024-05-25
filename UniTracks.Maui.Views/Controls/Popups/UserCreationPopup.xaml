@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<toolkit:Popup
+    x:Class="UniTracks.Maui.Views.Controls.Popups.UserCreationPopup"
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    xmlns:toolkit="http://schemas.microsoft.com/dotnet/2022/maui/toolkit"
+    xmlns:vm="clr-namespace:UniTracks.ViewModels.Controls.Popups;assembly=UniTracks.ViewModels"
+    x:DataType="vm:UserCreationPopupViewModel"
+    CanBeDismissedByTappingOutsideOfPopup="False">
+
+    <toolkit:Popup.Resources>
+        <Style x:Key="InvalidEntryStyle" TargetType="Entry">
+            <Setter Property="IsEnabled" Value="False" />
+        </Style>
+        <Style x:Key="ValidEntryStyle" TargetType="Entry">
+            <Setter Property="IsEnabled" Value="True" />
+        </Style>
+    </toolkit:Popup.Resources>
+
+    <Grid ColumnDefinitions="10*,80*,10*">
+        <VerticalStackLayout Grid.Column="1">
+            <Label FontSize="Title" Text="Create User" />
+
+            <Label Text="Name" />
+            <Entry Placeholder="Name">
+                <Entry.Behaviors>
+                    <toolkit:CharactersValidationBehavior
+                        CharacterType="Alphanumeric"
+                        Flags="ValidateOnValueChanged"
+                        InvalidStyle="{StaticResource Key=InvalidEntryStyle}"
+                        MinimumCharacterTypeCount="1"
+                        ValidStyle="{StaticResource Key=ValidEntryStyle}" />
+                </Entry.Behaviors>
+            </Entry>
+
+            <Label Text="Email" />
+            <Entry Placeholder="Email" />
+
+            <Label Text="Password" />
+            <Entry Placeholder="Password" />
+
+            <Label Text="Confirm Password" />
+            <Entry Placeholder="Confirm Password" />
+
+            <Label Text="Height" />
+            <Entry Placeholder="Height" />
+
+            <Label Text="Weight" />
+            <Entry Placeholder="Weight" />
+
+            <HorizontalStackLayout>
+                <Button Command="{Binding CreateUserCommand}" Text="OK" />
+                <Button Command="{Binding CancelCommand}" Text="Create Default User" />
+            </HorizontalStackLayout>
+        </VerticalStackLayout>
+    </Grid>
+</toolkit:Popup>

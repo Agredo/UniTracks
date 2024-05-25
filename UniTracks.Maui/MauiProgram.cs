@@ -10,15 +10,19 @@ using UniTracks.Data.LiteDB;
 using UniTracks.Data.Repository;
 using UniTracks.Data.SQLite;
 using UniTracks.Maui.Services.Location;
+using UniTracks.Maui.Services.Mapsui;
 using UniTracks.Maui.Services.Navigation;
+using UniTracks.Maui.Views.Controls.Popups;
 using UniTracks.Maui.Views.Pages;
 using UniTracks.Maui.Views.Pages.Tabs;
 using UniTracks.Services.ApplicationModel;
 using UniTracks.Services.Data;
 using UniTracks.Services.Dispatching;
 using UniTracks.Services.Location;
+using UniTracks.Services.MapsUI;
 using UniTracks.Services.Navigation;
 using UniTracks.ViewModels;
+using UniTracks.ViewModels.Controls.Popups;
 using UniTracks.ViewModels.Pages;
 using UniTracks.ViewModels.Pages.Tabs;
 using FileSystem = UniTracks.Maui.Services.IO.FileSystem;
@@ -60,6 +64,9 @@ namespace UniTracks.Maui
             services.AddTransient<TripTabPage, TripTabPageViewModel>();
             services.AddTransient<UserPage, UserPagevViewModel>();
 
+            //Popups
+            services.AddTransientPopup<UserCreationPopup, UserCreationPopupViewModel>();
+
             //DBContext
             services.AddDbContext<SqliteDBContext>();
             services.AddSingleton(typeof(IGenericRepository<>), typeof(GenericRepository<>));
@@ -76,6 +83,9 @@ namespace UniTracks.Maui
             services.AddSingleton<IPermissions, UniTracks.Maui.Services.ApplicationModel.Permissons>();
             services.AddSingleton<IMainThread, UniTracks.Maui.Services.ApplicationModel.MainThread>();
             services.AddSingleton<UniTracks.Services.Dispatching.IDispatcher, UniTracks.Maui.Services.Dispatching.Dispatcher>();
+            services.AddSingleton<IPopupNavigation, PopupNavigation>();
+
+            services.AddTransient<IMapRenderer, MapsUIRenderer>();
 
 
 

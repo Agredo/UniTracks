@@ -5,6 +5,9 @@
     <MauiXaml Update="Controls\MapView.xaml">
       <SubType>Designer</SubType>
     </MauiXaml>
+    <MauiXaml Update="Controls\Popups\UserCreationPopup.xaml">
+      <SubType>Designer</SubType>
+    </MauiXaml>
     <MauiXaml Update="Controls\TripCard.xaml">
       <SubType>Designer</SubType>
     </MauiXaml>

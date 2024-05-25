@@ -9,6 +9,7 @@ using UniTracks.Data.Repository;
 using UniTracks.Data.SQLite;
 using UniTracks.Models.Location;
 using UniTracks.Models.Trip;
+using UniTracks.Models.User;
 using UniTracks.Services.ApplicationModel.DataTransfer;
 using UniTracks.Services.Data;
 using UniTracks.Services.IO;
@@ -21,6 +22,7 @@ public partial class TripTabPageViewModel : ObservableObject
 {
     public Services.Navigation.INavigation Navigation { get; }
     public INavigationRoutes NavigationRoutes { get; }
+    public IPopupNavigation PopupNavigation { get; }
     public ILocationService LocationService { get; }
     public IShare Share { get; }
     public IFileSystem FileSystem { get; }
@@ -47,7 +49,8 @@ public partial class TripTabPageViewModel : ObservableObject
     private bool refreshIndicatorVisible;
 
     public TripTabPageViewModel(INavigation navigation, 
-        INavigationRoutes navigationRoutes, 
+        INavigationRoutes navigationRoutes,
+        IPopupNavigation popupNavigation,
         ILocationService locationService, 
         IShare share, 
         IFileSystem fileSystem, 
@@ -57,6 +60,7 @@ public partial class TripTabPageViewModel : ObservableObject
     {
         Navigation = navigation;
         NavigationRoutes = navigationRoutes;
+        PopupNavigation = popupNavigation;
         LocationService = locationService;
         Share = share;
         FileSystem = fileSystem;
@@ -71,6 +75,7 @@ public partial class TripTabPageViewModel : ObservableObject
 
     private async Task GetTrips()
     {
+
         Trips.Clear();
         (await SqliteRepository.GetAllAsync<Trip>(trip => trip.Locations)).OrderByDescending(trip => trip.StartTime).ToList().ForEach(trip =>
         {
