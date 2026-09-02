@@ -15,7 +15,6 @@ namespace UniTracks.Maui.Views.Controls;
 public partial class MapView : ContentView
 {
     private MemoryLayer? routeLayer;
-    private MemoryLayer? pointsLayer;
 
     public MapView()
     {
@@ -48,45 +47,25 @@ public partial class MapView : ContentView
             .Select(location => SphericalMercator.FromLonLat(location.Longitude, location.Latitude))
             .ToArray();
 
-        routeLayer = new MemoryLayer("Route")
+        var routeStyle = new Mapsui.Styles.VectorStyle
         {
-            Style = new Mapsui.Styles.VectorStyle
-            {
-                Line = new Mapsui.Styles.Pen(new Mapsui.Styles.Color(255, 0, 0), 3)
-            }
+            Line = new Mapsui.Styles.Pen(new Mapsui.Styles.Color(255, 0, 0), 4)
         };
+
+        routeLayer = new MemoryLayer("Route") { Style = routeStyle };
 
         if (projected.Length > 1)
         {
             var coordinates = projected.Select(point => new Coordinate(point.x, point.y)).ToArray();
             routeLayer.Features = new[] { new GeometryFeature(new LineString(coordinates)) };
         }
-
-        var pointFeatures = new List<IFeature>();
-
-        if (projected.Length > 0)
+        else
         {
-            pointFeatures.Add(new PointFeature(projected[0].x, projected[0].y));
+            routeStyle.Fill = new Mapsui.Styles.Brush(new Mapsui.Styles.Color(255, 0, 0));
+            routeLayer.Features = new[] { new PointFeature(projected[0].x, projected[0].y) };
         }
-
-        if (projected.Length > 1)
-        {
-            pointFeatures.Add(new PointFeature(projected[^1].x, projected[^1].y));
-        }
-
-        pointsLayer = new MemoryLayer("StartAndEnd")
-        {
-            Style = new Mapsui.Styles.SymbolStyle
-            {
-                SymbolType = Mapsui.Styles.SymbolType.Ellipse,
-                Fill = new Mapsui.Styles.Brush(new Mapsui.Styles.Color(0, 200, 0)),
-                SymbolScale = 0.75
-            },
-            Features = pointFeatures
-        };
 
         ControlMapView.Map.Layers.Add(routeLayer);
-        ControlMapView.Map.Layers.Add(pointsLayer);
 
         CenterOnRoute(projected);
     }
@@ -97,12 +76,6 @@ public partial class MapView : ContentView
         {
             ControlMapView.Map.Layers.Remove(routeLayer);
             routeLayer = null;
-        }
-
-        if (pointsLayer is not null)
-        {
-            ControlMapView.Map.Layers.Remove(pointsLayer);
-            pointsLayer = null;
         }
     }
 
