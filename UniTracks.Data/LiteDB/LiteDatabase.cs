@@ -1,12 +1,5 @@
-﻿using LiteDB;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using UniTracks.Common.Contants;
+using LiteDB;
 using UniTracks.Models.Location;
-using UniTracks.Services.IO;
 using LDB = LiteDB.LiteDatabase;
 
 namespace UniTracks.Data.LiteDB;
@@ -17,9 +10,9 @@ public class LiteDatabase : ILiteDatabase
 
     public ILiteCollection<Location> Locations { get; }
 
-    public LiteDatabase(IFileSystem fileSystem)
+    public LiteDatabase(string databasePath)
     {
-        Database = new LDB(Path.Combine(fileSystem.AppDataDirectory, ApplicationConstants.LiteDBName));
+        Database = new LDB(databasePath);
 
         Locations = Database.GetCollection<Location>();
     }

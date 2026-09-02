@@ -12,7 +12,7 @@
             IsRefreshing="{Binding RefreshIndicatorVisible}"
             PullToRefresh="{Binding RefreshCommand}"
             SelectedTrip="{Binding SelectedTrip, Mode=TwoWay}"
-            SelectionChaged="{Binding SelectedTripChangedCommand}"
+            SelectionChanged="{Binding SelectedTripChangedCommand}"
             Trips="{Binding Trips}" />
     </Grid>
 </ContentPage>

@@ -1,17 +1,10 @@
-﻿using Microsoft.EntityFrameworkCore;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using UniTracks.Common.Contants;
-using UniTracks.Common.ExtensionMethods;
+using Microsoft.EntityFrameworkCore;
+using UniTracks.Models.Constants;
 using UniTracks.Models.Environment;
 using UniTracks.Models.Health;
 using UniTracks.Models.Location;
 using UniTracks.Models.Trip;
 using UniTracks.Models.User;
-using UniTracks.Services.IO;
 
 namespace UniTracks.Data.SQLite;
 
@@ -31,14 +24,15 @@ public class SqliteDBContext : DbContext
 
     public SqliteDBContext()
     {
+        DatabasePath = string.Empty;
     }
 
-    public SqliteDBContext(IFileSystem fileSystem)
+    public SqliteDBContext(string databasePath)
     {
-        DatabasePath = Path.Combine(fileSystem.AppDataDirectory, ApplicationConstants.SQliteDatabaseName);
+        DatabasePath = databasePath;
         SQLitePCL.Batteries.Init();
 
-        this.Database.MigrateAsync().Await();
+        Database.Migrate();
     }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)

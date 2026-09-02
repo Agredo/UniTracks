@@ -1,6 +1,7 @@
 ﻿<?xml version="1.0" encoding="utf-8" ?>
 <Project>
 	<PropertyGroup>
-		<SciPlotTargetFramework>net8.0</SciPlotTargetFramework>
+		<ProjectTargetFramework>net11.0</ProjectTargetFramework>
+		<MauiNugetVersion>11.0.0-preview.7.26406.9</MauiNugetVersion>
 	</PropertyGroup>
 </Project>

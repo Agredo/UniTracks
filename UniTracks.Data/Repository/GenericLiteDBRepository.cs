@@ -5,7 +5,6 @@ using System.Linq;
 using System.Linq.Expressions;
 using System.Text;
 using System.Threading.Tasks;
-using UniTracks.Services.IO;
 using ILiteDatabase = UniTracks.Data.LiteDB.ILiteDatabase;
 
 namespace UniTracks.Data.Repository;

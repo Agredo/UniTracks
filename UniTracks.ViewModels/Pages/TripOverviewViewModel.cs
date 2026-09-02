@@ -1,34 +1,32 @@
-﻿using CommunityToolkit.Mvvm.ComponentModel;
 using System.Collections.ObjectModel;
-using UniTracks.Models.Location;
+using AgredoApplication.MVVM.Services.Abstractions.Navigation;
+using CommunityToolkit.Mvvm.ComponentModel;
 using UniTracks.Models.Trip;
-using UniTracks.Services.Navigation;
+using LocationModel = UniTracks.Models.Location.Location;
 
 namespace UniTracks.ViewModels.Pages;
 
 public partial class TripOverviewViewModel : ObservableObject
 {
-    public INavigation Navigation { get; }
-    public INavigationRoutes NavigationRoutes { get; }
+    public INavigationService Navigation { get; }
 
     [ObservableProperty]
-    private Trip trip = new Trip();
+    private Trip? trip;
 
     [ObservableProperty]
-    private ObservableCollection<Location> locations = new ObservableCollection<Location>();
+    private ObservableCollection<LocationModel> locations = new ObservableCollection<LocationModel>();
 
-    public TripOverviewViewModel(INavigation navigation, INavigationRoutes navigationRoutes)
+    public TripOverviewViewModel(INavigationService navigation)
     {
         Navigation = navigation;
-        NavigationRoutes = navigationRoutes;
 
         Navigation.Parameters.TryGetValue("parameter", out var parameter);
 
         Trip = parameter as Trip;
 
-        if (Trip != null)
+        if (Trip is not null)
         {
-            Trip.Locations.ForEach(location => Locations.Add(location));
+            Trip.Locations?.ForEach(location => Locations.Add(location));
         }
     }
 }

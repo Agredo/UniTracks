@@ -1,37 +1,77 @@
-﻿using Maui.BindableProperty.Generator.Core;
+﻿using CommunityToolkit.Maui;
 using Microsoft.Maui.Platform;
-using UniTracks.Models.Trip;
 
 namespace UniTracks.Maui.Views.Controls;
 
 public partial class TripCard : Microsoft.Maui.Controls.ContentView
 {
-	public TripCard()
-	{
-		InitializeComponent();
+    public TripCard()
+    {
+        InitializeComponent();
+    }
 
-	}
+    [BindableProperty(PropertyChangedMethodName = nameof(OnTripDateTimePropertyChanged))]
+    public partial DateTimeOffset TripDateTime { get; set; }
 
-	[AutoBindable (OnChanged = nameof(TripDateTimeChanged))]
-	private DateTimeOffset tripDateTime;
+    [BindableProperty(PropertyChangedMethodName = nameof(OnTripEndDateTimePropertyChanged))]
+    public partial DateTimeOffset TripEndDateTime { get; set; }
 
-    [AutoBindable(OnChanged = nameof(TripEndDateTimeChanged))]
-    private DateTimeOffset tripEndDateTime;
+    [BindableProperty(PropertyChangedMethodName = nameof(OnMaxSpeedPropertyChanged))]
+    public partial double MaxSpeed { get; set; }
 
-    [AutoBindable(OnChanged = nameof(MaxSpeedChanged))]
-    private double maxSpeed;
+    [BindableProperty(PropertyChangedMethodName = nameof(OnMinSpeedPropertyChanged))]
+    public partial double MinSpeed { get; set; }
 
-    [AutoBindable(OnChanged = nameof(MinSpeedChanged))]
-    private double minSpeed;
+    [BindableProperty(PropertyChangedMethodName = nameof(OnAverageSpeedPropertyChanged))]
+    public partial double AverageSpeed { get; set; }
 
-    [AutoBindable(OnChanged = nameof(AverageChanged))]
-    private double averageSpeed;
+    [BindableProperty(PropertyChangedMethodName = nameof(OnDistancePropertyChanged))]
+    public partial double Distance { get; set; }
 
-    [AutoBindable(OnChanged = nameof(DistanceChanged))]
-    private double distance;
+    [BindableProperty(PropertyChangedMethodName = nameof(OnDurationPropertyChanged))]
+    public partial TimeSpan Duration { get; set; }
 
-    [AutoBindable(OnChanged = nameof(DurationChanged))]
-    private TimeSpan duration;
+    private static void OnTripDateTimePropertyChanged(BindableObject bindable, object oldValue, object newValue)
+    {
+        var tripCard = (TripCard)bindable;
+        tripCard.TripDateTimeChanged((DateTimeOffset)newValue);
+    }
+
+    private static void OnTripEndDateTimePropertyChanged(BindableObject bindable, object oldValue, object newValue)
+    {
+        var tripCard = (TripCard)bindable;
+        tripCard.TripEndDateTimeChanged((DateTimeOffset)newValue);
+    }
+
+    private static void OnMaxSpeedPropertyChanged(BindableObject bindable, object oldValue, object newValue)
+    {
+        var tripCard = (TripCard)bindable;
+        tripCard.MaxSpeedChanged((double)newValue);
+    }
+
+    private static void OnMinSpeedPropertyChanged(BindableObject bindable, object oldValue, object newValue)
+    {
+        var tripCard = (TripCard)bindable;
+        tripCard.MinSpeedChanged((double)newValue);
+    }
+
+    private static void OnAverageSpeedPropertyChanged(BindableObject bindable, object oldValue, object newValue)
+    {
+        var tripCard = (TripCard)bindable;
+        tripCard.AverageChanged((double)newValue);
+    }
+
+    private static void OnDistancePropertyChanged(BindableObject bindable, object oldValue, object newValue)
+    {
+        var tripCard = (TripCard)bindable;
+        tripCard.DistanceChanged((double)newValue);
+    }
+
+    private static void OnDurationPropertyChanged(BindableObject bindable, object oldValue, object newValue)
+    {
+        var tripCard = (TripCard)bindable;
+        tripCard.DurationChanged((TimeSpan)newValue);
+    }
 
     private void TripDateTimeChanged(DateTimeOffset newDateTimeOffset)
     {
@@ -63,6 +103,7 @@ public partial class TripCard : Microsoft.Maui.Controls.ContentView
     {
         TripDistanceLabel.Text = $"🏁{Math.Round(newDistance, 1)}m";
     }
+
     private void DurationChanged(TimeSpan newDuration)
     {
         try
@@ -73,7 +114,6 @@ public partial class TripCard : Microsoft.Maui.Controls.ContentView
         {
             Console.WriteLine(ex.Message);
         }
-
     }
 
     private void SetNameLabelText()

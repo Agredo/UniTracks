@@ -1,16 +1,21 @@
-﻿using MauiDispatcher = Microsoft.Maui.Dispatching.Dispatcher;
-using UniTracks.Maui.Services.Dispatching;
-
 namespace UniTracks.Maui.Services.Dispatching;
 
 public class Dispatcher : UniTracks.Services.Dispatching.IDispatcher
 {
-    public IDispatcherTimer DispatcherTimer { get; set; }
+    private IDispatcherTimer? dispatcherTimer;
+
+    public IDispatcherTimer DispatcherTimer
+    {
+        get => dispatcherTimer ?? throw new InvalidOperationException("CreateTimer must be called before accessing the timer.");
+        set => dispatcherTimer = value;
+    }
 
     public void CreateTimer(TimeSpan interval)
     {
-        DispatcherTimer = Application.Current.Dispatcher.CreateTimer();
-        DispatcherTimer.Interval = interval;
+        var dispatcher = Application.Current?.Dispatcher ?? throw new InvalidOperationException("No application dispatcher available.");
+        var timer = dispatcher.CreateTimer();
+        timer.Interval = interval;
+        DispatcherTimer = timer;
     }
 
     public void AddEventHandler(EventHandler eventHandler)
@@ -22,6 +27,7 @@ public class Dispatcher : UniTracks.Services.Dispatching.IDispatcher
     {
         DispatcherTimer.Stop();
     }
+
     public void StartTimer()
     {
         DispatcherTimer.Start();
@@ -45,6 +51,7 @@ public class Dispatcher : UniTracks.Services.Dispatching.IDispatcher
 
     public void RemoveAllEventHandlers()
     {
-        DispatcherTimer = Application.Current.Dispatcher.CreateTimer();
+        var dispatcher = Application.Current?.Dispatcher ?? throw new InvalidOperationException("No application dispatcher available.");
+        DispatcherTimer = dispatcher.CreateTimer();
     }
 }

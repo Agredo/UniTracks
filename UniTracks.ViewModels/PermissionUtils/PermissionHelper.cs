@@ -1,7 +1,7 @@
-﻿using UniTracks.Services.ApplicationModel;
+using UniTracks.Services.ApplicationModel;
 using UniTracks.Services.ApplicationModel.Permissions;
 
-namespace UniTracks.ViewModels.Core.PermissionUtils;
+namespace UniTracks.ViewModels.PermissionUtils;
 
 public static class PermissionHelper
 {
@@ -11,13 +11,6 @@ public static class PermissionHelper
 
         if (status == PermissionStatus.Granted)
             return status;
-
-        //if (status == PermissionStatus.Denied && DeviceInfo.Platform == DevicePlatform.iOS)
-        //{
-        //    // Prompt the user to turn on in settings
-        //    // On iOS once a permission has been denied it may not be requested again from the application
-        //    return status;
-        //}
 
         if (permissions.ShouldShowRationale(permission))
         {

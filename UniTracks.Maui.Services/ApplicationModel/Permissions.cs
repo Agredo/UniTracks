@@ -1,15 +1,13 @@
-﻿using UniTracks.Services.ApplicationModel;
+using UniTracks.Services.ApplicationModel;
+using UniTracks.Services.ApplicationModel.Permissions;
 
-using PermissionStatus = UniTracks.Services.ApplicationModel.PermissionStatus;
 using MauiPermissionStatus = Microsoft.Maui.ApplicationModel.PermissionStatus;
 using MauiPermissions = Microsoft.Maui.ApplicationModel.Permissions;
-
-
-using UniTracks.Services.ApplicationModel.Permissions;
+using PermissionStatus = UniTracks.Services.ApplicationModel.PermissionStatus;
 
 namespace UniTracks.Maui.Services.ApplicationModel;
 
-public class Permissons : IPermissions
+public class Permissions : UniTracks.Services.ApplicationModel.IPermissions
 {
     public async Task<PermissionStatus> CheckPermissionStatusAsync(Permission permission)
     {

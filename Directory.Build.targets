@@ -1,0 +1,11 @@
+<Project>
+	<!-- Prevent NETSDK1032 when building the maccatalyst TFM on Windows ARM64. -->
+	<Target Name="ClearMacCatalystRidOnWindows"
+			BeforeTargets="_CheckForInvalidRuntimeIdentifier"
+			Condition="$([MSBuild]::IsOSPlatform('windows'))
+					   And $([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'maccatalyst'">
+		<PropertyGroup>
+			<RuntimeIdentifier></RuntimeIdentifier>
+		</PropertyGroup>
+	</Target>
+</Project>

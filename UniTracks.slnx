@@ -1,0 +1,20 @@
+<Solution>
+  <Folder Name="/Build/">
+    <File Path="Directory.Build.props" />
+    <File Path="Directory.Build.targets" />
+    <File Path="projects.props" />
+    <File Path="global.json" />
+    <File Path="NuGet.config" />
+  </Folder>
+  <Folder Name="/UI/">
+    <Project Path="UniTracks.Maui.Services/UniTracks.Maui.Services.csproj" />
+    <Project Path="UniTracks.Maui.Views/UniTracks.Maui.Views.csproj" />
+    <Project Path="UniTracks.Maui/UniTracks.Maui.csproj">
+      <Deploy Solution="Debug|*" />
+    </Project>
+  </Folder>
+  <Project Path="UniTracks.Models/UniTracks.Models.csproj" />
+  <Project Path="UniTracks.Data/UniTracks.Data.csproj" />
+  <Project Path="UniTracks.Services/UniTracks.Services.csproj" />
+  <Project Path="UniTracks.ViewModels/UniTracks.ViewModels.csproj" />
+</Solution>

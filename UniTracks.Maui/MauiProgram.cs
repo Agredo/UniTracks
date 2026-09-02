@@ -1,100 +1,107 @@
-﻿using CommunityToolkit.Maui;
-using CommunityToolkit.Maui.Markup;
-using DrawnUi.Maui.Draw;
-using Microcharts.Maui;
+using CommunityToolkit.Maui;
+using CommunityToolkit.Maui.Views;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using Shiny;
-using SkiaSharp.Views.Maui.Controls.Hosting;
-using UniTracks.Core.Services;
 using UniTracks.Data.LiteDB;
 using UniTracks.Data.Repository;
 using UniTracks.Data.SQLite;
 using UniTracks.Maui.Services.Location;
-using UniTracks.Maui.Services.Mapsui;
-using UniTracks.Maui.Services.Navigation;
 using UniTracks.Maui.Views.Controls.Popups;
 using UniTracks.Maui.Views.Pages;
 using UniTracks.Maui.Views.Pages.Tabs;
-using UniTracks.Services.ApplicationModel;
+using UniTracks.Models.Constants;
 using UniTracks.Services.Data;
-using UniTracks.Services.Dispatching;
 using UniTracks.Services.Location;
-using UniTracks.Services.MapsUI;
-using UniTracks.Services.Navigation;
-using UniTracks.ViewModels;
 using UniTracks.ViewModels.Controls.Popups;
 using UniTracks.ViewModels.Pages;
 using UniTracks.ViewModels.Pages.Tabs;
-using FileSystem = UniTracks.Maui.Services.IO.FileSystem;
-using IShare = UniTracks.Services.ApplicationModel.DataTransfer.IShare;
-using Share = UniTracks.Maui.Services.ApplicationModel.DataTransfer.Share;
 
-namespace UniTracks.Maui
+namespace UniTracks.Maui;
+
+public static class MauiProgram
 {
-    public static class MauiProgram
+    public static MauiApp CreateMauiApp()
     {
-        public static MauiApp CreateMauiApp()
-        {
-            AppContext.SetSwitch("System.Reflection.NullabilityInfoContext.IsSupported", true);
+        AppContext.SetSwitch("System.Reflection.NullabilityInfoContext.IsSupported", true);
 
-            var builder = MauiApp.CreateBuilder();
-            var services = builder.Services;
+        var builder = MauiApp.CreateBuilder();
 
-            builder
-                .UseMauiApp<App>()
-                .UseMauiCommunityToolkit()
-                .UseMauiCommunityToolkitMarkup()
-                .UseMicrocharts()
-                .UseShiny()
-                .UseSkiaSharp(true)
-                .ConfigureFonts(fonts =>
-                {
-                    fonts.AddFont("OpenSans-Regular.ttf", "OpenSansRegular");
-                    fonts.AddFont("OpenSans-Semibold.ttf", "OpenSansSemibold");
-                })
-                .UseDrawnUi();
-#if !WINDOWS
-            services.AddGps<Services.Location.GpsDelegate>();
-#endif
-            //Pages
-            services.AddTransient<MainPage, MainPageViewModel>();
-            services.AddTransient<StartPage, StartPageViewModel>();
-            services.AddTransient<TripOverviewPage, TripOverviewViewModel>();
-            services.AddTransient<RecordTripTabPage, RecordTripTabPageViewModel>();
-            services.AddTransient<TripTabPage, TripTabPageViewModel>();
-            services.AddTransient<UserPage, UserPagevViewModel>();
+        builder
+            .UseMauiApp<App>()
+            .UseMauiCommunityToolkit()
+            .ConfigureFonts(fonts =>
+            {
+                fonts.AddFont("OpenSans-Regular.ttf", "OpenSansRegular");
+                fonts.AddFont("OpenSans-Semibold.ttf", "OpenSansSemibold");
+            });
 
-            //Popups
-            services.AddTransientPopup<UserCreationPopup, UserCreationPopupViewModel>();
+        var services = builder.Services;
 
-            //DBContext
-            services.AddDbContext<SqliteDBContext>();
-            services.AddSingleton(typeof(IGenericRepository<>), typeof(GenericRepository<>));
-            services.AddSingleton<ILiteDatabase, LiteDatabase>();
-            services.AddSingleton(typeof(IGenericLiteDBRepository<>), typeof(GenericLiteDBRepository<>));
-
-            //Services
-            services.AddSingleton<UniTracks.Services.IO.IFileSystem, FileSystem>();
-            services.AddSingleton<ILocationService, LocationService>();
-            services.AddSingleton<IGpsDataStorageService, GpsDataStorageService>();
-            services.AddSingleton<IShare, Share>();
-            services.AddSingleton<UniTracks.Services.Navigation.INavigation, ShellNavigation>();
-            services.AddSingleton<INavigationRoutes, ShellNavigationRoutes>();
-            services.AddSingleton<IPermissions, UniTracks.Maui.Services.ApplicationModel.Permissons>();
-            services.AddSingleton<IMainThread, UniTracks.Maui.Services.ApplicationModel.MainThread>();
-            services.AddSingleton<UniTracks.Services.Dispatching.IDispatcher, UniTracks.Maui.Services.Dispatching.Dispatcher>();
-            services.AddSingleton<IPopupNavigation, PopupNavigation>();
-
-            services.AddTransient<IMapRenderer, MapsUIRenderer>();
-
-
-
+        RegisterAgredoServices(services);
+        RegisterUniTracksServices(services);
+        RegisterDataAccess(services);
+        RegisterPages(services);
+        RegisterPopups(services);
 
 #if DEBUG
-            builder.Logging.AddDebug();
+        builder.Logging.AddDebug();
 #endif
 
-            return builder.Build();
-        }
+        return builder.Build();
+    }
+
+    private static void RegisterAgredoServices(IServiceCollection services)
+    {
+        // Navigation
+        services.AddSingleton<AgredoApplication.MVVM.Services.Abstractions.Navigation.INavigationService, AgredoApplication.MVVM.Services.Maui.Navigation.NavigationService>();
+        services.AddSingleton<AgredoApplication.MVVM.Services.Abstractions.Navigation.IPopupNavigationService, AgredoApplication.MVVM.Services.Maui.Navigation.PopupNavigationService>();
+
+        // IO / Application / Devices
+        services.AddSingleton<AgredoApplication.MVVM.Services.Abstractions.IO.IFileSystem, AgredoApplication.MVVM.Services.Maui.IO.FileSystem>();
+        services.AddSingleton<AgredoApplication.MVVM.Services.Abstractions.Application.IMainThread, AgredoApplication.MVVM.Services.Maui.Application.MainThread>();
+        services.AddSingleton<AgredoApplication.MVVM.Services.Abstractions.Devices.IGeolocation, AgredoApplication.MVVM.Services.Maui.Devices.Geolocation>();
+    }
+
+    private static void RegisterUniTracksServices(IServiceCollection services)
+    {
+        services.AddSingleton<ILocationService, LocationService>();
+        services.AddSingleton<IGpsDataStorageService, GpsDataStorageService>();
+        services.AddSingleton<UniTracks.Services.ApplicationModel.IPermissions, UniTracks.Maui.Services.ApplicationModel.Permissions>();
+        services.AddSingleton<UniTracks.Services.Dispatching.IDispatcher, UniTracks.Maui.Services.Dispatching.Dispatcher>();
+    }
+
+    private static void RegisterDataAccess(IServiceCollection services)
+    {
+        services.AddSingleton<SqliteDBContext>(sp =>
+        {
+            var fileSystem = sp.GetRequiredService<AgredoApplication.MVVM.Services.Abstractions.IO.IFileSystem>();
+            var databasePath = Path.Combine(fileSystem.AppDataDirectory, ApplicationConstants.SQliteDatabaseName);
+            return new SqliteDBContext(databasePath);
+        });
+
+        services.AddSingleton<ILiteDatabase>(sp =>
+        {
+            var fileSystem = sp.GetRequiredService<AgredoApplication.MVVM.Services.Abstractions.IO.IFileSystem>();
+            var databasePath = Path.Combine(fileSystem.AppDataDirectory, ApplicationConstants.LiteDBName);
+            return new LiteDatabase(databasePath);
+        });
+
+        services.AddSingleton(typeof(IGenericRepository<>), typeof(GenericRepository<>));
+        services.AddSingleton(typeof(IGenericLiteDBRepository<>), typeof(GenericLiteDBRepository<>));
+    }
+
+    private static void RegisterPages(IServiceCollection services)
+    {
+        services.AddTransient<TripTabPage, TripTabPageViewModel>();
+        services.AddTransient<RecordTripTabPage, RecordTripTabPageViewModel>();
+        services.AddTransient<UserPage, UserPagevViewModel>();
+        services.AddTransient<TripOverviewPage, TripOverviewViewModel>();
+    }
+
+    private static void RegisterPopups(IServiceCollection services)
+    {
+        services.AddTransientPopup<UserCreationPopup, UserCreationPopupViewModel>();
+        services.AddTransient<UserCreationPopupViewModel>();
+        services.AddKeyedTransient<Popup, UserCreationPopup>(typeof(UserCreationPopupViewModel));
     }
 }

@@ -1,114 +1,132 @@
-using System.Collections.ObjectModel;
-using Location = UniTracks.Models.Location.Location;
-using Mapsui.UI.Maui;
-using Maui.BindableProperty.Generator.Core;
+﻿using System.Collections.Generic;
+using System.Linq;
+using CommunityToolkit.Maui;
 using Mapsui;
-using Mapsui.UI.Maui.Extensions;
-using Mapsui.Fetcher;
-using GeoCoordinatePortable;
+using Mapsui.Layers;
+using Mapsui.Projections;
+using Mapsui.Tiling;
+using Coordinate = NetTopologySuite.Geometries.Coordinate;
+using GeometryFeature = Mapsui.Nts.GeometryFeature;
+using LineString = NetTopologySuite.Geometries.LineString;
+using Location = UniTracks.Models.Location.Location;
 
 namespace UniTracks.Maui.Views.Controls;
 
 public partial class MapView : ContentView
 {
+    private MemoryLayer? routeLayer;
+    private MemoryLayer? pointsLayer;
+
     public MapView()
     {
         InitializeComponent();
-        ControlMapView.Map.Layers.Add(Mapsui.Tiling.OpenStreetMap.CreateTileLayer());
-        ControlMapView.Loaded += ControlMapView_Loaded;
+        ControlMapView.Map.Layers.Add(OpenStreetMap.CreateTileLayer());
+        ControlMapView.Map.Navigator.RotationLock = true;
     }
 
-    private void ControlMapView_Loaded(object? sender, EventArgs e)
-    {
-        var minLatitudeLocation = locations.OrderBy(x => x.Latitude).FirstOrDefault();
-        var maxLatitudeLocation = locations.OrderBy(x => x.Latitude).LastOrDefault();
-        var minLongitudeLocation = locations.OrderBy(x => x.Longitude).FirstOrDefault();
-        var maxLongitudeLocation = locations.OrderBy(x => x.Longitude).LastOrDefault();
+    [BindableProperty(PropertyChangedMethodName = nameof(OnLocationsPropertyChanged))]
+    public partial IReadOnlyList<Location>? Locations { get; set; }
 
-        if (minLatitudeLocation != null && maxLatitudeLocation != null && minLongitudeLocation != null && maxLongitudeLocation != null)
+    private static void OnLocationsPropertyChanged(BindableObject bindable, object oldValue, object newValue)
+    {
+        if (bindable is MapView mapView && newValue is IReadOnlyList<Location> locations)
         {
-            GeoCoordinate coordinate1 = new GeoCoordinate(maxLatitudeLocation.Latitude, maxLatitudeLocation.Longitude);
-            GeoCoordinate coordinate2 = new GeoCoordinate(maxLongitudeLocation.Latitude, maxLongitudeLocation.Longitude);
-
-            var centerLocation = new Position((minLongitudeLocation.Longitude + maxLongitudeLocation.Longitude) / 2, (minLatitudeLocation.Latitude + maxLatitudeLocation.Latitude) / 2);
-            double maxDistance = coordinate1.GetDistanceTo(coordinate2);
-            ControlMapView.Map.Navigator.CenterOnAndZoomTo(centerLocation.ToMapsui(), maxDistance + maxDistance * 0.25);
-
-            this.ForceLayout();
-
-            //ControlMapView.Map.Navigator.SetViewport(new Viewport(centerLocation.ToMapsui().X, centerLocation.ToMapsui().Y, maxDistance + maxDistance * 0.25, ControlMapView.Rotation, ControlMapView.Width, ControlMapView.Height));
-        } 
+            mapView.DrawRoute(locations);
+        }
     }
 
-    [AutoBindable(OnChanged = nameof(LocationChanged))]
-    private Collection<Location> locations = new Collection<Models.Location.Location>();
-
-    private void LocationChanged(Collection<Location> newLocations)
+    private void DrawRoute(IReadOnlyList<Location> locations)
     {
-        locations = newLocations;
-        DrawLine(newLocations);
+        RemoveRouteLayers();
 
-        AddStartAndEndPins(newLocations);
-    }
-
-    private void DrawLine(Collection<Location> newLocations)
-    {
-        ControlMapView.Drawables.Clear();
-
-        var line = new Mapsui.UI.Maui.Polyline
+        if (locations.Count == 0)
         {
-            StrokeWidth = 3,
-            StrokeColor = Mapsui.UI.Maui.KnownColor.Red,
-            IsClickable = true
+            return;
+        }
+
+        var projected = locations
+            .Select(location => SphericalMercator.FromLonLat(location.Longitude, location.Latitude))
+            .ToArray();
+
+        routeLayer = new MemoryLayer("Route")
+        {
+            Style = new Mapsui.Styles.VectorStyle
+            {
+                Line = new Mapsui.Styles.Pen(new Mapsui.Styles.Color(255, 0, 0), 3)
+            }
         };
 
-        foreach (var location in newLocations)
+        if (projected.Length > 1)
         {
-            var position = new Position(location.Longitude, location.Latitude);
-            line.Positions.Add(position);
+            var coordinates = projected.Select(point => new Coordinate(point.x, point.y)).ToArray();
+            routeLayer.Features = new[] { new GeometryFeature(new LineString(coordinates)) };
         }
 
-        ControlMapView.Drawables.Add(line);
+        var pointFeatures = new List<IFeature>();
+
+        if (projected.Length > 0)
+        {
+            pointFeatures.Add(new PointFeature(projected[0].x, projected[0].y));
+        }
+
+        if (projected.Length > 1)
+        {
+            pointFeatures.Add(new PointFeature(projected[^1].x, projected[^1].y));
+        }
+
+        pointsLayer = new MemoryLayer("StartAndEnd")
+        {
+            Style = new Mapsui.Styles.SymbolStyle
+            {
+                SymbolType = Mapsui.Styles.SymbolType.Ellipse,
+                Fill = new Mapsui.Styles.Brush(new Mapsui.Styles.Color(0, 200, 0)),
+                SymbolScale = 0.75
+            },
+            Features = pointFeatures
+        };
+
+        ControlMapView.Map.Layers.Add(routeLayer);
+        ControlMapView.Map.Layers.Add(pointsLayer);
+
+        CenterOnRoute(projected);
     }
 
-    private void AddStartAndEndPins(Collection<Location> newLocations)
+    private void RemoveRouteLayers()
     {
-        if (newLocations.Count > 0)
+        if (routeLayer is not null)
         {
-            var startPin = new Mapsui.UI.Maui.Pin(ControlMapView)
-            {
-                Label = "Start",
-                Type = PinType.Svg,
-                Position = new Position(newLocations[0].Longitude, newLocations[0].Latitude),
-                Scale = 0.5F,
-                Color = Colors.Green
-            };
+            ControlMapView.Map.Layers.Remove(routeLayer);
+            routeLayer = null;
+        }
 
-            var endPin = new Mapsui.UI.Maui.Pin(ControlMapView)
-            {
-                Label = "End",
-                Type = PinType.Svg,
-                Position = new Position(newLocations[^1].Longitude, newLocations[^1].Latitude),
-                Scale = 0.5F,
-                Color = Colors.Red
-            };
-
-            SetPinCallout(startPin, "Start", 10, 14, Colors.Black, Colors.Black);
-            SetPinCallout(endPin, "Finish", 10, 14, Colors.Black, Colors.Black);
-
-            ControlMapView.Pins.Add(startPin);
-            ControlMapView.Pins.Add(endPin);
+        if (pointsLayer is not null)
+        {
+            ControlMapView.Map.Layers.Remove(pointsLayer);
+            pointsLayer = null;
         }
     }
 
-    private void SetPinCallout(Mapsui.UI.Maui.Pin pin, string title, int arrowHeight, int titleFontSize, Color color, Color titleFontColor)
+    private void CenterOnRoute((double x, double y)[] projected)
     {
-        pin.ShowCallout();
-        pin.Callout.ArrowHeight = arrowHeight;
-        pin.Callout.TitleFontSize = titleFontSize;
-        pin.Callout.Color = color;
-        pin.Callout.TitleFontColor = titleFontColor;
-        pin.Callout.Title = title;
-        pin.Callout.IsClosableByClick = false;
+        var minX = projected.Min(point => point.x);
+        var maxX = projected.Max(point => point.x);
+        var minY = projected.Min(point => point.y);
+        var maxY = projected.Max(point => point.y);
+
+        var paddingX = (maxX - minX) * 0.25;
+        var paddingY = (maxY - minY) * 0.25;
+
+        if (paddingX <= 0)
+        {
+            paddingX = 100;
+        }
+
+        if (paddingY <= 0)
+        {
+            paddingY = 100;
+        }
+
+        var box = new MRect(minX - paddingX, minY - paddingY, maxX + paddingX, maxY + paddingY);
+        ControlMapView.Map.Navigator.ZoomToBox(box, MBoxFit.Fill);
     }
 }

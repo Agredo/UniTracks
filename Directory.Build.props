@@ -1,0 +1,50 @@
+<Project>
+	<!-- Shared per-project TFM/version overrides (ProjectTargetFramework, MauiNugetVersion). -->
+	<Import Project="projects.props" Condition="Exists('projects.props')" />
+
+	<PropertyGroup>
+		<!-- Platform TFMs used by MAUI projects (app head + MAUI class libraries).
+		     Non-MAUI class libraries target plain $(ProjectTargetFramework) instead. -->
+		<MauiTargetFrameworks>net11.0-android;net11.0-ios;net11.0-maccatalyst</MauiTargetFrameworks>
+		<MauiTargetFrameworks Condition="$([MSBuild]::IsOSPlatform('windows'))">$(MauiTargetFrameworks);net11.0-windows10.0.26100.0</MauiTargetFrameworks>
+
+		<!-- Gemeinsame Plattform-Versionen -->
+		<SupportedOSPlatformVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'ios'">16.0</SupportedOSPlatformVersion>
+		<SupportedOSPlatformVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'maccatalyst'">15.0</SupportedOSPlatformVersion>
+		<SupportedOSPlatformVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'android'">24.0</SupportedOSPlatformVersion>
+		<SupportedOSPlatformVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'windows'">10.0.17763.0</SupportedOSPlatformVersion>
+		<TargetPlatformMinVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'windows'">10.0.17763.0</TargetPlatformMinVersion>
+
+		<!-- Gemeinsame .NET Einstellungen -->
+		<ImplicitUsings>enable</ImplicitUsings>
+		<Nullable>enable</Nullable>
+
+		<!-- Central Package-Versions -->
+		<MauiVersion>11.0.0-preview.7.26406.9</MauiVersion>
+		<MauiCommunityToolkitVersion>15.0.1</MauiCommunityToolkitVersion>
+		<CommunityToolkitMvvmVersion>8.4.2</CommunityToolkitMvvmVersion>
+		<MicrosoftExtensionsLoggingDebugVersion>11.0.0-preview.7.26381.103</MicrosoftExtensionsLoggingDebugVersion>
+		<EntityFrameworkCoreVersion>11.0.0-preview.7.26381.103</EntityFrameworkCoreVersion>
+		<LiteDBVersion>5.0.21</LiteDBVersion>
+		<MapsuiMauiVersion>5.1.0</MapsuiMauiVersion>
+		<AgredoMvvmServicesVersion>1.2.0</AgredoMvvmServicesVersion>
+
+		<!-- Disable ReadyToRun precompilation to avoid Crossgen2/ILCompiler issues in Release -->
+		<PublishReadyToRun>false</PublishReadyToRun>
+	</PropertyGroup>
+
+	<!-- Auto-detect PlatformTarget for Windows builds when not explicitly set via CLI.
+	     Restricted to net*-windows TFMs only. -->
+	<PropertyGroup Condition="$([MSBuild]::IsOSPlatform('windows'))
+					And '$(PlatformTarget)' == ''
+					And $([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'windows'">
+		<PlatformTarget Condition="$([System.Runtime.InteropServices.RuntimeInformation]::OSArchitecture) == 'Arm64'">arm64</PlatformTarget>
+		<PlatformTarget Condition="'$(PlatformTarget)' == ''">x64</PlatformTarget>
+	</PropertyGroup>
+
+	<!-- Non-MAUI class libraries are RID-agnostic for non-Windows TFMs only. -->
+	<PropertyGroup Condition="'$(UseMaui)' != 'true'
+					And $([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) != 'windows'">
+		<IsRidAgnostic>true</IsRidAgnostic>
+	</PropertyGroup>
+</Project>

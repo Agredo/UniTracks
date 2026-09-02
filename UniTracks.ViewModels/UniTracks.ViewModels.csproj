@@ -1,17 +1,18 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net8.0</TargetFramework>
-    <ImplicitUsings>enable</ImplicitUsings>
-    <Nullable>enable</Nullable>
+    <TargetFramework>$(ProjectTargetFramework)</TargetFramework>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="CommunityToolkit.Mvvm" Version="8.2.2" />
+    <PackageReference Include="CommunityToolkit.Mvvm" Version="$(CommunityToolkitMvvmVersion)" />
+    <PackageReference Include="AgredoApplication.MVVM.Services" Version="$(AgredoMvvmServicesVersion)" />
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\UniTracks.ViewModels.Core\UniTracks.ViewModels.Core.csproj" />
+    <ProjectReference Include="..\UniTracks.Services\UniTracks.Services.csproj" />
+    <ProjectReference Include="..\UniTracks.Data\UniTracks.Data.csproj" />
+    <ProjectReference Include="..\UniTracks.Models\UniTracks.Models.csproj" />
   </ItemGroup>
 
 </Project>

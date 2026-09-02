@@ -1,4 +1,5 @@
-﻿using CommunityToolkit.Mvvm.ComponentModel;
+using AgredoApplication.MVVM.Services.Abstractions.Navigation;
+using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using UniTracks.Data.Repository;
 using UniTracks.Data.SQLite;
@@ -6,11 +7,9 @@ using UniTracks.Models.User;
 
 namespace UniTracks.ViewModels.Controls.Popups;
 
-public delegate Task CloseHandler<T>(T result);
-
-public partial class UserCreationPopupViewModel : ObservableObject
+public partial class UserCreationPopupViewModel : ObservableObject, IPopupResultProvider<bool>
 {
-    public event CloseHandler<bool> OnClose;
+    public event EventHandler<bool>? Completed;
 
     public IGenericRepository<SqliteDBContext> SqliteRepository { get; }
 
@@ -35,21 +34,20 @@ public partial class UserCreationPopupViewModel : ObservableObject
     }
 
     [RelayCommand]
-    private void CreateUser()
+    private async Task CreateUser()
     {
-        var user = new User() { Name = name, Email = email, Password = password };
-        SqliteRepository.Add(user);
+        var user = new User() { Name = Name, Email = Email, Password = Password };
+        await SqliteRepository.Add(user);
 
-        OnClose?.Invoke(true);
+        Completed?.Invoke(this, true);
     }
 
     [RelayCommand]
-    private void Cancel()
+    private async Task Cancel()
     {
-        //CreateDefaultUser
         var user = new User() { Name = "User" };
-        SqliteRepository.Add(user);
+        await SqliteRepository.Add(user);
 
-        OnClose?.Invoke(true);
+        Completed?.Invoke(this, true);
     }
 }

@@ -1,24 +1,21 @@
-﻿using CommunityToolkit.Mvvm.ComponentModel;
-using CommunityToolkit.Mvvm.Input;
 using System.Collections.ObjectModel;
-using UniTracks.Common.Contants;
-using UniTracks.Common.ExtensionMethods;
+using AgredoApplication.MVVM.Services.Abstractions.IO;
+using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.Input;
 using UniTracks.Data.LiteDB;
 using UniTracks.Data.Repository;
 using UniTracks.Data.SQLite;
-using UniTracks.Models.Location;
+using UniTracks.Models.Constants;
 using UniTracks.Models.Trip;
-using UniTracks.Services.ApplicationModel.DataTransfer;
 using UniTracks.Services.Data;
-using UniTracks.Services.IO;
 using UniTracks.Services.Location;
+using LocationModel = UniTracks.Models.Location.Location;
 
 namespace UniTracks.ViewModels.Pages;
 
 public partial class StartPageViewModel : ObservableObject
 {
     public ILocationService LocationService { get; }
-    public IShare Share { get; }
     public IFileSystem FileSystem { get; }
     public IGpsDataStorageService GpsDataStorageService { get; }
     public IGenericRepository<SqliteDBContext> SqliteRepository { get; }
@@ -27,14 +24,19 @@ public partial class StartPageViewModel : ObservableObject
     public string LiteDBDatabasePath { get; private set; }
 
     [ObservableProperty]
-    public ObservableCollection<Location> locations = new ObservableCollection<Location>();
-    [ObservableProperty]
-    private string debugText;
+    private ObservableCollection<LocationModel> locations = new ObservableCollection<LocationModel>();
 
-    public StartPageViewModel(ILocationService locationService, IShare share, IFileSystem fileSystem, IGpsDataStorageService gpsDataStorageService, IGenericRepository<SqliteDBContext> sqliteRepository, IGenericLiteDBRepository<ILiteDatabase> liteDBRepository)
+    [ObservableProperty]
+    private string? debugText;
+
+    public StartPageViewModel(
+        ILocationService locationService,
+        IFileSystem fileSystem,
+        IGpsDataStorageService gpsDataStorageService,
+        IGenericRepository<SqliteDBContext> sqliteRepository,
+        IGenericLiteDBRepository<ILiteDatabase> liteDBRepository)
     {
         LocationService = locationService;
-        Share = share;
         FileSystem = fileSystem;
         GpsDataStorageService = gpsDataStorageService;
         SqliteRepository = sqliteRepository;
@@ -42,26 +44,24 @@ public partial class StartPageViewModel : ObservableObject
         DatabasePath = Path.Combine(FileSystem.AppDataDirectory, ApplicationConstants.SQliteDatabaseName);
         LiteDBDatabasePath = Path.Combine(FileSystem.AppDataDirectory, ApplicationConstants.LiteDBName);
 
-        StopListening().Await();
-
+        _ = StopListening();
     }
 
     [RelayCommand]
-    public async Task StartListening()
+    private async Task StartListening()
     {
         await LocationService.StartListening();
     }
 
     [RelayCommand]
-    public async Task StopListening()
+    private async Task StopListening()
     {
         LocationService.StopListening();
 
-        await LocationfromLastTrip();
-
+        await LoadLocationsFromLastTripAsync();
     }
 
-    private async Task LocationfromLastTrip()
+    private async Task LoadLocationsFromLastTripAsync()
     {
         List<Trip> trips = (await SqliteRepository.GetAllAsync<Trip>(trip => trip.Locations)).ToList();
 
@@ -71,32 +71,29 @@ public partial class StartPageViewModel : ObservableObject
             Trip lastTrip = trips.Last();
 
             Console.WriteLine($"Last Trip: {lastTrip.ID} {lastTrip.StartTime}");
-            lastTrip.Locations?.ForEach(location =>
-            {
-                Locations.Add(location);
-            });
+            lastTrip.Locations?.ForEach(location => Locations.Add(location));
         }
     }
 
     [RelayCommand]
-    public async Task ShareDatabase()
+    private async Task ShareDatabase()
     {
-        List<Models.Location.Location> sqliteLocations = (await SqliteRepository.GetAllAsync<Location>()).ToList();
-        List<Models.Location.Location> liteDBLocations = (await LiteDBRepository.GetAllAsync<Location>()).ToList();
+        List<LocationModel> sqliteLocations = (await SqliteRepository.GetAllAsync<LocationModel>()).ToList();
+        List<LocationModel> liteDBLocations = (await LiteDBRepository.GetAllAsync<LocationModel>()).ToList();
         Console.WriteLine($"Total SQLite Locations: {sqliteLocations.Count}");
         Console.WriteLine($"Total LiteDB Locations: {liteDBLocations.Count}");
 
-        sqliteLocations.ForEach(async x => Console.WriteLine($"SQLite {x.Timestamp} - {x.ID} - {x.Longitude} - {x.Latitude}"));
-        liteDBLocations.ForEach(async x => Console.WriteLine($"LiteDB {x.Timestamp} - {x.ID} - {x.Longitude} - {x.Latitude}"));
+        sqliteLocations.ForEach(x => Console.WriteLine($"SQLite {x.Timestamp} - {x.ID} - {x.Longitude} - {x.Latitude}"));
+        liteDBLocations.ForEach(x => Console.WriteLine($"LiteDB {x.Timestamp} - {x.ID} - {x.Longitude} - {x.Latitude}"));
 
-        await LocationfromLastTrip();
+        await LoadLocationsFromLastTripAsync();
 
-        await Share.ShareFiles("Share Databases", new string[] { DatabasePath, LiteDBDatabasePath });
+        await FileSystem.ShareFilesAsync("Share Databases", new[] { DatabasePath, LiteDBDatabasePath });
     }
 
     [RelayCommand]
-    public async Task ImportDatabase()
+    private async Task ImportDatabase()
     {
-
+        await Task.CompletedTask;
     }
 }

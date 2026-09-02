@@ -1,30 +1,24 @@
-﻿using CommunityToolkit.Mvvm.ComponentModel;
-using CommunityToolkit.Mvvm.Input;
-using GeoCoordinatePortable;
 using System.Collections.ObjectModel;
-using UniTracks.Common.Contants;
-using UniTracks.Common.ExtensionMethods;
+using AgredoApplication.MVVM.Services.Abstractions.IO;
+using AgredoApplication.MVVM.Services.Abstractions.Navigation;
+using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.Input;
 using UniTracks.Data.LiteDB;
 using UniTracks.Data.Repository;
 using UniTracks.Data.SQLite;
-using UniTracks.Models.Location;
+using UniTracks.Models.Constants;
 using UniTracks.Models.Trip;
-using UniTracks.Models.User;
-using UniTracks.Services.ApplicationModel.DataTransfer;
 using UniTracks.Services.Data;
-using UniTracks.Services.IO;
 using UniTracks.Services.Location;
-using UniTracks.Services.Navigation;
+using LocationModel = UniTracks.Models.Location.Location;
 
 namespace UniTracks.ViewModels.Pages.Tabs;
 
 public partial class TripTabPageViewModel : ObservableObject
 {
-    public Services.Navigation.INavigation Navigation { get; }
-    public INavigationRoutes NavigationRoutes { get; }
-    public IPopupNavigation PopupNavigation { get; }
+    public INavigationService Navigation { get; }
+    public IPopupNavigationService PopupNavigation { get; }
     public ILocationService LocationService { get; }
-    public IShare Share { get; }
     public IFileSystem FileSystem { get; }
     public IGpsDataStorageService GpsDataStorageService { get; }
     public IGenericRepository<SqliteDBContext> SqliteRepository { get; }
@@ -32,37 +26,43 @@ public partial class TripTabPageViewModel : ObservableObject
     public string DatabasePath { get; }
     public string LiteDBDatabasePath { get; private set; }
 
-
     [ObservableProperty]
-    private ObservableCollection<Location> locations = new ObservableCollection<Location>();
+    private ObservableCollection<LocationModel> locations = new ObservableCollection<LocationModel>();
 
     [ObservableProperty]
     private ObservableCollection<Trip> trips = new ObservableCollection<Trip>();
 
     [ObservableProperty]
-    private string debugText;
+    private string? debugText;
 
-    [ObservableProperty]
-    private Trip selectedTrip;
+    private Trip? selectedTrip;
+    public Trip? SelectedTrip
+    {
+        get => selectedTrip;
+        set
+        {
+            if (SetProperty(ref selectedTrip, value) && value is not null)
+            {
+                _ = Navigation.ShellNavigationTo("TripOverviewPage", new Dictionary<string, object> { { "parameter", value } });
+            }
+        }
+    }
 
     [ObservableProperty]
     private bool refreshIndicatorVisible;
 
-    public TripTabPageViewModel(INavigation navigation, 
-        INavigationRoutes navigationRoutes,
-        IPopupNavigation popupNavigation,
-        ILocationService locationService, 
-        IShare share, 
-        IFileSystem fileSystem, 
-        IGpsDataStorageService gpsDataStorageService, 
-        IGenericRepository<SqliteDBContext> sqliteRepository, 
+    public TripTabPageViewModel(
+        INavigationService navigation,
+        IPopupNavigationService popupNavigation,
+        ILocationService locationService,
+        IFileSystem fileSystem,
+        IGpsDataStorageService gpsDataStorageService,
+        IGenericRepository<SqliteDBContext> sqliteRepository,
         IGenericLiteDBRepository<ILiteDatabase> liteDBRepository)
     {
         Navigation = navigation;
-        NavigationRoutes = navigationRoutes;
         PopupNavigation = popupNavigation;
         LocationService = locationService;
-        Share = share;
         FileSystem = fileSystem;
         GpsDataStorageService = gpsDataStorageService;
         SqliteRepository = sqliteRepository;
@@ -70,20 +70,20 @@ public partial class TripTabPageViewModel : ObservableObject
         DatabasePath = Path.Combine(FileSystem.AppDataDirectory, ApplicationConstants.SQliteDatabaseName);
         LiteDBDatabasePath = Path.Combine(FileSystem.AppDataDirectory, ApplicationConstants.LiteDBName);
 
-        GetTrips().Await();
+        _ = GetTrips();
     }
 
     private async Task GetTrips()
     {
-
         Trips.Clear();
-        (await SqliteRepository.GetAllAsync<Trip>(trip => trip.Locations)).OrderByDescending(trip => trip.StartTime).ToList().ForEach(trip =>
+        var orderedTrips = (await SqliteRepository.GetAllAsync<Trip>(trip => trip.Locations))
+            .OrderByDescending(trip => trip.StartTime)
+            .ToList();
+
+        foreach (var trip in orderedTrips)
         {
-            if (trip != null)
-            {
-                Trips.Add(trip);
-            }
-        });
+            Trips.Add(trip);
+        }
 
         if (Trips.Count > 0)
         {
@@ -91,38 +91,14 @@ public partial class TripTabPageViewModel : ObservableObject
             Trip lastTrip = Trips.Last();
 
             Console.WriteLine($"Last Trip: {lastTrip.ID} {lastTrip.StartTime}");
-            lastTrip.Locations?.ForEach(location =>
-            {
-                Locations.Add(location);
-            });
+            lastTrip.Locations?.ForEach(location => Locations.Add(location));
         }
-
-        double calculateDistance(List<Location> locations)
-        {
-            double distance = 0;
-            for (int i = 0; i < locations.Count - 1; i++)
-            {
-                var location1 = locations[i];
-                var location2 = locations[i + 1];
-                GeoCoordinate coordinate1 = new GeoCoordinate(location1.Latitude, location1.Longitude);
-                GeoCoordinate coordinate2 = new GeoCoordinate(location2.Latitude, location2.Longitude);
-
-                distance += coordinate1.GetDistanceTo(coordinate2);
-            }
-
-            return distance;
-        }
-    }
-
-    partial void OnSelectedTripChanged(Trip? oldValue, Trip newValue)
-    {
-        Navigation.NavigateTo(NavigationRoutes.TripOverviewPage, newValue);
     }
 
     [RelayCommand]
     private void SelectedTripChanged()
     {
-        //Navigation.NavigateTo(NavigationRoutes.TripOverviewPage, SelectedTrip);
+        // Selection is handled via the SelectedTrip property setter.
     }
 
     [RelayCommand]

@@ -1,14 +1,15 @@
-using Maui.BindableProperty.Generator.Core;
+﻿using System.Linq;
 using System.Windows.Input;
+using CommunityToolkit.Maui;
 using UniTracks.Models.Trip;
 
 namespace UniTracks.Maui.Views.Tabs.StartPage;
 
 public partial class TripsTab : ContentView
 {
-	public TripsTab()
-	{
-		InitializeComponent();
+    public TripsTab()
+    {
+        InitializeComponent();
         IsRefreshing = Refresh.IsRefreshing;
 
         Refresh.Refreshing += (s, e) =>
@@ -17,49 +18,78 @@ public partial class TripsTab : ContentView
         };
     }
 
-    [AutoBindable(OnChanged = nameof(TripsChanged))]
-    private ICollection<Trip> trips;
+    [BindableProperty(PropertyChangedMethodName = nameof(OnTripsPropertyChanged))]
+    public partial ICollection<Trip>? Trips { get; set; }
 
-    [AutoBindable(OnChanged = nameof(SelectedTripChanged))]
-    private Trip selectedTrip;
+    [BindableProperty(PropertyChangedMethodName = nameof(OnSelectedTripPropertyChanged), DefaultBindingMode = BindingMode.TwoWay)]
+    public partial Trip? SelectedTrip { get; set; }
 
-    [AutoBindable(OnChanged = nameof(SelectionChangedCommandChanged), DefaultBindingMode = nameof(BindingMode.TwoWay))]
-    private ICommand selectionChaged;
+    [BindableProperty(PropertyChangedMethodName = nameof(OnSelectionChangedPropertyChanged), DefaultBindingMode = BindingMode.TwoWay)]
+    public partial ICommand? SelectionChanged { get; set; }
 
-    [AutoBindable(OnChanged = nameof(PullToRefreshCommandCommandChanged), DefaultBindingMode = nameof(BindingMode.TwoWay))]
-    private ICommand pullToRefresh;
+    [BindableProperty(PropertyChangedMethodName = nameof(OnPullToRefreshPropertyChanged), DefaultBindingMode = BindingMode.TwoWay)]
+    public partial ICommand? PullToRefresh { get; set; }
 
-    [AutoBindable(OnChanged = nameof(IsRefreshingChanged), DefaultBindingMode = nameof(BindingMode.TwoWay))]
-    private bool isRefreshing;
+    [BindableProperty(PropertyChangedMethodName = nameof(OnIsRefreshingPropertyChanged), DefaultBindingMode = BindingMode.TwoWay)]
+    public partial bool IsRefreshing { get; set; }
 
-    private void TripsChanged(ICollection<Trip> newTrips)
+    private static void OnTripsPropertyChanged(BindableObject bindable, object oldValue, object newValue)
     {
-		TracksCollectionView.ItemsSource = newTrips;
+        var tab = (TripsTab)bindable;
+        tab.TripsChanged((ICollection<Trip>?)newValue);
     }
 
-	private void SelectedTripChanged(Trip newTrip)
+    private static void OnSelectedTripPropertyChanged(BindableObject bindable, object oldValue, object newValue)
     {
-		TracksCollectionView.SelectedItem = newTrip;
+        var tab = (TripsTab)bindable;
+        tab.SelectedTripChanged((Trip?)newValue);
+    }
+
+    private static void OnSelectionChangedPropertyChanged(BindableObject bindable, object oldValue, object newValue)
+    {
+        var tab = (TripsTab)bindable;
+        tab.SelectionChangedCommandChanged((ICommand?)newValue);
+    }
+
+    private static void OnPullToRefreshPropertyChanged(BindableObject bindable, object oldValue, object newValue)
+    {
+        var tab = (TripsTab)bindable;
+        tab.PullToRefreshCommandChanged((ICommand?)newValue);
+    }
+
+    private static void OnIsRefreshingPropertyChanged(BindableObject bindable, object oldValue, object newValue)
+    {
+        var tab = (TripsTab)bindable;
+        tab.IsRefreshingChanged((bool)newValue);
+    }
+
+    private void TripsChanged(ICollection<Trip>? newTrips)
+    {
+        TracksCollectionView.ItemsSource = newTrips;
+    }
+
+    private void SelectedTripChanged(Trip? newTrip)
+    {
+        TracksCollectionView.SelectedItem = newTrip;
     }
 
     private void TracksCollectionView_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {
-		SelectedTrip = e.CurrentSelection.FirstOrDefault() as Trip;
+        SelectedTrip = e.CurrentSelection.FirstOrDefault() as Trip;
     }
 
-	private void SelectionChangedCommandChanged(ICommand newCommand)
+    private void SelectionChangedCommandChanged(ICommand? newCommand)
     {
         TracksCollectionView.SelectionChangedCommand = newCommand;
-		
     }
 
-    private void PullToRefreshCommandCommandChanged(ICommand newCommand)
+    private void PullToRefreshCommandChanged(ICommand? newCommand)
     {
         Refresh.Command = newCommand;
     }
 
-    private void IsRefreshingChanged(bool newvalue)
+    private void IsRefreshingChanged(bool newValue)
     {
-        Refresh.IsRefreshing = newvalue; 
+        Refresh.IsRefreshing = newValue;
     }
 }
