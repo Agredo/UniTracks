@@ -30,8 +30,6 @@ public partial class RecordTripTabPageViewModel : ObservableObject
     private const string RedColor = "#FF0000";
     private const string WhiteColor = "#FFFFFF";
 
-    private bool isRecording = false;
-
     private readonly Stopwatch stopWatch = new Stopwatch();
 
     private readonly EventHandler stopWatchEventHandler;
@@ -79,6 +77,12 @@ public partial class RecordTripTabPageViewModel : ObservableObject
     [ObservableProperty]
     private string stopWatchTime = "00:00:000";
 
+    [ObservableProperty]
+    private bool isRecording;
+
+    [ObservableProperty]
+    private string statusText = "Bereit";
+
     [RelayCommand]
     private async Task StartListening()
     {
@@ -87,11 +91,12 @@ public partial class RecordTripTabPageViewModel : ObservableObject
             await PopupNavigation.ShowPopupAsync<UserCreationPopupViewModel>();
         }
 
-        if (isRecording)
+        if (IsRecording)
         {
             RecordIconColor = WhiteColor;
             RecordIconSourceString = $"{ApplicationConstants.RawIconBasePath}{ApplicationIconConstants.PlayIcon}";
-            isRecording = false;
+            IsRecording = false;
+            StatusText = "Pausiert";
 
             LocationService.StopListening();
 
@@ -100,7 +105,8 @@ public partial class RecordTripTabPageViewModel : ObservableObject
         }
         else
         {
-            isRecording = true;
+            IsRecording = true;
+            StatusText = "Aufnahme läuft";
             RecordIconColor = RedColor;
             RecordIconSourceString = $"{ApplicationConstants.RawIconBasePath}{ApplicationIconConstants.StopIcon}";
 
@@ -123,6 +129,8 @@ public partial class RecordTripTabPageViewModel : ObservableObject
         Dispatcher.StopTimer();
         stopWatch.Stop();
 
+        IsRecording = false;
+        StatusText = "Bereit";
         RecordIconColor = WhiteColor;
     }
 }

@@ -5,7 +5,7 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
     xmlns:tabViews="clr-namespace:UniTracks.Maui.Views.Tabs.StartPage;assembly=UniTracks.Maui.Views"
     xmlns:viewModels="clr-namespace:UniTracks.ViewModels.Pages.Tabs;assembly=UniTracks.ViewModels"
-    Title="TripTabPage"
+    Title="Trips"
     x:DataType="viewModels:TripTabPageViewModel">
     <Grid>
         <tabViews:TripsTab

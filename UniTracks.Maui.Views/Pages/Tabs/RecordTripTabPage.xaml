@@ -6,22 +6,108 @@
     xmlns:viewModels="clr-namespace:UniTracks.ViewModels.Pages.Tabs;assembly=UniTracks.ViewModels"
     Title="Record Trip"
     x:DataType="viewModels:RecordTripTabPageViewModel">
-    <Grid Padding="0,0,0,12" RowDefinitions="*,Auto">
-        <Label
-            Grid.Row="0"
-            FontSize="48"
-            HorizontalOptions="Center"
-            Text="{Binding StopWatchTime}"
-            TextColor="White"
-            VerticalOptions="Center" />
 
-        <HorizontalStackLayout
+    <Grid Padding="24" RowDefinitions="Auto,*,Auto">
+
+        <!-- Status chip -->
+        <Border
+            Grid.Row="0"
+            Background="{StaticResource AccentSoft}"
+            HorizontalOptions="Center"
+            Padding="16,8"
+            Stroke="{StaticResource AccentDim}"
+            StrokeThickness="1">
+            <Border.StrokeShape>
+                <RoundRectangle CornerRadius="20" />
+            </Border.StrokeShape>
+            <HorizontalStackLayout Spacing="8">
+                <Ellipse
+                    x:Name="StatusDot"
+                    Fill="{StaticResource Accent}"
+                    HeightRequest="8"
+                    VerticalOptions="Center"
+                    WidthRequest="8">
+                    <Ellipse.Triggers>
+                        <DataTrigger
+                            Binding="{Binding IsRecording}"
+                            TargetType="Ellipse"
+                            Value="True">
+                            <Setter Property="Fill" Value="{StaticResource Record}" />
+                        </DataTrigger>
+                    </Ellipse.Triggers>
+                </Ellipse>
+                <Label
+                    FontAttributes="Bold"
+                    FontFamily="OpenSansSemibold"
+                    FontSize="12"
+                    Text="{Binding StatusText}"
+                    TextColor="{StaticResource Accent}"
+                    VerticalOptions="Center">
+                    <Label.Triggers>
+                        <DataTrigger
+                            Binding="{Binding IsRecording}"
+                            TargetType="Label"
+                            Value="True">
+                            <Setter Property="TextColor" Value="{StaticResource Record}" />
+                        </DataTrigger>
+                    </Label.Triggers>
+                </Label>
+            </HorizontalStackLayout>
+            <Border.Triggers>
+                <DataTrigger
+                    Binding="{Binding IsRecording}"
+                    TargetType="Border"
+                    Value="True">
+                    <Setter Property="BackgroundColor" Value="{StaticResource RecordSoft}" />
+                    <Setter Property="Stroke" Value="{StaticResource Record}" />
+                </DataTrigger>
+            </Border.Triggers>
+        </Border>
+
+        <!-- Timer -->
+        <Label
             Grid.Row="1"
             HorizontalOptions="Center"
-            Spacing="8"
+            Style="{StaticResource TimerLabel}"
+            Text="{Binding StopWatchTime}"
+            VerticalOptions="Center" />
+
+        <!-- Controls -->
+        <HorizontalStackLayout
+            Grid.Row="2"
+            HorizontalOptions="Center"
+            Spacing="16"
             VerticalOptions="End">
-            <Button Command="{Binding StopListeningCommand}" Text="Stop" />
-            <Button Command="{Binding StartListeningCommand}" Text="Record" />
+
+            <Button
+                Command="{Binding StopListeningCommand}"
+                Style="{StaticResource DangerButton}"
+                Text="Stop"
+                VerticalOptions="Center" />
+
+            <Button Command="{Binding StartListeningCommand}" Style="{StaticResource RoundActionButton}">
+                <Button.ImageSource>
+                    <FileImageSource File="play.png" />
+                </Button.ImageSource>
+                <Button.Triggers>
+                    <DataTrigger
+                        Binding="{Binding IsRecording}"
+                        TargetType="Button"
+                        Value="True">
+                        <Setter Property="ImageSource" Value="stop.png" />
+                        <Setter Property="BackgroundColor" Value="{StaticResource Record}" />
+                        <Setter Property="Shadow">
+                            <Setter.Value>
+                                <Shadow
+                                    Brush="{StaticResource Record}"
+                                    Offset="0,6"
+                                    Opacity="0.35"
+                                    Radius="24" />
+                            </Setter.Value>
+                        </Setter>
+                    </DataTrigger>
+                </Button.Triggers>
+            </Button>
         </HorizontalStackLayout>
     </Grid>
 </ContentPage>

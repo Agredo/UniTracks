@@ -4,93 +4,96 @@
     xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
     xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml">
 
-    <ContentView.Resources>
-        <ResourceDictionary>
-            <Style TargetType="Label">
-                <Setter Property="TextColor" Value="{StaticResource Key=PrimaryDarkText}" />
-            </Style>
-        </ResourceDictionary>
+    <Border Style="{StaticResource CardBorder}">
+        <Grid ColumnDefinitions="Auto,*" ColumnSpacing="14">
 
-    </ContentView.Resources>
-
-    <Border Padding="0" StrokeThickness="0">
-        <Border.StrokeShape>
-            <RoundRectangle CornerRadius="4,4,4,4" />
-        </Border.StrokeShape>
-        <!--<Border.Shadow>
-            <Shadow
-                Brush="Black"
-                Opacity="0.4"
-                Radius="15"
-                Offset="10,10" />
-        </Border.Shadow>-->
-        <Grid
-            Margin="4"
-            Padding="4"
-            Background="{StaticResource Key=White}"
-            ColumnDefinitions="132,*"
-            ColumnSpacing="12">
+            <!-- Activity icon -->
             <Border
                 Grid.Column="0"
-                Padding="0"
-                StrokeThickness="1">
+                HeightRequest="64"
+                Style="{StaticResource AccentChipBorder}"
+                VerticalOptions="Start"
+                WidthRequest="64">
                 <Border.StrokeShape>
-                    <RoundRectangle CornerRadius="4,4,4,4" />
+                    <RoundRectangle CornerRadius="18" />
                 </Border.StrokeShape>
-
                 <Image
-                    HeightRequest="128"
-                    Source="runblack.png"
-                    WidthRequest="128" />
+                    Aspect="AspectFit"
+                    HeightRequest="32"
+                    Source="run.png"
+                    WidthRequest="32" />
             </Border>
 
-            <Grid Grid.Column="1" RowDefinitions="Auto,Auto,Auto">
-                <Label
-                    x:Name="TripNameLabel"
-                    Grid.Row="0"
-                    FontSize="Medium"
-                    TextColor="{StaticResource Key=PrimaryDarkText}" />
-                <Grid
-                    Grid.Row="1"
-                    ColumnDefinitions="*,*,*"
-                    HorizontalOptions="FillAndExpand"
-                    RowDefinitions="*,*,*"
-                    VerticalOptions="FillAndExpand">
+            <VerticalStackLayout Grid.Column="1" Spacing="10">
+
+                <!-- Title + date -->
+                <Grid ColumnDefinitions="*,Auto">
                     <Label
-                        x:Name="TripDistanceLabel"
-                        Grid.Row="0"
+                        x:Name="TripNameLabel"
                         Grid.Column="0"
-                        FontSize="Micro" />
+                        FontFamily="OpenSansSemibold"
+                        FontSize="17"
+                        VerticalTextAlignment="Center" />
                     <Label
-                        x:Name="TripDurationLabel"
-                        Grid.Row="0"
+                        x:Name="TripDateLabel"
                         Grid.Column="1"
-                        FontSize="Micro" />
-                    <Label
-                        x:Name="AverageSpeedLabel"
-                        Grid.Row="1"
-                        Grid.Column="0"
-                        FontSize="Micro" />
-                    <Label
-                        x:Name="MinSpeedLabel"
-                        Grid.Row="1"
-                        Grid.Column="1"
-                        FontSize="Micro" />
-                    <Label
-                        x:Name="MaxSpeedLabel"
-                        Grid.Row="1"
-                        Grid.Column="2"
-                        FontSize="Micro" />
+                        FontSize="11"
+                        TextColor="{StaticResource TextMuted}"
+                        VerticalTextAlignment="Center" />
                 </Grid>
 
-                <Label
-                    x:Name="TripDateLabel"
-                    Grid.Row="2"
-                    Grid.Column="0"
-                    FontSize="Micro"
-                    VerticalOptions="End" />
+                <!-- Hero distance -->
+                <HorizontalStackLayout Spacing="4">
+                    <Label
+                        x:Name="DistanceValueLabel"
+                        FontFamily="OpenSansSemibold"
+                        FontSize="30"
+                        Text="0"
+                        TextColor="{StaticResource Accent}" />
+                    <Label
+                        x:Name="DistanceUnitLabel"
+                        FontFamily="OpenSansSemibold"
+                        FontSize="13"
+                        Text="km"
+                        TextColor="{StaticResource TextMuted}"
+                        VerticalOptions="End"
+                        VerticalTextAlignment="End" />
+                </HorizontalStackLayout>
 
-            </Grid>
+                <!-- Stat chips -->
+                <Grid ColumnDefinitions="*,*,*" ColumnSpacing="8">
+                    <Border Grid.Column="0" Style="{StaticResource ChipBorder}">
+                        <VerticalStackLayout Spacing="2">
+                            <Label Style="{StaticResource StatLabel}" Text="DAUER" />
+                            <Label
+                                x:Name="DurationValueLabel"
+                                FontFamily="OpenSansSemibold"
+                                FontSize="15"
+                                Text="--:--" />
+                        </VerticalStackLayout>
+                    </Border>
+                    <Border Grid.Column="1" Style="{StaticResource ChipBorder}">
+                        <VerticalStackLayout Spacing="2">
+                            <Label Style="{StaticResource StatLabel}" Text="&#xD8; KM/H" />
+                            <Label
+                                x:Name="AverageSpeedValueLabel"
+                                FontFamily="OpenSansSemibold"
+                                FontSize="15"
+                                Text="-" />
+                        </VerticalStackLayout>
+                    </Border>
+                    <Border Grid.Column="2" Style="{StaticResource ChipBorder}">
+                        <VerticalStackLayout Spacing="2">
+                            <Label Style="{StaticResource StatLabel}" Text="MAX KM/H" />
+                            <Label
+                                x:Name="MaxSpeedValueLabel"
+                                FontFamily="OpenSansSemibold"
+                                FontSize="15"
+                                Text="-" />
+                        </VerticalStackLayout>
+                    </Border>
+                </Grid>
+            </VerticalStackLayout>
         </Grid>
     </Border>
 </ContentView>

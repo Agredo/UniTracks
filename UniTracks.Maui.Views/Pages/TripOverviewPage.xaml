@@ -6,9 +6,80 @@
     xmlns:controls="clr-namespace:UniTracks.Maui.Views.Controls;assembly=UniTracks.Maui.Views"
     xmlns:models="clr-namespace:UniTracks.Models.Trip;assembly=UniTracks.Models"
     xmlns:vm="clr-namespace:UniTracks.ViewModels.Pages;assembly=UniTracks.ViewModels"
-    Title="TripOverviewPage"
+    Title="Trip"
     x:DataType="vm:TripOverviewViewModel">
+
     <Grid>
         <controls:MapView Locations="{Binding Locations}" />
+
+        <!-- Floating stats card -->
+        <Border
+            Margin="16"
+            Style="{StaticResource CardBorder}"
+            VerticalOptions="Start">
+            <VerticalStackLayout Spacing="10">
+
+                <Grid ColumnDefinitions="*,Auto">
+                    <Label
+                        Grid.Column="0"
+                        FontFamily="OpenSansSemibold"
+                        FontSize="20"
+                        Text="{Binding TripName}" />
+                    <Label
+                        Grid.Column="1"
+                        FontSize="11"
+                        Text="{Binding DateText}"
+                        TextColor="{StaticResource TextMuted}"
+                        VerticalTextAlignment="Center" />
+                </Grid>
+
+                <Grid ColumnDefinitions="*,*,*,*" ColumnSpacing="8">
+                    <Border Grid.Column="0" Style="{StaticResource AccentChipBorder}">
+                        <VerticalStackLayout Spacing="2">
+                            <Label Style="{StaticResource StatLabel}" Text="DISTANZ" />
+                            <HorizontalStackLayout Spacing="3">
+                                <Label
+                                    FontFamily="OpenSansSemibold"
+                                    FontSize="16"
+                                    Text="{Binding DistanceText}"
+                                    TextColor="{StaticResource Accent}" />
+                                <Label
+                                    FontSize="11"
+                                    Text="{Binding DistanceUnit}"
+                                    TextColor="{StaticResource TextMuted}"
+                                    VerticalOptions="End" />
+                            </HorizontalStackLayout>
+                        </VerticalStackLayout>
+                    </Border>
+                    <Border Grid.Column="1" Style="{StaticResource ChipBorder}">
+                        <VerticalStackLayout Spacing="2">
+                            <Label Style="{StaticResource StatLabel}" Text="DAUER" />
+                            <Label
+                                FontFamily="OpenSansSemibold"
+                                FontSize="16"
+                                Text="{Binding DurationText}" />
+                        </VerticalStackLayout>
+                    </Border>
+                    <Border Grid.Column="2" Style="{StaticResource ChipBorder}">
+                        <VerticalStackLayout Spacing="2">
+                            <Label Style="{StaticResource StatLabel}" Text="&#xD8; KM/H" />
+                            <Label
+                                FontFamily="OpenSansSemibold"
+                                FontSize="16"
+                                Text="{Binding AverageSpeedText}" />
+                        </VerticalStackLayout>
+                    </Border>
+                    <Border Grid.Column="3" Style="{StaticResource ChipBorder}">
+                        <VerticalStackLayout Spacing="2">
+                            <Label Style="{StaticResource StatLabel}" Text="MAX KM/H" />
+                            <Label
+                                FontFamily="OpenSansSemibold"
+                                FontSize="16"
+                                Text="{Binding MaxSpeedText}" />
+                        </VerticalStackLayout>
+                    </Border>
+                </Grid>
+            </VerticalStackLayout>
+        </Border>
     </Grid>
 </ContentPage>

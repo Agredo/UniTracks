@@ -9,7 +9,7 @@
     Shell.FlyoutBehavior="Disabled">
 
     <TabBar>
-        <Tab Title="Trips" Icon="map.png">
+        <Tab Title="Trips" Icon="mapblack.png">
             <ShellContent Title="Trips" ContentTemplate="{DataTemplate tabPages:TripTabPage}" />
         </Tab>
         <Tab Title="Record" Icon="record.png">

@@ -28,6 +28,46 @@
 
     <Color x:Key="AppBackgroundDark">#9DB0A2</Color>
 
+    <!--  2026 dark sport design tokens (legacy keys above stay untouched)  -->
+    <Color x:Key="Surface">#0C120E</Color>
+    <Color x:Key="SurfaceAlt">#121A14</Color>
+    <Color x:Key="Card">#182119</Color>
+    <Color x:Key="CardAlt">#1F2A22</Color>
+    <Color x:Key="CardStroke">#2A382E</Color>
+    <Color x:Key="TextPrimary">#F2F7F3</Color>
+    <Color x:Key="TextSecondary">#A9B8AC</Color>
+    <Color x:Key="TextMuted">#6B7A6D</Color>
+    <Color x:Key="Accent">#4DE790</Color>
+    <Color x:Key="AccentDim">#2E7D54</Color>
+    <Color x:Key="AccentSoft">#1B3A29</Color>
+    <Color x:Key="OnAccent">#06130B</Color>
+    <Color x:Key="Record">#FF4D5E</Color>
+    <Color x:Key="RecordSoft">#3A1B20</Color>
+    <Color x:Key="LavenderSoft">#26203A</Color>
+
+    <SolidColorBrush x:Key="SurfaceBrush" Color="{StaticResource Surface}" />
+    <SolidColorBrush x:Key="SurfaceAltBrush" Color="{StaticResource SurfaceAlt}" />
+    <SolidColorBrush x:Key="CardBrush" Color="{StaticResource Card}" />
+    <SolidColorBrush x:Key="CardAltBrush" Color="{StaticResource CardAlt}" />
+    <SolidColorBrush x:Key="CardStrokeBrush" Color="{StaticResource CardStroke}" />
+    <SolidColorBrush x:Key="TextPrimaryBrush" Color="{StaticResource TextPrimary}" />
+    <SolidColorBrush x:Key="TextSecondaryBrush" Color="{StaticResource TextSecondary}" />
+    <SolidColorBrush x:Key="TextMutedBrush" Color="{StaticResource TextMuted}" />
+    <SolidColorBrush x:Key="AccentBrush" Color="{StaticResource Accent}" />
+    <SolidColorBrush x:Key="AccentSoftBrush" Color="{StaticResource AccentSoft}" />
+    <SolidColorBrush x:Key="OnAccentBrush" Color="{StaticResource OnAccent}" />
+    <SolidColorBrush x:Key="RecordBrush" Color="{StaticResource Record}" />
+    <SolidColorBrush x:Key="RecordSoftBrush" Color="{StaticResource RecordSoft}" />
+
+    <LinearGradientBrush x:Key="AccentGradientBrush" StartPoint="0,0" EndPoint="1,1">
+        <GradientStop Offset="0.0" Color="#4DE790" />
+        <GradientStop Offset="1.0" Color="#25C06B" />
+    </LinearGradientBrush>
+    <LinearGradientBrush x:Key="HeroGradientBrush" StartPoint="0,0" EndPoint="0,1">
+        <GradientStop Offset="0.0" Color="#14231A" />
+        <GradientStop Offset="1.0" Color="{StaticResource Surface}" />
+    </LinearGradientBrush>
+
     <SolidColorBrush x:Key="PrimaryBrush" Color="{StaticResource Primary}" />
     <SolidColorBrush x:Key="SecondaryBrush" Color="{StaticResource Secondary}" />
     <SolidColorBrush x:Key="TertiaryBrush" Color="{StaticResource Tertiary}" />

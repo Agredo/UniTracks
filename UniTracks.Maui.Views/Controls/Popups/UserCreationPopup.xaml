@@ -15,43 +15,91 @@
         <Style x:Key="ValidEntryStyle" TargetType="Entry">
             <Setter Property="IsEnabled" Value="True" />
         </Style>
+        <Style x:Key="FieldBorder" TargetType="Border">
+            <Setter Property="BackgroundColor" Value="{StaticResource CardAlt}" />
+            <Setter Property="Stroke" Value="{StaticResource CardStroke}" />
+            <Setter Property="StrokeThickness" Value="1" />
+            <Setter Property="Padding" Value="12,0" />
+            <Setter Property="StrokeShape">
+                <Setter.Value>
+                    <RoundRectangle CornerRadius="12" />
+                </Setter.Value>
+            </Setter>
+        </Style>
+        <Style x:Key="FieldLabel" TargetType="Label">
+            <Setter Property="Style" Value="{StaticResource SectionHeader}" />
+        </Style>
     </toolkit:Popup.Resources>
 
-    <Grid ColumnDefinitions="10*,80*,10*">
-        <VerticalStackLayout Grid.Column="1">
-            <Label FontSize="Title" Text="Create User" />
+    <Border
+        Padding="24"
+        Style="{StaticResource CardBorder}"
+        WidthRequest="420">
+        <VerticalStackLayout Spacing="12">
 
-            <Label Text="Name" />
-            <Entry Placeholder="Name">
-                <Entry.Behaviors>
-                    <toolkit:CharactersValidationBehavior
-                        CharacterType="Alphanumeric"
-                        Flags="ValidateOnValueChanged"
-                        InvalidStyle="{StaticResource Key=InvalidEntryStyle}"
-                        MinimumCharacterTypeCount="1"
-                        ValidStyle="{StaticResource Key=ValidEntryStyle}" />
-                </Entry.Behaviors>
-            </Entry>
+            <Label Style="{StaticResource TitleLabel}" Text="Profil erstellen" />
+            <Label
+                Style="{StaticResource SubtitleLabel}"
+                Text="Lege dein Sportler-Profil an, um Trips aufzuzeichnen." />
 
-            <Label Text="Email" />
-            <Entry Placeholder="Email" />
+            <Label Style="{StaticResource SectionHeader}" Text="NAME" />
+            <Border Style="{StaticResource FieldBorder}">
+                <Entry Placeholder="Dein Name">
+                    <Entry.Behaviors>
+                        <toolkit:CharactersValidationBehavior
+                            CharacterType="Alphanumeric"
+                            Flags="ValidateOnValueChanged"
+                            InvalidStyle="{StaticResource InvalidEntryStyle}"
+                            MinimumCharacterTypeCount="1"
+                            ValidStyle="{StaticResource ValidEntryStyle}" />
+                    </Entry.Behaviors>
+                </Entry>
+            </Border>
 
-            <Label Text="Password" />
-            <Entry Placeholder="Password" />
+            <Label Style="{StaticResource SectionHeader}" Text="EMAIL" />
+            <Border Style="{StaticResource FieldBorder}">
+                <Entry Keyboard="Email" Placeholder="name@example.com" />
+            </Border>
 
-            <Label Text="Confirm Password" />
-            <Entry Placeholder="Confirm Password" />
+            <Label Style="{StaticResource SectionHeader}" Text="PASSWORT" />
+            <Border Style="{StaticResource FieldBorder}">
+                <Entry IsPassword="True" Placeholder="Passwort" />
+            </Border>
 
-            <Label Text="Height" />
-            <Entry Placeholder="Height" />
+            <Label Style="{StaticResource SectionHeader}" Text="PASSWORT BESTÄTIGEN" />
+            <Border Style="{StaticResource FieldBorder}">
+                <Entry IsPassword="True" Placeholder="Passwort wiederholen" />
+            </Border>
 
-            <Label Text="Weight" />
-            <Entry Placeholder="Weight" />
+            <Grid ColumnDefinitions="*,*" ColumnSpacing="12">
+                <VerticalStackLayout Grid.Column="0" Spacing="4">
+                    <Label Style="{StaticResource SectionHeader}" Text="GRÖSSE" />
+                    <Border Style="{StaticResource FieldBorder}">
+                        <Entry Keyboard="Numeric" Placeholder="cm" />
+                    </Border>
+                </VerticalStackLayout>
+                <VerticalStackLayout Grid.Column="1" Spacing="4">
+                    <Label Style="{StaticResource SectionHeader}" Text="GEWICHT" />
+                    <Border Style="{StaticResource FieldBorder}">
+                        <Entry Keyboard="Numeric" Placeholder="kg" />
+                    </Border>
+                </VerticalStackLayout>
+            </Grid>
 
-            <HorizontalStackLayout>
-                <Button Command="{Binding CreateUserCommand}" Text="OK" />
-                <Button Command="{Binding CancelCommand}" Text="Create Default User" />
-            </HorizontalStackLayout>
+            <Grid
+                ColumnDefinitions="*,*"
+                ColumnSpacing="12"
+                Margin="0,8,0,0">
+                <Button
+                    Command="{Binding CreateUserCommand}"
+                    Grid.Column="0"
+                    Text="Erstellen" />
+                <Button
+                    Command="{Binding CancelCommand}"
+                    Grid.Column="1"
+                    Style="{StaticResource SecondaryButton}"
+                    Text="Standard" />
+            </Grid>
         </VerticalStackLayout>
-    </Grid>
+    </Border>
 </toolkit:Popup>

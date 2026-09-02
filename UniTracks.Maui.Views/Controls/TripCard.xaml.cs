@@ -1,10 +1,12 @@
-﻿using CommunityToolkit.Maui;
-using Microsoft.Maui.Platform;
+using CommunityToolkit.Maui;
+using System.Globalization;
 
 namespace UniTracks.Maui.Views.Controls;
 
 public partial class TripCard : Microsoft.Maui.Controls.ContentView
 {
+    private static readonly CultureInfo GermanCulture = CultureInfo.GetCultureInfo("de-DE");
+
     public TripCard()
     {
         InitializeComponent();
@@ -39,8 +41,7 @@ public partial class TripCard : Microsoft.Maui.Controls.ContentView
 
     private static void OnTripEndDateTimePropertyChanged(BindableObject bindable, object oldValue, object newValue)
     {
-        var tripCard = (TripCard)bindable;
-        tripCard.TripEndDateTimeChanged((DateTimeOffset)newValue);
+        // Reserved for future use.
     }
 
     private static void OnMaxSpeedPropertyChanged(BindableObject bindable, object oldValue, object newValue)
@@ -51,8 +52,7 @@ public partial class TripCard : Microsoft.Maui.Controls.ContentView
 
     private static void OnMinSpeedPropertyChanged(BindableObject bindable, object oldValue, object newValue)
     {
-        var tripCard = (TripCard)bindable;
-        tripCard.MinSpeedChanged((double)newValue);
+        // Reserved for future use.
     }
 
     private static void OnAverageSpeedPropertyChanged(BindableObject bindable, object oldValue, object newValue)
@@ -75,45 +75,44 @@ public partial class TripCard : Microsoft.Maui.Controls.ContentView
 
     private void TripDateTimeChanged(DateTimeOffset newDateTimeOffset)
     {
-        TripDateLabel.Text = newDateTimeOffset.ToString("yyyy-MM-dd HH:mm:ss");
+        TripDateLabel.Text = newDateTimeOffset.ToString("ddd, dd. MMM · HH:mm", GermanCulture);
         SetNameLabelText();
-    }
-
-    private void TripEndDateTimeChanged(DateTimeOffset newDateTimeOffset)
-    {
-        //TripEndDateLabel.Text = newDateTimeOffset.ToString("yyyy-MM-dd HH:mm:ss");
     }
 
     private void MaxSpeedChanged(double newMaxSpeed)
     {
-        MaxSpeedLabel.Text = $"↗️{Math.Round(newMaxSpeed, 1)}m/s";
-    }
-
-    private void MinSpeedChanged(double newMinSpeed)
-    {
-        MinSpeedLabel.Text = $"↘️{Math.Round(newMinSpeed, 1)}m/s";
+        MaxSpeedValueLabel.Text = ToKilometersPerHour(newMaxSpeed);
     }
 
     private void AverageChanged(double newAverageSpeed)
     {
-        AverageSpeedLabel.Text = $"∅{Math.Round(newAverageSpeed, 1)}m/s";
+        AverageSpeedValueLabel.Text = ToKilometersPerHour(newAverageSpeed);
     }
 
     private void DistanceChanged(double newDistance)
     {
-        TripDistanceLabel.Text = $"🏁{Math.Round(newDistance, 1)}m";
+        if (newDistance >= 1000)
+        {
+            DistanceValueLabel.Text = (newDistance / 1000).ToString("0.00", GermanCulture);
+            DistanceUnitLabel.Text = "km";
+        }
+        else
+        {
+            DistanceValueLabel.Text = Math.Round(newDistance).ToString("0", GermanCulture);
+            DistanceUnitLabel.Text = "m";
+        }
     }
 
     private void DurationChanged(TimeSpan newDuration)
     {
-        try
-        {
-            TripDurationLabel.Text = $"⏱️{newDuration.ToFormattedString("mm:ss")}min";
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine(ex.Message);
-        }
+        DurationValueLabel.Text = newDuration.TotalHours >= 1
+            ? newDuration.ToString(@"h\:mm\:ss", GermanCulture)
+            : newDuration.ToString(@"mm\:ss", GermanCulture);
+    }
+
+    private static string ToKilometersPerHour(double metersPerSecond)
+    {
+        return Math.Round(metersPerSecond * 3.6, 1).ToString("0.0", GermanCulture);
     }
 
     private void SetNameLabelText()

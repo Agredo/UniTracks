@@ -4,16 +4,63 @@
     xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
     xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
     xmlns:viewModels="clr-namespace:UniTracks.ViewModels.Pages.Tabs;assembly=UniTracks.ViewModels"
-    Title="UserPage"
+    Title="Profil"
     x:DataType="viewModels:UserPagevViewModel">
-    <Grid Padding="0,0,0,12" RowDefinitions="*,Auto">
 
-        <HorizontalStackLayout
-            Grid.Row="1"
-            HorizontalOptions="Center"
-            Spacing="8"
-            VerticalOptions="End">
-            <Button Command="{Binding ShareDatabaseCommand}" Text="Share DB" />
-        </HorizontalStackLayout>
-    </Grid>
+    <VerticalStackLayout Padding="20" Spacing="20">
+
+        <!-- Profile hero -->
+        <Border
+            Background="{StaticResource HeroGradientBrush}"
+            Padding="24,20"
+            Stroke="{StaticResource CardStroke}"
+            StrokeThickness="1">
+            <Border.StrokeShape>
+                <RoundRectangle CornerRadius="24" />
+            </Border.StrokeShape>
+            <HorizontalStackLayout Spacing="16">
+                <Border
+                    Background="{StaticResource AccentSoft}"
+                    HeightRequest="72"
+                    Stroke="{StaticResource AccentDim}"
+                    StrokeThickness="1"
+                    WidthRequest="72">
+                    <Border.StrokeShape>
+                        <RoundRectangle CornerRadius="36" />
+                    </Border.StrokeShape>
+                    <Image
+                        Aspect="AspectFit"
+                        HeightRequest="36"
+                        Source="user.png"
+                        WidthRequest="36" />
+                </Border>
+                <VerticalStackLayout Spacing="2" VerticalOptions="Center">
+                    <Label Style="{StaticResource TitleLabel}" Text="Dein Profil" />
+                    <Label Style="{StaticResource SubtitleLabel}" Text="Bereit für den nächsten Trip" />
+                </VerticalStackLayout>
+            </HorizontalStackLayout>
+        </Border>
+
+        <!-- Data section -->
+        <VerticalStackLayout Spacing="8">
+            <Label Style="{StaticResource SectionHeader}" Text="DATEN" />
+            <Border Style="{StaticResource CardBorder}">
+                <Grid ColumnDefinitions="*,Auto">
+                    <VerticalStackLayout Grid.Column="0" Spacing="2" VerticalOptions="Center">
+                        <Label FontFamily="OpenSansSemibold" FontSize="15" Text="Datenbank teilen" />
+                        <Label
+                            FontSize="12"
+                            Text="Exportiere deine Trips als Datei"
+                            TextColor="{StaticResource TextSecondary}" />
+                    </VerticalStackLayout>
+                    <Button
+                        Command="{Binding ShareDatabaseCommand}"
+                        Grid.Column="1"
+                        Style="{StaticResource SecondaryButton}"
+                        Text="Teilen"
+                        VerticalOptions="Center" />
+                </Grid>
+            </Border>
+        </VerticalStackLayout>
+    </VerticalStackLayout>
 </ContentPage>

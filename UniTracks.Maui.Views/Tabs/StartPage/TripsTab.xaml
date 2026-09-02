@@ -13,23 +13,76 @@
         </ResourceDictionary>
     </ContentView.Resources>
 
-    <Grid BackgroundColor="{StaticResource AppBackgroundDark}">
-        <RefreshView x:Name="Refresh">
+    <Grid BackgroundColor="{StaticResource Surface}" RowDefinitions="Auto,*">
+
+        <!-- Hero header -->
+        <Border
+            Grid.Row="0"
+            Background="{StaticResource HeroGradientBrush}"
+            Padding="20,24,20,16"
+            StrokeThickness="0">
+            <VerticalStackLayout Spacing="2">
+                <Label Style="{StaticResource HeroTitle}" Text="Deine Trips" />
+                <Label Style="{StaticResource SubtitleLabel}" Text="Jeder Kilometer zählt." />
+            </VerticalStackLayout>
+        </Border>
+
+        <RefreshView x:Name="Refresh" Grid.Row="1">
             <CollectionView
                 x:Name="TracksCollectionView"
                 Background="Transparent"
                 SelectionChanged="TracksCollectionView_SelectionChanged"
                 SelectionMode="Single">
+
+                <CollectionView.EmptyView>
+                    <VerticalStackLayout
+                        Padding="32"
+                        Spacing="12"
+                        VerticalOptions="Center">
+                        <Border
+                            Background="{StaticResource AccentSoft}"
+                            HeightRequest="88"
+                            HorizontalOptions="Center"
+                            Stroke="{StaticResource AccentDim}"
+                            StrokeThickness="1"
+                            WidthRequest="88">
+                            <Border.StrokeShape>
+                                <RoundRectangle CornerRadius="26" />
+                            </Border.StrokeShape>
+                            <Image
+                                Aspect="AspectFit"
+                                HeightRequest="44"
+                                Source="run.png"
+                                WidthRequest="44" />
+                        </Border>
+                        <Label
+                            HorizontalTextAlignment="Center"
+                            Style="{StaticResource TitleLabel}"
+                            Text="Noch keine Trips" />
+                        <Label
+                            HorizontalTextAlignment="Center"
+                            Style="{StaticResource SubtitleLabel}"
+                            Text="Starte deine erste Aufnahme im Record-Tab&#xA;und sammle deine ersten Kilometer." />
+                    </VerticalStackLayout>
+                </CollectionView.EmptyView>
+
+                <CollectionView.Header>
+                    <Grid HeightRequest="8" />
+                </CollectionView.Header>
+                <CollectionView.Footer>
+                    <Grid HeightRequest="16" />
+                </CollectionView.Footer>
+
                 <CollectionView.ItemsLayout>
                     <GridItemsLayout
-                        HorizontalItemSpacing="4"
+                        HorizontalItemSpacing="12"
                         Orientation="Horizontal"
-                        VerticalItemSpacing="4" />
+                        VerticalItemSpacing="12" />
                 </CollectionView.ItemsLayout>
 
                 <CollectionView.ItemTemplate>
                     <DataTemplate x:DataType="tripModels:Trip">
-                        <Grid>
+                        <Grid Padding="16,0">
                             <views:TripCard
                                 AverageSpeed="{Binding AverageSpeed}"
                                 Distance="{Binding Distance}"
@@ -57,10 +110,10 @@
                                 <Setter Property="ItemsLayout">
                                     <Setter.Value>
                                         <GridItemsLayout
-                                            HorizontalItemSpacing="4"
+                                            HorizontalItemSpacing="12"
                                             Orientation="Vertical"
                                             Span="1"
-                                            VerticalItemSpacing="4" />
+                                            VerticalItemSpacing="12" />
                                     </Setter.Value>
                                 </Setter>
                             </VisualState.Setters>
@@ -68,33 +121,16 @@
 
                         <VisualState x:Name="Display2">
                             <VisualState.StateTriggers>
-                                <AdaptiveTrigger MinWindowWidth="640" />
+                                <AdaptiveTrigger MinWindowWidth="900" />
                             </VisualState.StateTriggers>
                             <VisualState.Setters>
                                 <Setter Property="ItemsLayout">
                                     <Setter.Value>
                                         <GridItemsLayout
-                                            HorizontalItemSpacing="4"
+                                            HorizontalItemSpacing="12"
                                             Orientation="Vertical"
                                             Span="2"
-                                            VerticalItemSpacing="4" />
-                                    </Setter.Value>
-                                </Setter>
-                            </VisualState.Setters>
-                        </VisualState>
-
-                        <VisualState x:Name="Display3">
-                            <VisualState.StateTriggers>
-                                <AdaptiveTrigger MinWindowWidth="960" />
-                            </VisualState.StateTriggers>
-                            <VisualState.Setters>
-                                <Setter Property="ItemsLayout">
-                                    <Setter.Value>
-                                        <GridItemsLayout
-                                            HorizontalItemSpacing="4"
-                                            Orientation="Vertical"
-                                            Span="1"
-                                            VerticalItemSpacing="4" />
+                                            VerticalItemSpacing="12" />
                                     </Setter.Value>
                                 </Setter>
                             </VisualState.Setters>
