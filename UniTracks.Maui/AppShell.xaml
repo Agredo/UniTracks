@@ -9,13 +9,13 @@
     Shell.FlyoutBehavior="Disabled">
 
     <TabBar>
-        <Tab Title="Trips" Icon="mapblack.png">
+        <Tab Title="Trips" Icon="mapblack.png" Shell.NavBarIsVisible="False">
             <ShellContent Title="Trips" ContentTemplate="{DataTemplate tabPages:TripTabPage}" />
         </Tab>
-        <Tab Title="Record" Icon="record.png">
+        <Tab Title="Record" Icon="record.png" Shell.NavBarIsVisible="False">
             <ShellContent Title="Record Trip" ContentTemplate="{DataTemplate tabPages:RecordTripTabPage}" />
         </Tab>
-        <Tab Title="User" Icon="user.png">
+        <Tab Title="User" Icon="user.png" Shell.NavBarIsVisible="False">
             <ShellContent Title="User" ContentTemplate="{DataTemplate tabPages:UserPage}" />
         </Tab>
     </TabBar>
