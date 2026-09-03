@@ -3,10 +3,7 @@ using AgredoApplication.MVVM.Services.Abstractions.IO;
 using AgredoApplication.MVVM.Services.Abstractions.Navigation;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
-using UniTracks.Data.LiteDB;
 using UniTracks.Data.Repository;
-using UniTracks.Data.SQLite;
-using UniTracks.Models.Constants;
 using UniTracks.Models.Trip;
 using UniTracks.Services.Data;
 using UniTracks.Services.Location;
@@ -21,10 +18,8 @@ public partial class TripTabPageViewModel : ObservableObject
     public ILocationService LocationService { get; }
     public IFileSystem FileSystem { get; }
     public IGpsDataStorageService GpsDataStorageService { get; }
-    public IGenericRepository<SqliteDBContext> SqliteRepository { get; }
-    public IGenericLiteDBRepository<ILiteDatabase> LiteDBRepository { get; }
+    public IRepository Repository { get; }
     public string DatabasePath { get; }
-    public string LiteDBDatabasePath { get; private set; }
 
     [ObservableProperty]
     private ObservableCollection<LocationModel> locations = new ObservableCollection<LocationModel>();
@@ -57,18 +52,15 @@ public partial class TripTabPageViewModel : ObservableObject
         ILocationService locationService,
         IFileSystem fileSystem,
         IGpsDataStorageService gpsDataStorageService,
-        IGenericRepository<SqliteDBContext> sqliteRepository,
-        IGenericLiteDBRepository<ILiteDatabase> liteDBRepository)
+        IRepository repository)
     {
         Navigation = navigation;
         PopupNavigation = popupNavigation;
         LocationService = locationService;
         FileSystem = fileSystem;
         GpsDataStorageService = gpsDataStorageService;
-        SqliteRepository = sqliteRepository;
-        LiteDBRepository = liteDBRepository;
-        DatabasePath = Path.Combine(FileSystem.AppDataDirectory, ApplicationConstants.SQliteDatabaseName);
-        LiteDBDatabasePath = Path.Combine(FileSystem.AppDataDirectory, ApplicationConstants.LiteDBName);
+        Repository = repository;
+        DatabasePath = repository.DatabasePath;
 
         _ = GetTrips();
     }
@@ -76,7 +68,7 @@ public partial class TripTabPageViewModel : ObservableObject
     private async Task GetTrips()
     {
         Trips.Clear();
-        var orderedTrips = (await SqliteRepository.GetAllAsync<Trip>(trip => trip.Locations))
+        var orderedTrips = (await Repository.GetAllAsync<Trip>(trip => trip.Locations))
             .OrderByDescending(trip => trip.StartTime)
             .ToList();
 

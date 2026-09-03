@@ -8,4 +8,5 @@ public interface ILiteDatabase
 {
     LDB Database { get; }
     ILiteCollection<Location> Locations { get; }
+    string DatabasePath { get; }
 }

@@ -4,7 +4,6 @@ using AgredoApplication.MVVM.Services.Abstractions.Navigation;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using UniTracks.Data.Repository;
-using UniTracks.Data.SQLite;
 using UniTracks.Models.Constants;
 using UniTracks.Models.User;
 using UniTracks.Services.ApplicationModel;
@@ -24,7 +23,7 @@ public partial class RecordTripTabPageViewModel : ObservableObject
     public IPermissions Permissions { get; }
     public IMainThread MainThread { get; }
     public IDispatcher Dispatcher { get; }
-    public IGenericRepository<SqliteDBContext> SqliteRepository { get; }
+    public IRepository Repository { get; }
     public string DatabasePath { get; private set; }
 
     private const string RedColor = "#FF0000";
@@ -41,7 +40,7 @@ public partial class RecordTripTabPageViewModel : ObservableObject
         IPermissions permissions,
         IMainThread mainThread,
         IDispatcher dispatcher,
-        IGenericRepository<SqliteDBContext> sqliteRepository)
+        IRepository repository)
     {
         Navigation = navigation;
         PopupNavigation = popupNavigation;
@@ -49,7 +48,7 @@ public partial class RecordTripTabPageViewModel : ObservableObject
         Permissions = permissions;
         MainThread = mainThread;
         Dispatcher = dispatcher;
-        SqliteRepository = sqliteRepository;
+        Repository = repository;
         DatabasePath = string.Empty;
         RecordIconSourceString = $"{ApplicationConstants.RawIconBasePath}{ApplicationIconConstants.PlayIcon}";
         RecordIconColor = WhiteColor;
@@ -86,7 +85,7 @@ public partial class RecordTripTabPageViewModel : ObservableObject
     [RelayCommand]
     private async Task StartListening()
     {
-        if (!(await SqliteRepository.GetAllAsync<User>()).Any())
+        if (!(await Repository.GetAllAsync<User>()).Any())
         {
             await PopupNavigation.ShowPopupAsync<UserCreationPopupViewModel>();
         }

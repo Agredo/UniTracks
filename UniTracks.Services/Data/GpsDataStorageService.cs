@@ -1,6 +1,4 @@
-using UniTracks.Data.LiteDB;
 using UniTracks.Data.Repository;
-using UniTracks.Data.SQLite;
 using UniTracks.Models.GPS;
 using UniTracks.Models.Trip;
 using LocationModel = UniTracks.Models.Location.Location;
@@ -11,20 +9,16 @@ public class GpsDataStorageService : IGpsDataStorageService
 {
     private Trip? currentTrip;
 
-    public GpsDataStorageService(
-        IGenericRepository<SqliteDBContext> sqliteRepository,
-        IGenericLiteDBRepository<ILiteDatabase> liteDBRepository)
+    public GpsDataStorageService(IRepository repository)
     {
-        SqliteRepository = sqliteRepository;
-        LiteDBRepository = liteDBRepository;
+        Repository = repository;
     }
 
-    public IGenericRepository<SqliteDBContext> SqliteRepository { get; }
-    public IGenericLiteDBRepository<ILiteDatabase> LiteDBRepository { get; }
+    public IRepository Repository { get; }
 
     public async Task<List<LocationModel>> getAll()
     {
-        return (await SqliteRepository.GetAllAsync<LocationModel>()).ToList();
+        return (await Repository.GetAllAsync<LocationModel>()).ToList();
     }
 
     public async Task StoreData(GPSInformatoion gpsInformatoion, Action<GPSInformatoion> action)
@@ -42,6 +36,7 @@ public class GpsDataStorageService : IGpsDataStorageService
 
         LocationModel location = new LocationModel()
         {
+            ID = Guid.NewGuid(),
             Latitude = latitude,
             Longitude = longitude,
             Altitude = gpsInformatoion.Altitude,
@@ -68,12 +63,13 @@ public class GpsDataStorageService : IGpsDataStorageService
 
             currentTrip.Distance = CalculateDistance(currentTrip.Locations);
 
-            await SqliteRepository.Update<Trip>(currentTrip);
+            await Repository.Update<Trip>(currentTrip);
         }
         else
         {
             var trip = new Trip()
             {
+                ID = Guid.NewGuid(),
                 StartTime = DateTimeOffset.Now,
                 Locations = new List<LocationModel>() { location },
                 MaxSpeed = location.Speed,
@@ -86,12 +82,10 @@ public class GpsDataStorageService : IGpsDataStorageService
                 MinAccuracy = location.Accuracy
             };
 
-            currentTrip = await SqliteRepository.Add<Trip>(trip);
+            currentTrip = await Repository.Add<Trip>(trip);
         }
 
         Console.WriteLine($"CurrentTrip: {currentTrip.ID} {currentTrip.StartTime} Latitude: {currentTrip.Locations.Last().Latitude}, Longitude: {currentTrip.Locations.Last().Longitude}");
-
-        await LiteDBRepository.Add<LocationModel>(location);
     }
 
     private static double CalculateDistance(List<LocationModel> locations)

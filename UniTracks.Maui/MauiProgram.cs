@@ -74,22 +74,28 @@ public static class MauiProgram
 
     private static void RegisterDataAccess(IServiceCollection services)
     {
-        services.AddSingleton<SqliteDBContext>(sp =>
-        {
-            var fileSystem = sp.GetRequiredService<AgredoApplication.MVVM.Services.Abstractions.IO.IFileSystem>();
-            var databasePath = Path.Combine(fileSystem.AppDataDirectory, ApplicationConstants.SQliteDatabaseName);
-            return new SqliteDBContext(databasePath);
-        });
-
+#if IOS
+        // On iOS the app runs on CoreCLR + ReadyToRun (IsDynamicCodeSupported=false), where EF
+        // Core can neither build its model at runtime nor run Database.Migrate(). We therefore
+        // back the repository with LiteDB (document store, embedded aggregates) on iOS only.
         services.AddSingleton<ILiteDatabase>(sp =>
         {
             var fileSystem = sp.GetRequiredService<AgredoApplication.MVVM.Services.Abstractions.IO.IFileSystem>();
             var databasePath = Path.Combine(fileSystem.AppDataDirectory, ApplicationConstants.LiteDBName);
             return new LiteDatabase(databasePath);
         });
-
-        services.AddSingleton(typeof(IGenericRepository<>), typeof(GenericRepository<>));
-        services.AddSingleton(typeof(IGenericLiteDBRepository<>), typeof(GenericLiteDBRepository<>));
+        services.AddSingleton<IRepository, LiteDbRepository>();
+#else
+        // Android, Mac Catalyst and Windows run on JIT, where EF Core can build its model at
+        // runtime and execute Database.Migrate(), so SQLite + EF Core remains the store.
+        services.AddSingleton<SqliteDBContext>(sp =>
+        {
+            var fileSystem = sp.GetRequiredService<AgredoApplication.MVVM.Services.Abstractions.IO.IFileSystem>();
+            var databasePath = Path.Combine(fileSystem.AppDataDirectory, ApplicationConstants.SQliteDatabaseName);
+            return new SqliteDBContext(databasePath);
+        });
+        services.AddSingleton<IRepository, EfRepository>();
+#endif
     }
 
     private static void RegisterPages(IServiceCollection services)
