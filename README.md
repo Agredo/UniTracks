@@ -21,7 +21,11 @@ Weitere geplante Features siehe [FEATURE_IDEAS.md](FEATURE_IDEAS.md).
 
 iOS (iPhone)
 
-![image](https://github.com/Agredo/UniTracks/assets/16531090/3182082f-64b7-46fb-a2c3-03f0b898856b)
+![Trips](docs/screenshots/ios-trips.jpeg)
+
+![Record Trip](docs/screenshots/ios-record-trip.jpeg)
+
+![Profil](docs/screenshots/ios-profile.jpeg)
 
 Android
 
