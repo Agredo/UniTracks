@@ -12,3 +12,10 @@
 **/.vs
 /UniTracks.Maui/UniTracks.Maui.csproj.user
 /UniTracks.Maui/UniTracks.Maui.csproj.user
+
+# Signierungs-Assets nur lokal (nicht ins Repo)
+*.keystore
+*.pfx
+
+# Build-Ausgaben der Publish-Skripte
+/dist/

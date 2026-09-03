@@ -11,27 +11,66 @@
 		<Nullable>enable</Nullable>
 
 		<!-- Display name -->
-		<ApplicationTitle>UniTracks.Maui</ApplicationTitle>
+		<ApplicationTitle>UniTracks</ApplicationTitle>
 
 		<!-- App Identifier -->
-		<ApplicationId>com.companyname.unitracks.maui</ApplicationId>
+		<ApplicationId>com.agredoapplication.unitracks</ApplicationId>
 
 		<!-- Versions -->
 		<ApplicationDisplayVersion>1.0</ApplicationDisplayVersion>
 		<ApplicationVersion>1</ApplicationVersion>
+
+		<DefaultLanguage>de-DE</DefaultLanguage>
 	</PropertyGroup>
 
-	<PropertyGroup Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'ios'">
+	<!-- Android: signiertes Release-APK (Keystore analog nexile.keystore/finanzio.keystore,
+	     liegt nur lokal im Projektordner und ist per .gitignore ausgeschlossen) -->
+	<PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Release|net11.0-android|AnyCPU'">
+		<AndroidPackageFormat>apk</AndroidPackageFormat>
+		<AndroidKeyStore>True</AndroidKeyStore>
+		<AndroidSigningKeyStore>unitracks.keystore</AndroidSigningKeyStore>
+		<AndroidSigningKeyAlias>unitracks</AndroidSigningKeyAlias>
+		<AndroidSigningStorePass>Agredo10Castillo</AndroidSigningStorePass>
+		<AndroidSigningKeyPass>Agredo10Castillo</AndroidSigningKeyPass>
+	</PropertyGroup>
+
+	<!-- Windows: Dev-Loop unverpackt, MSIX nur ueber Publish-Profile (Properties/PublishProfiles).
+	     Zertifikat: Publisher-CN aus dem Partner Center (Thumbprint wie Finanzio/Nexile). -->
+	<PropertyGroup>
+		<WindowsPackageType>None</WindowsPackageType>
+		<GenerateAppxPackageOnBuild>False</GenerateAppxPackageOnBuild>
+		<AppxPackageSigningEnabled>True</AppxPackageSigningEnabled>
+		<PackageCertificateThumbprint>727E15C7BE0E2740F464383F1D81FE6314C1F357</PackageCertificateThumbprint>
+		<AppxPackageSigningTimestampDigestAlgorithm>SHA256</AppxPackageSigningTimestampDigestAlgorithm>
+		<AppxAutoIncrementPackageRevision>False</AppxAutoIncrementPackageRevision>
+		<AppxSymbolPackageEnabled>False</AppxSymbolPackageEnabled>
+		<GenerateTemporaryStoreCertificate>False</GenerateTemporaryStoreCertificate>
+		<GenerateAppInstallerFile>False</GenerateAppInstallerFile>
+		<HoursBetweenUpdateChecks>0</HoursBetweenUpdateChecks>
+	</PropertyGroup>
+
+	<!-- iOS: Development-Signierung (Debug) -->
+	<PropertyGroup Condition="'$(Configuration)'=='Debug' And $([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'ios'">
 		<CodesignKey>Apple Development: Created via API (R63MXH8N84)</CodesignKey>
 		<CodesignProvision>VS: WildCard Development</CodesignProvision>
 	</PropertyGroup>
 
+	<!-- iOS: Release-Signierung fuer IPA (Build nur auf einem Mac moeglich). Distribution-
+	     Zertifikat + App-Store-Profil fuer com.agredoapplication.unitracks im Apple Developer
+	     Portal anlegen und die beiden Werte unten eintragen, dann Kommentar entfernen:
+	<PropertyGroup Condition="'$(Configuration)'=='Release' And $([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'ios'">
+		<CodesignKey>Apple Distribution: &lt;Name&gt; (&lt;TeamId&gt;)</CodesignKey>
+		<CodesignProvision>&lt;AppStore-Provisioning-Profil&gt;</CodesignProvision>
+		<ArchiveOnBuild>true</ArchiveOnBuild>
+	</PropertyGroup>
+	-->
+
 	<ItemGroup>
 		<!-- App Icon -->
-		<MauiIcon Include="Resources\AppIcon\appicon.svg" ForegroundFile="Resources\AppIcon\appiconfg.svg" Color="#512BD4" />
+		<MauiIcon Include="Resources\AppIcon\appicon.svg" ForegroundFile="Resources\AppIcon\appiconfg.svg" Color="#020617" />
 
 		<!-- Splash Screen -->
-		<MauiSplashScreen Include="Resources\Splash\splash.svg" Color="#512BD4" BaseSize="128,128" />
+		<MauiSplashScreen Include="Resources\Splash\splash.svg" Color="#020617" BaseSize="128,128" />
 
 		<!-- Images -->
 		<MauiImage Include="Resources\Images\*" />
