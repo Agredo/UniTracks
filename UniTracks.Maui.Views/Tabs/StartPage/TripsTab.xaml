@@ -83,19 +83,34 @@
                 <CollectionView.ItemTemplate>
                     <DataTemplate x:DataType="tripModels:Trip">
                         <Grid Padding="16,0">
-                            <views:TripCard
-                                AverageSpeed="{Binding AverageSpeed}"
-                                Distance="{Binding Distance}"
-                                MaxSpeed="{Binding MaxSpeed}"
-                                MinSpeed="{Binding MinSpeed}"
-                                TripDateTime="{Binding StartTime}">
-                                <views:TripCard.Duration>
-                                    <MultiBinding Converter="{StaticResource DateTimeDifferenceConverter}">
-                                        <Binding Mode="OneWay" Path="EndTime" />
-                                        <Binding Mode="OneWay" Path="StartTime" />
-                                    </MultiBinding>
-                                </views:TripCard.Duration>
-                            </views:TripCard>
+                            <SwipeView>
+                                <SwipeView.RightItems>
+                                    <SwipeItems Mode="Reveal">
+                                        <SwipeItem
+                                            BackgroundColor="{StaticResource CardAlt}"
+                                            Invoked="OnRenameInvoked"
+                                            Text="Umbenennen" />
+                                        <SwipeItem
+                                            BackgroundColor="{StaticResource Record}"
+                                            Invoked="OnDeleteInvoked"
+                                            Text="Löschen" />
+                                    </SwipeItems>
+                                </SwipeView.RightItems>
+                                <views:TripCard
+                                    AverageSpeed="{Binding AverageSpeed}"
+                                    Distance="{Binding Distance}"
+                                    MaxSpeed="{Binding MaxSpeed}"
+                                    MinSpeed="{Binding MinSpeed}"
+                                    Name="{Binding Name}"
+                                    TripDateTime="{Binding StartTime}">
+                                    <views:TripCard.Duration>
+                                        <MultiBinding Converter="{StaticResource DateTimeDifferenceConverter}">
+                                            <Binding Mode="OneWay" Path="EndTime" />
+                                            <Binding Mode="OneWay" Path="StartTime" />
+                                        </MultiBinding>
+                                    </views:TripCard.Duration>
+                                </views:TripCard>
+                            </SwipeView>
                         </Grid>
                     </DataTemplate>
                 </CollectionView.ItemTemplate>

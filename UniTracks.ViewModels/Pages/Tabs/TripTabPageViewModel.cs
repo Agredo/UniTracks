@@ -99,4 +99,17 @@ public partial class TripTabPageViewModel : ObservableObject
         await GetTrips();
         RefreshIndicatorVisible = false;
     }
+
+    public async Task RenameTripAsync(Trip trip, string newName)
+    {
+        trip.Name = newName;
+        await Repository.Update(trip);
+        await GetTrips();
+    }
+
+    public async Task DeleteTripAsync(Trip trip)
+    {
+        await Repository.Delete(trip);
+        await GetTrips();
+    }
 }
