@@ -2,6 +2,7 @@ using CommunityToolkit.Maui;
 using CommunityToolkit.Maui.Views;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Microsoft.Maui.LifecycleEvents;
 using SkiaSharp.Views.Maui.Controls.Hosting;
 using UniTracks.Data.LiteDB;
 using UniTracks.Data.Repository;
@@ -31,6 +32,40 @@ public static class MauiProgram
             .UseMauiApp<App>()
             .UseMauiCommunityToolkit()
             .UseSkiaSharp()
+            .ConfigureLifecycleEvents(events =>
+            {
+#if WINDOWS
+                events.AddWindows(windows => windows.OnWindowCreated(window =>
+                {
+                    void ApplyTitleBarColors()
+                    {
+                        if (window.AppWindow?.TitleBar is not { } titleBar)
+                            return;
+
+                        var surface = Windows.UI.Color.FromArgb(0xFF, 0x12, 0x1A, 0x14);   // SurfaceAlt (TabBar)
+                        var accent = Windows.UI.Color.FromArgb(0xFF, 0x4D, 0xE7, 0x90);   // Accent
+                        var text = Windows.UI.Color.FromArgb(0xFF, 0xF2, 0xF7, 0xF3);     // TextPrimary
+                        var hover = Windows.UI.Color.FromArgb(0xFF, 0x1B, 0x3A, 0x29);    // AccentSoft
+
+                        titleBar.BackgroundColor = surface;
+                        titleBar.ForegroundColor = text;
+                        titleBar.InactiveBackgroundColor = surface;
+                        titleBar.InactiveForegroundColor = text;
+                        titleBar.ButtonBackgroundColor = surface;
+                        titleBar.ButtonForegroundColor = text;
+                        titleBar.ButtonHoverBackgroundColor = hover;
+                        titleBar.ButtonHoverForegroundColor = accent;
+                        titleBar.ButtonPressedBackgroundColor = accent;
+                        titleBar.ButtonPressedForegroundColor = surface;
+                        titleBar.ButtonInactiveBackgroundColor = surface;
+                        titleBar.ButtonInactiveForegroundColor = text;
+                    }
+
+                    ApplyTitleBarColors();
+                    window.Activated += (_, _) => ApplyTitleBarColors();
+                }));
+#endif
+            })
             .ConfigureFonts(fonts =>
             {
                 fonts.AddFont("OpenSans-Regular.ttf", "OpenSansRegular");
