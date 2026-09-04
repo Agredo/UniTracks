@@ -76,6 +76,10 @@ public partial class TripsTab : ContentView
     private void TracksCollectionView_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {
         SelectedTrip = e.CurrentSelection.FirstOrDefault() as Trip;
+
+        // MAUI keeps SelectedItem set after navigation, so tapping the same trip again
+        // would not re-trigger SelectionChanged. Reset the selection to allow re-selection.
+        TracksCollectionView.SelectedItem = null;
     }
 
     private void SelectionChangedCommandChanged(ICommand? newCommand)
