@@ -2,6 +2,7 @@
 using System.Windows.Input;
 using CommunityToolkit.Maui;
 using UniTracks.Models.Trip;
+using UniTracks.ViewModels.Pages.Tabs;
 
 namespace UniTracks.Maui.Views.Tabs.StartPage;
 
@@ -95,5 +96,52 @@ public partial class TripsTab : ContentView
     private void IsRefreshingChanged(bool newValue)
     {
         Refresh.IsRefreshing = newValue;
+    }
+
+    private TripTabPageViewModel? ViewModel => BindingContext as TripTabPageViewModel;
+
+    private async void OnRenameInvoked(object? sender, EventArgs e)
+    {
+        if (sender is not SwipeItem { } item || item.BindingContext is not Trip trip)
+        {
+            return;
+        }
+
+        var newName = await Shell.Current.DisplayPromptAsync(
+            "Trip umbenennen",
+            "Neuer Name:",
+            "Speichern",
+            "Abbrechen",
+            initialValue: trip.Name ?? string.Empty);
+
+        if (string.IsNullOrWhiteSpace(newName) || newName.Trim() == trip.Name)
+        {
+            return;
+        }
+
+        if (ViewModel is { } vm)
+        {
+            await vm.RenameTripAsync(trip, newName.Trim());
+        }
+    }
+
+    private async void OnDeleteInvoked(object? sender, EventArgs e)
+    {
+        if (sender is not SwipeItem { } item || item.BindingContext is not Trip trip)
+        {
+            return;
+        }
+
+        var title = string.IsNullOrWhiteSpace(trip.Name) ? trip.StartTime.ToString("dd.MM.yyyy HH:mm") : trip.Name;
+        var confirm = await Shell.Current.DisplayAlertAsync(
+            "Trip löschen",
+            $"Möchtest du „{title}“ wirklich löschen?",
+            "Löschen",
+            "Abbrechen");
+
+        if (confirm && ViewModel is { } vm)
+        {
+            await vm.DeleteTripAsync(trip);
+        }
     }
 }

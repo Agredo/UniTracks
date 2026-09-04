@@ -15,6 +15,14 @@ public partial class TripCard : Microsoft.Maui.Controls.ContentView
     [BindableProperty(PropertyChangedMethodName = nameof(OnTripDateTimePropertyChanged))]
     public partial DateTimeOffset TripDateTime { get; set; }
 
+    [BindableProperty(PropertyChangedMethodName = nameof(OnNamePropertyChanged))]
+    public partial string Name { get; set; }
+
+    private static void OnNamePropertyChanged(BindableObject bindable, object oldValue, object newValue)
+    {
+        ((TripCard)bindable).SetNameLabelText();
+    }
+
     [BindableProperty(PropertyChangedMethodName = nameof(OnTripEndDateTimePropertyChanged))]
     public partial DateTimeOffset TripEndDateTime { get; set; }
 
@@ -117,6 +125,12 @@ public partial class TripCard : Microsoft.Maui.Controls.ContentView
 
     private void SetNameLabelText()
     {
+        if (!string.IsNullOrWhiteSpace(Name))
+        {
+            TripNameLabel.Text = Name;
+            return;
+        }
+
         if (TripDateTime.Hour >= 5 && TripDateTime.Hour < 11)
         {
             TripNameLabel.Text = "Morgen Trip";
