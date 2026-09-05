@@ -21,6 +21,9 @@
         <Tab Title="Erfolge" Icon="trophy.png" Shell.NavBarIsVisible="False">
             <ShellContent Title="Erfolge" ContentTemplate="{DataTemplate tabPages:AchievementsPage}" />
         </Tab>
+        <Tab Title="Spiel" Icon="gamepad.png" Shell.NavBarIsVisible="False">
+            <ShellContent Title="Spiel" ContentTemplate="{DataTemplate tabPages:GameTabPage}" />
+        </Tab>
     </TabBar>
 
     <!--<ShellContent

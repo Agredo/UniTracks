@@ -27,6 +27,8 @@
 		<EntityFrameworkCoreVersion>11.0.0-preview.7.26381.103</EntityFrameworkCoreVersion>
 		<LiteDBVersion>6.0.0-prerelease.81</LiteDBVersion>
 		<MapsuiMauiVersion>5.1.0</MapsuiMauiVersion>
+		<!-- Must match the SkiaSharp version pinned by Mapsui.Maui (see Mapsui nuspec). -->
+		<SkiaSharpVersion>3.119.2</SkiaSharpVersion>
 		<AgredoMvvmServicesVersion>1.2.0</AgredoMvvmServicesVersion>
 
 		<!-- Disable ReadyToRun precompilation to avoid Crossgen2/ILCompiler issues in Release -->

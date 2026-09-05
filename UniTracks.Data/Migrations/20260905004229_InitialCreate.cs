@@ -8,11 +8,26 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace UniTracks.Data.Migrations;
 
 /// <inheritdoc />
-public partial class _20260904233540_InitialCreate : Migration
+public partial class _20260905004229_InitialCreate : Migration
 {
     /// <inheritdoc />
     protected override void Up(MigrationBuilder migrationBuilder)
     {
+        migrationBuilder.CreateTable(
+            name: "PlacedBuildings",
+            columns: table => new
+            {
+                ID = table.Column<Guid>(type: "TEXT", nullable: false),
+                BuildingId = table.Column<string>(type: "TEXT", nullable: false),
+                X = table.Column<int>(type: "INTEGER", nullable: false),
+                Y = table.Column<int>(type: "INTEGER", nullable: false),
+                PlacedAt = table.Column<DateTimeOffset>(type: "TEXT", nullable: false)
+            },
+            constraints: table =>
+            {
+                table.PrimaryKey("PK_PlacedBuildings", x => x.ID);
+            });
+
         migrationBuilder.CreateTable(
             name: "TripTypes",
             columns: table => new
@@ -334,6 +349,9 @@ public partial class _20260904233540_InitialCreate : Migration
     {
         migrationBuilder.DropTable(
             name: "HeartRates");
+
+        migrationBuilder.DropTable(
+            name: "PlacedBuildings");
 
         migrationBuilder.DropTable(
             name: "Weathers");

@@ -13,11 +13,14 @@
 		<PackageReference Include="Microsoft.Maui.Controls" Version="$(MauiVersion)" />
 		<PackageReference Include="CommunityToolkit.Maui" Version="$(MauiCommunityToolkitVersion)" />
 		<PackageReference Include="Mapsui.Maui" Version="$(MapsuiMauiVersion)" />
+		<!-- Explicit pin: SkiaSharp also arrives transitively via Mapsui at this exact version. -->
+		<PackageReference Include="SkiaSharp.Views.Maui.Controls" Version="$(SkiaSharpVersion)" />
 	</ItemGroup>
 
 	<ItemGroup>
 		<ProjectReference Include="..\UniTracks.ViewModels\UniTracks.ViewModels.csproj" />
 		<ProjectReference Include="..\UniTracks.Models\UniTracks.Models.csproj" />
+		<ProjectReference Include="..\UniTracks.Games\UniTracks.Games.csproj" />
 	</ItemGroup>
 
 </Project>

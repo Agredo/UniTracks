@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage
+    x:Class="UniTracks.Maui.Views.Pages.Tabs.GameTabPage"
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    xmlns:games="clr-namespace:UniTracks.Games.Catalog;assembly=UniTracks.Games"
+    xmlns:viewModels="clr-namespace:UniTracks.ViewModels.Pages.Tabs;assembly=UniTracks.ViewModels"
+    Title="Spiel"
+    x:DataType="viewModels:GameTabPageViewModel">
+
+    <Grid Padding="20,0">
+        <VerticalStackLayout Padding="0,20,0,20" Spacing="20">
+
+            <!-- Coins hero -->
+            <Border Padding="20" Style="{StaticResource CardBorder}">
+                <HorizontalStackLayout Spacing="14">
+                    <Border
+                        Background="{StaticResource AccentSoft}"
+                        HeightRequest="56"
+                        Stroke="{StaticResource AccentDim}"
+                        StrokeThickness="1"
+                        WidthRequest="56">
+                        <Border.StrokeShape>
+                            <RoundRectangle CornerRadius="28" />
+                        </Border.StrokeShape>
+                        <Label
+                            FontSize="28"
+                            HorizontalOptions="Center"
+                            Text="🪙"
+                            VerticalOptions="Center" />
+                    </Border>
+                    <VerticalStackLayout Spacing="2" VerticalOptions="Center">
+                        <Label Style="{StaticResource TitleLabel}" Text="{Binding CoinsLabel}" />
+                        <Label Style="{StaticResource SubtitleLabel}" Text="Verdient durch Trips und Erfolge" />
+                    </VerticalStackLayout>
+                </HorizontalStackLayout>
+            </Border>
+
+            <!-- Games list -->
+            <Label Style="{StaticResource SectionHeader}" Text="SPIELE" />
+
+            <CollectionView ItemsSource="{Binding Games}">
+                <CollectionView.ItemsLayout>
+                    <LinearItemsLayout ItemSpacing="12" Orientation="Vertical" />
+                </CollectionView.ItemsLayout>
+                <CollectionView.ItemTemplate>
+                    <DataTemplate x:DataType="games:GameInfo">
+                        <Border Padding="18" Style="{StaticResource CardBorder}">
+                            <Border.GestureRecognizers>
+                                <TapGestureRecognizer Command="{Binding Source={RelativeSource AncestorType={x:Type viewModels:GameTabPageViewModel}}, Path=OpenGameCommand}" CommandParameter="{Binding .}" />
+                            </Border.GestureRecognizers>
+                            <HorizontalStackLayout Spacing="14">
+                                <Border
+                                    Background="{StaticResource CardAlt}"
+                                    HeightRequest="52"
+                                    Stroke="{StaticResource CardStroke}"
+                                    StrokeThickness="1"
+                                    WidthRequest="52">
+                                    <Border.StrokeShape>
+                                        <RoundRectangle CornerRadius="14" />
+                                    </Border.StrokeShape>
+                                    <Label
+                                        FontSize="26"
+                                        HorizontalOptions="Center"
+                                        Text="{Binding Icon}"
+                                        VerticalOptions="Center" />
+                                </Border>
+                                <VerticalStackLayout Spacing="2" VerticalOptions="Center" HorizontalOptions="FillAndExpand">
+                                    <Label Style="{StaticResource TitleLabel}" Text="{Binding Title}" />
+                                    <Label Style="{StaticResource SubtitleLabel}" Text="{Binding Description}" />
+                                </VerticalStackLayout>
+                                <Label VerticalOptions="Center">
+                                    <Label.Triggers>
+                                        <DataTrigger Binding="{Binding IsAvailable}" TargetType="Label" Value="True">
+                                            <Setter Property="Text" Value="›" />
+                                            <Setter Property="FontSize" Value="28" />
+                                            <Setter Property="TextColor" Value="{StaticResource Accent}" />
+                                        </DataTrigger>
+                                        <DataTrigger Binding="{Binding IsAvailable}" TargetType="Label" Value="False">
+                                            <Setter Property="Text" Value="BALD" />
+                                            <Setter Property="FontSize" Value="11" />
+                                            <Setter Property="Style" Value="{StaticResource StatLabel}" />
+                                        </DataTrigger>
+                                    </Label.Triggers>
+                                </Label>
+                            </HorizontalStackLayout>
+                            <Border.Triggers>
+                                <DataTrigger Binding="{Binding IsAvailable}" TargetType="Border" Value="False">
+                                    <Setter Property="Opacity" Value="0.55" />
+                                </DataTrigger>
+                            </Border.Triggers>
+                        </Border>
+                    </DataTemplate>
+                </CollectionView.ItemTemplate>
+            </CollectionView>
+        </VerticalStackLayout>
+    </Grid>
+</ContentPage>

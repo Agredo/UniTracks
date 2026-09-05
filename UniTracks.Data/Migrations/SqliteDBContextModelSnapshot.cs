@@ -15,12 +15,36 @@ partial class SqliteDBContextModelSnapshot : ModelSnapshot
     // If you encounter a merge conflict in the line below, it means you need to
     // discard one of the migration branches and recreate its migrations on top of
     // the other branch. See https://aka.ms/efcore-docs-migrations-conflicts for more info.
-    public override string LastMigrationId => "20260904233540_InitialCreate";
+    public override string LastMigrationId => "20260905004229_InitialCreate";
 
     protected override void BuildModel(ModelBuilder modelBuilder)
     {
 #pragma warning disable 612, 618
         modelBuilder.HasAnnotation("ProductVersion", "11.0.0-preview.7.26381.103");
+
+        modelBuilder.Entity("UniTracks.Games.Persistence.PlacedBuilding", b =>
+            {
+                b.Property<Guid>("ID")
+                    .ValueGeneratedOnAdd()
+                    .HasColumnType("TEXT");
+
+                b.Property<string>("BuildingId")
+                    .IsRequired()
+                    .HasColumnType("TEXT");
+
+                b.Property<DateTimeOffset>("PlacedAt")
+                    .HasColumnType("TEXT");
+
+                b.Property<int>("X")
+                    .HasColumnType("INTEGER");
+
+                b.Property<int>("Y")
+                    .HasColumnType("INTEGER");
+
+                b.HasKey("ID");
+
+                b.ToTable("PlacedBuildings");
+            });
 
         modelBuilder.Entity("UniTracks.Models.Environment.Weather", b =>
             {

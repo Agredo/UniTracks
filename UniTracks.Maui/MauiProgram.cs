@@ -11,8 +11,10 @@ using UniTracks.Maui.Services.Location;
 using UniTracks.Maui.Views.Controls.Popups;
 using UniTracks.Maui.Views.Pages;
 using UniTracks.Maui.Views.Pages.Tabs;
+using UniTracks.Games.Persistence;
 using UniTracks.Models.Constants;
 using UniTracks.Services.Data;
+using UniTracks.Services.Game;
 using UniTracks.Services.Location;
 using UniTracks.Services.Stats;
 using UniTracks.ViewModels.Controls.Popups;
@@ -98,6 +100,9 @@ public static class MauiProgram
         services.AddSingleton<AgredoApplication.MVVM.Services.Abstractions.IO.IFileSystem, AgredoApplication.MVVM.Services.Maui.IO.FileSystem>();
         services.AddSingleton<AgredoApplication.MVVM.Services.Abstractions.Application.IMainThread, AgredoApplication.MVVM.Services.Maui.Application.MainThread>();
         services.AddSingleton<AgredoApplication.MVVM.Services.Abstractions.Devices.IGeolocation, AgredoApplication.MVVM.Services.Maui.Devices.Geolocation>();
+
+        // UI / Dialogs
+        services.AddSingleton<AgredoApplication.MVVM.Services.Abstractions.UI.IDialogService, AgredoApplication.MVVM.Services.Maui.UI.DialogService>();
     }
 
     private static void RegisterUniTracksServices(IServiceCollection services)
@@ -105,6 +110,14 @@ public static class MauiProgram
         services.AddSingleton<ILocationService, LocationService>();
         services.AddSingleton<IGpsDataStorageService, GpsDataStorageService>();
         services.AddSingleton<IGamificationService, GamificationService>();
+
+        // Games: coin economy + city builder. CoinService doubles as the games-layer
+        // activity-stats port; the city store adapts the games persistence port to IRepository.
+        services.AddSingleton<ICoinService, CoinService>();
+        services.AddSingleton<IActivityStatsSource>(sp => sp.GetRequiredService<ICoinService>());
+        services.AddSingleton<ICityStore, CityStore>();
+        services.AddSingleton<ICityBuilderService, CityBuilderService>();
+        services.AddSingleton<IGameCatalogService, GameCatalogService>();
         services.AddSingleton<UniTracks.Services.ApplicationModel.IPermissions, UniTracks.Maui.Services.ApplicationModel.Permissions>();
         services.AddSingleton<UniTracks.Services.Dispatching.IDispatcher, UniTracks.Maui.Services.Dispatching.Dispatcher>();
     }
@@ -142,6 +155,8 @@ public static class MauiProgram
         services.AddTransient<UserPage, UserPagevViewModel>();
         services.AddTransient<AchievementsPage, AchievementsPageViewModel>();
         services.AddTransient<TripOverviewPage, TripOverviewViewModel>();
+        services.AddTransient<GameTabPage, GameTabPageViewModel>();
+        services.AddTransient<CityBuilderPage, CityBuilderPageViewModel>();
     }
 
     private static void RegisterPopups(IServiceCollection services)

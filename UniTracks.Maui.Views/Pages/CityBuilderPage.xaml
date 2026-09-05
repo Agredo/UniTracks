@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage
+    x:Class="UniTracks.Maui.Views.Pages.CityBuilderPage"
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    xmlns:city="clr-namespace:UniTracks.Games.CityBuilder;assembly=UniTracks.Games"
+    xmlns:gameControls="clr-namespace:UniTracks.Maui.Views.Controls.Game"
+    xmlns:viewModels="clr-namespace:UniTracks.ViewModels.Pages;assembly=UniTracks.ViewModels"
+    Title="Cozy City"
+    x:DataType="viewModels:CityBuilderPageViewModel">
+
+    <Grid RowDefinitions="Auto,*,Auto">
+
+        <!-- Top bar: coins + demolish toggle -->
+        <Grid Grid.Row="0" Padding="16,12" ColumnDefinitions="*,Auto" ColumnSpacing="10">
+            <Border Padding="14,10" Style="{StaticResource CardBorder}">
+                <HorizontalStackLayout Spacing="8">
+                    <Label FontSize="20" Text="🪙" VerticalOptions="Center" />
+                    <Label Style="{StaticResource TitleLabel}" Text="{Binding Coins}" VerticalOptions="Center" />
+                </HorizontalStackLayout>
+            </Border>
+            <Border Grid.Column="1" Padding="14,10" Style="{StaticResource CardBorder}">
+                <Border.GestureRecognizers>
+                    <TapGestureRecognizer Command="{Binding ToggleDemolishModeCommand}" />
+                </Border.GestureRecognizers>
+                <Label FontSize="20" Text="🧨" VerticalOptions="Center" HorizontalOptions="Center" />
+                <Border.Triggers>
+                    <DataTrigger Binding="{Binding IsDemolishMode}" TargetType="Border" Value="True">
+                        <Setter Property="BackgroundColor" Value="{StaticResource AccentSoft}" />
+                        <Setter Property="Stroke" Value="{StaticResource Accent}" />
+                    </DataTrigger>
+                </Border.Triggers>
+            </Border>
+        </Grid>
+
+        <!-- City map -->
+        <gameControls:CityMapView
+            Grid.Row="1"
+            City="{Binding City}"
+            DemolishMode="{Binding IsDemolishMode}"
+            GhostBuilding="{Binding SelectedBuilding}"
+            TileTappedCommand="{Binding TileTappedCommand}" />
+
+        <!-- Bottom panel: hint + shop -->
+        <VerticalStackLayout Grid.Row="2" Padding="16,8,16,16" Spacing="8">
+            <Label
+                FontSize="12"
+                HorizontalTextAlignment="Center"
+                Style="{StaticResource SubtitleLabel}"
+                Text="{Binding ModeHint}" />
+
+            <ScrollView HorizontalScrollBarVisibility="Never" Orientation="Horizontal">
+                <HorizontalStackLayout Spacing="10" BindableLayout.ItemsSource="{Binding ShopItems}">
+                    <BindableLayout.ItemTemplate>
+                        <DataTemplate x:DataType="city:BuildingDefinition">
+                            <Border Padding="12,8" Style="{StaticResource CardBorder}" WidthRequest="92">
+                                <Border.GestureRecognizers>
+                                    <TapGestureRecognizer Command="{Binding Source={RelativeSource AncestorType={x:Type viewModels:CityBuilderPageViewModel}}, Path=SelectBuildingCommand}" CommandParameter="{Binding .}" />
+                                </Border.GestureRecognizers>
+                                <VerticalStackLayout Spacing="2">
+                                    <Label FontSize="24" HorizontalTextAlignment="Center" Text="{Binding Icon}" />
+                                    <Label
+                                        FontSize="11"
+                                        HorizontalTextAlignment="Center"
+                                        Style="{StaticResource TitleLabel}"
+                                        Text="{Binding Name}" />
+                                    <Label
+                                        FontSize="10"
+                                        HorizontalTextAlignment="Center"
+                                        Style="{StaticResource StatLabel}"
+                                        Text="{Binding Cost, StringFormat='{0} 🪙'}" />
+                                </VerticalStackLayout>
+                                <Border.Triggers>
+                                    <DataTrigger
+                                        Binding="{Binding Source={RelativeSource AncestorType={x:Type viewModels:CityBuilderPageViewModel}}, Path=SelectedBuilding.Id}"
+                                        TargetType="Border"
+                                        Value="{Binding Id}">
+                                        <Setter Property="BackgroundColor" Value="{StaticResource AccentSoft}" />
+                                        <Setter Property="Stroke" Value="{StaticResource Accent}" />
+                                    </DataTrigger>
+                                </Border.Triggers>
+                            </Border>
+                        </DataTemplate>
+                    </BindableLayout.ItemTemplate>
+                </HorizontalStackLayout>
+            </ScrollView>
+        </VerticalStackLayout>
+    </Grid>
+</ContentPage>

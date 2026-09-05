@@ -3,6 +3,7 @@ using System.Linq;
 using System.Reflection;
 using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
+using UniTracks.Games.Persistence;
 using UniTracks.Models.Constants;
 using UniTracks.Models.Environment;
 using UniTracks.Models.Health;
@@ -22,6 +23,7 @@ public class SqliteDBContext : DbContext
     public DbSet<Weight> Weights { get; set; }
     public DbSet<TripType> TripTypes { get; set; }
     public DbSet<User> Users { get; set; }
+    public DbSet<PlacedBuilding> PlacedBuildings { get; set; }
 
     public DbContext Context => this;
     public string DatabasePath { get; }

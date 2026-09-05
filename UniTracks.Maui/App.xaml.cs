@@ -11,6 +11,7 @@ namespace UniTracks.Maui
             MainPage = new AppShell();
 
             Routing.RegisterRoute(nameof(TripOverviewPage), typeof(TripOverviewPage));
+            Routing.RegisterRoute(nameof(CityBuilderPage), typeof(CityBuilderPage));
         }
 
         protected override Window CreateWindow(IActivationState? activationState)

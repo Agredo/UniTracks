@@ -24,6 +24,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\UniTracks.Models\UniTracks.Models.csproj" />
+    <ProjectReference Include="..\UniTracks.Games\UniTracks.Games.csproj" />
   </ItemGroup>
 
   <ItemGroup>
