@@ -24,28 +24,79 @@ bleibt daher in `Maui.Views`. `UniTracks.Games` kann später auch von anderen Ho
 
 ## Währung & Wirtschaft
 
-- **XP** (bestehend, Gamification) = Prestige/Level, **unverbrauchbar**.
-- **Coins** (neu) = ausgebbare Währung. `Balance = Earned − Spent`
-  - Earned (aus Trip-Daten berechnet, wie Gamification — keine Sync-Probleme):
-    `10 Coins pro km + 5 Coins pro Trip + 25 Coins pro freigeschaltetem Erfolg`
-  - Spent = Summe der Kosten aller platzierten Gebäude (abrissbedingte Rückerstattung: 50 %).
-- Persistiert wird nur: `PlacedBuilding` (ID Guid, BuildingId string, X int, Y int, PlacedAt DateTimeOffset).
-  Coins werden NICHT persistiert (immer berechnet) → kein Cheating-Drift, keine Migration von Balances.
+- **XP** (bestehend, Gamification) = Prestige/Level, **unverbrauchbar**. `XP = ⌊km⌋ + 2×Trips`, `Level = XP/100 + 1`.
+- **Coins** = ausgebbare Währung. `Balance = Earned − Spent`. **Alles wird serverlos aus Trip-Daten berechnet — nie persistiert** → kein Cheating, kein Drift.
+- Persistiert wird nur: `PlacedBuilding` + `CityExpansion` (gekaufte Erweiterungen).
 
-## Gebäude-Katalog (Start, `BuildingCatalog` im Games-Projekt)
+### Sportart-Faktoren (Anti-Schummel-Fairness) 🆕
 
-| Gebäude | Icon | Kosten |
+Coins pro km hängen vom Trip-Typ ab — die Faktoren leben **nur serverseitig** in `UniTracks.Games/Economy/TripTypeFactors.cs`
+(kein Client-Input, keine User-Wahl), nach Kategorie gemappt:
+
+| Kategorie | Faktor | Begründung |
 |---|---|---|
-| Blumenbeet | 🌷 | 15 |
-| Baum / Nadelbaum | 🌳 / 🌲 | 20 |
-| Brunnen | ⛲ | 60 |
-| Haus | 🏠 | 80 |
-| Spielplatz | 🛝 | 90 |
-| Café | ☕ | 100 |
-| Laden | 🏪 | 120 |
-| Villa | 🏡 | 150 |
-| Schule | 🏫 | 200 |
-| Krankenhaus | 🏥 | 300 |
+| running (Run, Walk, Gassi, Hiking) | **1.0** | Referenz — reine Körperleistung pro km |
+| winter sports (Ski, Snowboard, Schneeschuh) | **0.8** | körperlich, aber liftgestützt/bergab |
+| skating | **0.7** | Rollwiderstand hilft |
+| water sports (Schwimmen, SUP, Rudern) | **1.2** | langsam & hart — Bonus |
+| cycling | **0.3** | Hebelwirkung des Rads |
+| fitness / fighting / ball sports / misc | **0.5** | oft indoor, Distanz sekundär |
+| E-Bike / E-Mountainbike (Identifier-Whitelist) | **0.1** | Motorunterstützung |
+
+`Earned = 500 (Start) + Σ pro Trip (⌊km × Faktor × 10⌋ + 5) + LevelBoni + 25×Erfolge + Erfolg-Belohnungen`
+→ Gleiche Distanz ≠ gleiche Coins; ein 20-km-Radtrip gibt ~65 Coins, ein 20-km-Lauf ~205.
+
+### Level- & Erfolg-Incentives 🆕
+
+| Auslöser | Belohnung |
+|---|---|
+| **Levelaufstieg** | `100 × Level` Coins (Level 2 → 200, Level 5 → 500, …; aus XP-Verlauf berechnet) |
+| **Erfolg freigeschaltet** | 25 Coins (Basis) + ggf. **Exklusiv-Deko** (s. Katalog) |
+| **Level-Freischaltung** | Gebäude haben `RequiredLevel` — Shop zeigt gesperrte Items mit „🔒 Level X" |
+| **Erfolg-Exklusives** | Gebäude mit `RequiredAchievementId` — z. B. 🏆 Goldene Statue (erst ab „100 km gesamt", kostet 500 🪙) |
+
+### Stadterweiterung 🆕
+
+- Stadt startet **6×6**. Erweiterungen: **8×8 → 10×10 → 12×12** (Level-Gate + Coin-Kauf):
+  `8×8: Level 2, 300 🪙 · 10×10: Level 4, 800 🪙 · 12×12: Level 7, 1500 🪙`
+- Tabelle in `UniTracks.Games/CityBuilder/CityExpansions.cs`; gekaufte Erweiterungen werden
+  in neuer Entity `CityExpansion` (Id Guid, GridSize int, PurchasedAt) persistiert —
+  ebenfalls ohne Migration, InitialCreate neu generieren.
+- UI: „＋ Erweitern"-Button auf der Karte (aktiv, wenn nächste Stufe freigeschaltet & bezahlbar).
+
+### Gebäude-Katalog (überarbeitet: Level-Gates + Erfolg-Exklusives) 🆕
+
+| Gebäude | Icon | Kosten | Freischaltung |
+|---|---|---|---|
+| Blumenbeet | 🌷 | 15 | — |
+| Baum / Nadelbaum | 🌳 / 🌲 | 20 | — |
+| Brunnen | ⛲ | 60 | — |
+| Haus | 🏠 | 80 | — |
+| Spielplatz | 🛝 | 90 | Level 2 |
+| Café | ☕ | 100 | Level 2 |
+| Laden | 🏪 | 120 | Level 3 |
+| Villa | 🏡 | 150 | Level 3 |
+| Schule | 🏫 | 200 | Level 4 |
+| Krankenhaus | 🏥 | 300 | Level 5 |
+| **Goldene Statue** | 🏆 | 500 | Erfolg „100 km gesamt" |
+| **Gipfel-Kreuz** | ⛰️ | 400 | Erfolg „Gipfelstürmer" |
+| **Marathon-Torbogen** | 🎽 | 400 | Erfolg „Marathon-Bereit" |
+
+`BuildingDefinition` bekommt `RequiredLevel int = 1` und `RequiredAchievementId string?`.
+`CityEngine` validiert Platzierung gegen Level + freigeschaltete Erfolge (nicht nur Coins).
+
+## Umsetzungs-Reihenfolge Wirtschafts-Update 🆕
+
+1. `TripTypeFactors` (Kategorie→Faktor + E-Bike-Whitelist) + `CoinEconomy.ComputeEarned` umstellen
+   (Signatur: Liste der Trips mit Distanz+TripTypeIdentifier statt Aggregat)
+2. `GamificationService`-Schnittstelle: CoinService braucht Trip-Liste inkl. Typ → neuer Adapter
+3. `BuildingDefinition` um `RequiredLevel`/`RequiredAchievementId`, `CityEngine`-Validierung,
+   Shop-UI mit 🔒-Zustand
+4. `CityExpansion`-Entity + `CityExpansions`-Tabelle + Kauf-Flow + „＋ Erweitern"-Button
+   (InitialCreate-Migration neu generieren, lokale DB löschen)
+5. Level-Bonus in `ComputeEarned` (aus XP-Verlauf) + Exklusiv-Gebäude (Statue/Kreuz/Torbogen)
+   inkl. neuer Sprites
+6. GameTabPage: Level-Anzeige + „Nächster Levelaufstieg: +X 🪙"-Teaser
 
 ## Rendering: SkiaSharp (beeindruckende Karte)
 
