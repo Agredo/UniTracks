@@ -315,6 +315,14 @@ partial class _20260905004229_InitialCreate
                     },
                     new
                     {
+                        ID = new Guid("00000000-0000-0000-0000-000000000085"),
+                        Category = "running",
+                        Description = "",
+                        Identifier = "dogwalk",
+                        Name = "Gassi gehen"
+                    },
+                    new
+                    {
                         ID = new Guid("00000000-0000-0000-0000-000000000004"),
                         Category = "running",
                         Description = "",

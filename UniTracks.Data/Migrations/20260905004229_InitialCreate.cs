@@ -220,6 +220,7 @@ public partial class _20260905004229_InitialCreate : Migration
                 { new Guid("00000000-0000-0000-0000-000000000001"), "running", "", "run", "Run" },
                 { new Guid("00000000-0000-0000-0000-000000000002"), "running", "", "trailrun", "Trail Run" },
                 { new Guid("00000000-0000-0000-0000-000000000003"), "running", "", "walk", "Walk" },
+                { new Guid("00000000-0000-0000-0000-000000000085"), "running", "", "dogwalk", "Gassi gehen" },
                 { new Guid("00000000-0000-0000-0000-000000000004"), "running", "", "hiking", "Hiking" },
                 { new Guid("00000000-0000-0000-0000-000000000005"), "cycling", "", "cycling", "Cycling" },
                 { new Guid("00000000-0000-0000-0000-000000000006"), "cycling", "", "mountainbiking", "Mountain Biking" },
