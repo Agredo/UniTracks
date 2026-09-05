@@ -23,6 +23,20 @@ public class DefenseMapView : SKCanvasView
     private static readonly SKColor SkyTop = new(18, 26, 22);
     private static readonly SKColor SkyBottom = new(30, 44, 35);
 
+    // Reusable Skia objects for the board, so a full redraw doesn't allocate hundreds of
+    // native paint/path objects every frame (which grows as later waves add more enemies).
+    private readonly SKPath tileSidePath = new();
+    private readonly SKPath tileTopPath = new();
+    private readonly SKPaint tileSidePaint = new() { Style = SKPaintStyle.Fill, IsAntialias = true };
+    private readonly SKPaint tileTopPaint = new() { Style = SKPaintStyle.Fill, IsAntialias = true };
+    private readonly SKPaint tileGhostStrokePaint = new()
+    {
+        Color = new SKColor(77, 231, 144),
+        Style = SKPaintStyle.Stroke,
+        StrokeWidth = 3,
+        IsAntialias = true,
+    };
+
     private readonly Stopwatch tickWatch = new();
     private readonly IDispatcherTimer gameTimer;
 
@@ -128,9 +142,16 @@ public class DefenseMapView : SKCanvasView
         tickWatch.Restart();
         effectTimeMs += elapsedMs;
 
-        if (State is not null && TickCommand?.CanExecute(elapsedMs) == true)
+        try
         {
-            TickCommand.Execute(elapsedMs);
+            if (State is not null && TickCommand?.CanExecute(elapsedMs) == true)
+            {
+                TickCommand.Execute(elapsedMs);
+            }
+        }
+        catch (Exception ex)
+        {
+            CrashLog.Write($"Game tick failed: {ex}");
         }
 
         InvalidateSurface();
@@ -233,6 +254,13 @@ public class DefenseMapView : SKCanvasView
     {
         var layout = CurrentLayout();
 
+        // During layout the canvas can still be 0-sized, which would make the inverse
+        // transform divide by zero and overflow when converted back to a tile index.
+        if (layout.TileW <= 0 || layout.TileH <= 0)
+        {
+            return;
+        }
+
         // Inverse isometric transform: screen → tile coordinates.
         double dx = point.X - layout.OriginX;
         double dy = point.Y - layout.OriginY;
@@ -264,19 +292,27 @@ public class DefenseMapView : SKCanvasView
         canvasWidth = e.Info.Width;
         canvasHeight = e.Info.Height;
 
-        DrawBackground(canvas);
-
-        if (State is null)
+        try
         {
-            return;
-        }
+            DrawBackground(canvas);
 
-        var layout = CurrentLayout();
-        DrawTiles(canvas, layout);
-        DrawGhost(canvas, layout);
-        DrawTowerEffects(canvas, layout);
-        DrawEnemies(canvas, layout);
-        DrawProjectiles(canvas, layout);
+            if (State is null)
+            {
+                return;
+            }
+
+            var layout = CurrentLayout();
+            DrawTiles(canvas, layout);
+            DrawGhost(canvas, layout);
+            DrawTowerEffects(canvas, layout);
+            DrawEnemies(canvas, layout);
+            DrawProjectiles(canvas, layout);
+        }
+        catch (Exception ex)
+        {
+            // A single bad frame must never take the whole game down.
+            CrashLog.Write($"Paint failed: {ex}");
+        }
     }
 
     private void DrawBackground(SKCanvas canvas)
@@ -338,39 +374,31 @@ public class DefenseMapView : SKCanvasView
         float hw = (float)(layout.TileW / 2.0);
         float hh = (float)(layout.TileH / 2.0);
 
-        // Side faces for a subtle 3D feel.
-        using (var sidePath = new SKPath())
-        {
-            sidePath.MoveTo(cx - hw, cy);
-            sidePath.LineTo(cx, cy + hh);
-            sidePath.LineTo(cx + hw, cy);
-            sidePath.LineTo(cx + hw, cy + hh * 0.25f);
-            sidePath.LineTo(cx, cy + hh * 1.25f);
-            sidePath.LineTo(cx - hw, cy + hh * 0.25f);
-            sidePath.Close();
-            using var sidePaint = new SKPaint { Color = side, Style = SKPaintStyle.Fill, IsAntialias = true };
-            canvas.DrawPath(sidePath, sidePaint);
-        }
+        // Side faces for a subtle 3D feel. Path/paint instances are reused across tiles
+        // so the board stays cheap to redraw every frame (135 tiles * many objects/frame).
+        tileSidePaint.Color = side;
+        tileSidePath.Rewind();
+        tileSidePath.MoveTo(cx - hw, cy);
+        tileSidePath.LineTo(cx, cy + hh);
+        tileSidePath.LineTo(cx + hw, cy);
+        tileSidePath.LineTo(cx + hw, cy + hh * 0.25f);
+        tileSidePath.LineTo(cx, cy + hh * 1.25f);
+        tileSidePath.LineTo(cx - hw, cy + hh * 0.25f);
+        tileSidePath.Close();
+        canvas.DrawPath(tileSidePath, tileSidePaint);
 
-        using var topPath = new SKPath();
-        topPath.MoveTo(cx, cy - hh);
-        topPath.LineTo(cx + hw, cy);
-        topPath.LineTo(cx, cy + hh);
-        topPath.LineTo(cx - hw, cy);
-        topPath.Close();
-        using var topPaint = new SKPaint { Color = top, Style = SKPaintStyle.Fill, IsAntialias = true };
-        canvas.DrawPath(topPath, topPaint);
+        tileTopPaint.Color = top;
+        tileTopPath.Rewind();
+        tileTopPath.MoveTo(cx, cy - hh);
+        tileTopPath.LineTo(cx + hw, cy);
+        tileTopPath.LineTo(cx, cy + hh);
+        tileTopPath.LineTo(cx - hw, cy);
+        tileTopPath.Close();
+        canvas.DrawPath(tileTopPath, tileTopPaint);
 
         if (isGhostTarget)
         {
-            using var stroke = new SKPaint
-            {
-                Color = new SKColor(77, 231, 144),
-                Style = SKPaintStyle.Stroke,
-                StrokeWidth = 3,
-                IsAntialias = true,
-            };
-            canvas.DrawPath(topPath, stroke);
+            canvas.DrawPath(tileTopPath, tileGhostStrokePaint);
         }
     }
 
