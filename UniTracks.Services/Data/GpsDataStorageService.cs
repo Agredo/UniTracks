@@ -16,6 +16,13 @@ public class GpsDataStorageService : IGpsDataStorageService
 
     public IRepository Repository { get; }
 
+    public Guid? CurrentTripTypeId { get; set; }
+
+    public void FinalizeTrip()
+    {
+        currentTrip = null;
+    }
+
     public async Task<List<LocationModel>> getAll()
     {
         return (await Repository.GetAllAsync<LocationModel>()).ToList();
@@ -71,6 +78,7 @@ public class GpsDataStorageService : IGpsDataStorageService
             {
                 ID = Guid.NewGuid(),
                 StartTime = DateTimeOffset.Now,
+                TripTypeId = CurrentTripTypeId,
                 Locations = new List<LocationModel>() { location },
                 MaxSpeed = location.Speed,
                 MinSpeed = location.Speed,

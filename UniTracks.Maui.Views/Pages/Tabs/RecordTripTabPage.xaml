@@ -4,10 +4,11 @@
     xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
     xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
     xmlns:viewModels="clr-namespace:UniTracks.ViewModels.Pages.Tabs;assembly=UniTracks.ViewModels"
+    xmlns:models="clr-namespace:UniTracks.Models.Trip;assembly=UniTracks.Models"
     Title="Record Trip"
     x:DataType="viewModels:RecordTripTabPageViewModel">
 
-    <Grid Padding="24" RowDefinitions="Auto,*,Auto">
+    <Grid Padding="24" RowDefinitions="Auto,Auto,*,Auto">
 
         <!-- Status chip -->
         <Border
@@ -64,9 +65,60 @@
             </Border.Triggers>
         </Border>
 
+        <!-- Trip type selector -->
+        <CollectionView
+            Grid.Row="1"
+            Margin="0,20,0,0"
+            HeightRequest="56"
+            HorizontalScrollBarVisibility="Never"
+            ItemsSource="{Binding TripTypes}"
+            SelectedItem="{Binding SelectedTripType}"
+            SelectionMode="Single"
+            VerticalScrollBarVisibility="Never">
+            <CollectionView.ItemsLayout>
+                <LinearItemsLayout ItemSpacing="8" Orientation="Horizontal" />
+            </CollectionView.ItemsLayout>
+            <CollectionView.ItemTemplate>
+                <DataTemplate x:DataType="models:TripType">
+                    <Border
+                        Padding="18,10"
+                        Stroke="{StaticResource CardStroke}"
+                        StrokeThickness="1"
+                        VerticalOptions="Center">
+                        <Border.StrokeShape>
+                            <RoundRectangle CornerRadius="20" />
+                        </Border.StrokeShape>
+                        <Label
+                            FontAttributes="Bold"
+                            FontSize="13"
+                            Text="{Binding Name}"
+                            TextColor="{StaticResource TextSecondary}"
+                            VerticalOptions="Center" />
+                        <Border.VisualStateManager.VisualStateGroups>
+                            <VisualStateGroup Name="CommonStates">
+                                <VisualState Name="Normal">
+                                    <VisualState.Setters>
+                                        <Setter Property="BackgroundColor" Value="{StaticResource Card}" />
+                                        <Setter Property="Stroke" Value="{StaticResource CardStroke}" />
+                                    </VisualState.Setters>
+                                </VisualState>
+                                <VisualState Name="Selected">
+                                    <VisualState.Setters>
+                                        <Setter Property="BackgroundColor" Value="{StaticResource CardAlt}" />
+                                        <Setter Property="Stroke" Value="{StaticResource Accent}" />
+                                        <Setter Property="StrokeThickness" Value="2" />
+                                    </VisualState.Setters>
+                                </VisualState>
+                            </VisualStateGroup>
+                        </Border.VisualStateManager.VisualStateGroups>
+                    </Border>
+                </DataTemplate>
+            </CollectionView.ItemTemplate>
+        </CollectionView>
+
         <!-- Timer -->
         <Label
-            Grid.Row="1"
+            Grid.Row="2"
             HorizontalOptions="Center"
             Style="{StaticResource TimerLabel}"
             Text="{Binding StopWatchTime}"
@@ -74,7 +126,7 @@
 
         <!-- Controls -->
         <HorizontalStackLayout
-            Grid.Row="2"
+            Grid.Row="3"
             HorizontalOptions="Center"
             Spacing="16"
             VerticalOptions="End">

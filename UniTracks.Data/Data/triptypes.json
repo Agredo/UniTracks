@@ -1,0 +1,590 @@
+[
+  {
+    "ID": "00000000-0000-0000-0000-000000000001",
+    "Category": "running",
+    "Description": "",
+    "Identifier": "run",
+    "Name": "Run"
+  },
+  {
+    "ID": "00000000-0000-0000-0000-000000000002",
+    "Category": "running",
+    "Description": "",
+    "Identifier": "trailrun",
+    "Name": "Trail Run"
+  },
+  {
+    "ID": "00000000-0000-0000-0000-000000000003",
+    "Category": "running",
+    "Description": "",
+    "Identifier": "walk",
+    "Name": "Walk"
+  },
+  {
+    "ID": "00000000-0000-0000-0000-000000000004",
+    "Category": "running",
+    "Description": "",
+    "Identifier": "hiking",
+    "Name": "Hiking"
+  },
+  {
+    "ID": "00000000-0000-0000-0000-000000000005",
+    "Category": "cycling",
+    "Description": "",
+    "Identifier": "cycling",
+    "Name": "Cycling"
+  },
+  {
+    "ID": "00000000-0000-0000-0000-000000000006",
+    "Category": "cycling",
+    "Description": "",
+    "Identifier": "mountainbiking",
+    "Name": "Mountain Biking"
+  },
+  {
+    "ID": "00000000-0000-0000-0000-000000000007",
+    "Category": "cycling",
+    "Description": "",
+    "Identifier": "gravelride",
+    "Name": "Gravel Ride"
+  },
+  {
+    "ID": "00000000-0000-0000-0000-000000000008",
+    "Category": "cycling",
+    "Description": "",
+    "Identifier": "ebikeride",
+    "Name": "E-Bike Ride"
+  },
+  {
+    "ID": "00000000-0000-0000-0000-000000000009",
+    "Category": "cycling",
+    "Description": "",
+    "Identifier": "emountainbikeride",
+    "Name": "E-Mountainbike Ride"
+  },
+  {
+    "ID": "00000000-0000-0000-0000-000000000010",
+    "Category": "cycling",
+    "Description": "",
+    "Identifier": "velobikeride",
+    "Name": "Velobike Ride"
+  },
+  {
+    "ID": "00000000-0000-0000-0000-000000000011",
+    "Category": "winter sports",
+    "Description": "",
+    "Identifier": "skiing",
+    "Name": "Skiing"
+  },
+  {
+    "ID": "00000000-0000-0000-0000-000000000012",
+    "Category": "winter sports",
+    "Description": "",
+    "Identifier": "snowboarding",
+    "Name": "Snowboarding"
+  },
+  {
+    "ID": "00000000-0000-0000-0000-000000000013",
+    "Category": "winter sports",
+    "Description": "",
+    "Identifier": "crosscountryskiing",
+    "Name": "Cross Country Skiing"
+  },
+  {
+    "ID": "00000000-0000-0000-0000-000000000014",
+    "Category": "winter sports",
+    "Description": "",
+    "Identifier": "backcountryskiing",
+    "Name": "Backcountry Skiing"
+  },
+  {
+    "ID": "00000000-0000-0000-0000-000000000015",
+    "Category": "winter sports",
+    "Description": "",
+    "Identifier": "telemarkskiing",
+    "Name": "Telemark Skiing"
+  },
+  {
+    "ID": "00000000-0000-0000-0000-000000000016",
+    "Category": "winter sports",
+    "Description": "",
+    "Identifier": "snowshoeing",
+    "Name": "Snowshoeing"
+  },
+  {
+    "ID": "00000000-0000-0000-0000-000000000017",
+    "Category": "winter sports",
+    "Description": "",
+    "Identifier": "alpineskiing",
+    "Name": "Alpine Skiing"
+  },
+  {
+    "ID": "00000000-0000-0000-0000-000000000018",
+    "Category": "winter sports",
+    "Description": "",
+    "Identifier": "snowshoehike",
+    "Name": "Snowshoe Hike"
+  },
+  {
+    "ID": "00000000-0000-0000-0000-000000000019",
+    "Category": "skating",
+    "Description": "",
+    "Identifier": "skating",
+    "Name": "Skating"
+  },
+  {
+    "ID": "00000000-0000-0000-0000-000000000020",
+    "Category": "skating",
+    "Description": "",
+    "Identifier": "inlineskating",
+    "Name": "Inline Skating"
+  },
+  {
+    "ID": "00000000-0000-0000-0000-000000000021",
+    "Category": "skating",
+    "Description": "",
+    "Identifier": "rollerskating",
+    "Name": "Roller Skating"
+  },
+  {
+    "ID": "00000000-0000-0000-0000-000000000022",
+    "Category": "skating",
+    "Description": "",
+    "Identifier": "iceskating",
+    "Name": "Ice Skating"
+  },
+  {
+    "ID": "00000000-0000-0000-0000-000000000023",
+    "Category": "water sports",
+    "Description": "",
+    "Identifier": "swimming",
+    "Name": "Swimming"
+  },
+  {
+    "ID": "00000000-0000-0000-0000-000000000024",
+    "Category": "water sports",
+    "Description": "",
+    "Identifier": "openwaterswimming",
+    "Name": "Open Water Swimming"
+  },
+  {
+    "ID": "00000000-0000-0000-0000-000000000025",
+    "Category": "water sports",
+    "Description": "",
+    "Identifier": "poolswimming",
+    "Name": "Pool Swimming"
+  },
+  {
+    "ID": "00000000-0000-0000-0000-000000000026",
+    "Category": "water sports",
+    "Description": "",
+    "Identifier": "lapswimming",
+    "Name": "Lap Swimming"
+  },
+  {
+    "ID": "00000000-0000-0000-0000-000000000027",
+    "Category": "water sports",
+    "Description": "",
+    "Identifier": "kanu",
+    "Name": "Kanu"
+  },
+  {
+    "ID": "00000000-0000-0000-0000-000000000028",
+    "Category": "water sports",
+    "Description": "",
+    "Identifier": "kayak",
+    "Name": "Kayak"
+  },
+  {
+    "ID": "00000000-0000-0000-0000-000000000029",
+    "Category": "water sports",
+    "Description": "",
+    "Identifier": "standuppaddling",
+    "Name": "Stand Up Paddling"
+  },
+  {
+    "ID": "00000000-0000-0000-0000-000000000030",
+    "Category": "water sports",
+    "Description": "",
+    "Identifier": "rowing",
+    "Name": "Rowing"
+  },
+  {
+    "ID": "00000000-0000-0000-0000-000000000031",
+    "Category": "water sports",
+    "Description": "",
+    "Identifier": "dragonboat",
+    "Name": "Dragon Boat"
+  },
+  {
+    "ID": "00000000-0000-0000-0000-000000000032",
+    "Category": "water sports",
+    "Description": "",
+    "Identifier": "sailing",
+    "Name": "Sailing"
+  },
+  {
+    "ID": "00000000-0000-0000-0000-000000000033",
+    "Category": "water sports",
+    "Description": "",
+    "Identifier": "surfing",
+    "Name": "Surfing"
+  },
+  {
+    "ID": "00000000-0000-0000-0000-000000000034",
+    "Category": "water sports",
+    "Description": "",
+    "Identifier": "kitesurfing",
+    "Name": "Kitesurfing"
+  },
+  {
+    "ID": "00000000-0000-0000-0000-000000000035",
+    "Category": "water sports",
+    "Description": "",
+    "Identifier": "windsurfing",
+    "Name": "Windsurfing"
+  },
+  {
+    "ID": "00000000-0000-0000-0000-000000000036",
+    "Category": "water sports",
+    "Description": "",
+    "Identifier": "wakeboarding",
+    "Name": "Wakeboarding"
+  },
+  {
+    "ID": "00000000-0000-0000-0000-000000000037",
+    "Category": "water sports",
+    "Description": "",
+    "Identifier": "wakesurfing",
+    "Name": "Wakesurfing"
+  },
+  {
+    "ID": "00000000-0000-0000-0000-000000000038",
+    "Category": "water sports",
+    "Description": "",
+    "Identifier": "waterskiing",
+    "Name": "Water Skiing"
+  },
+  {
+    "ID": "00000000-0000-0000-0000-000000000039",
+    "Category": "water sports",
+    "Description": "",
+    "Identifier": "jetskiing",
+    "Name": "Jet Skiing"
+  },
+  {
+    "ID": "00000000-0000-0000-0000-000000000040",
+    "Category": "water sports",
+    "Description": "",
+    "Identifier": "diving",
+    "Name": "Diving"
+  },
+  {
+    "ID": "00000000-0000-0000-0000-000000000041",
+    "Category": "water sports",
+    "Description": "",
+    "Identifier": "freediving",
+    "Name": "Freediving"
+  },
+  {
+    "ID": "00000000-0000-0000-0000-000000000042",
+    "Category": "miscellaneous",
+    "Description": "",
+    "Identifier": "golf",
+    "Name": "Golf"
+  },
+  {
+    "ID": "00000000-0000-0000-0000-000000000043",
+    "Category": "miscellaneous",
+    "Description": "",
+    "Identifier": "horsebackriding",
+    "Name": "Horseback Riding"
+  },
+  {
+    "ID": "00000000-0000-0000-0000-000000000044",
+    "Category": "miscellaneous",
+    "Description": "",
+    "Identifier": "climbing",
+    "Name": "Climbing"
+  },
+  {
+    "ID": "00000000-0000-0000-0000-000000000045",
+    "Category": "miscellaneous",
+    "Description": "",
+    "Identifier": "bouldering",
+    "Name": "Bouldering"
+  },
+  {
+    "ID": "00000000-0000-0000-0000-000000000046",
+    "Category": "miscellaneous",
+    "Description": "",
+    "Identifier": "indoorclimbing",
+    "Name": "Indoor Climbing"
+  },
+  {
+    "ID": "00000000-0000-0000-0000-000000000047",
+    "Category": "miscellaneous",
+    "Description": "",
+    "Identifier": "outdoorclimbing",
+    "Name": "Outdoor Climbing"
+  },
+  {
+    "ID": "00000000-0000-0000-0000-000000000048",
+    "Category": "miscellaneous",
+    "Description": "",
+    "Identifier": "iceclimbing",
+    "Name": "Ice Climbing"
+  },
+  {
+    "ID": "00000000-0000-0000-0000-000000000049",
+    "Category": "miscellaneous",
+    "Description": "",
+    "Identifier": "mountaineering",
+    "Name": "Mountaineering"
+  },
+  {
+    "ID": "00000000-0000-0000-0000-000000000050",
+    "Category": "miscellaneous",
+    "Description": "",
+    "Identifier": "viaferrata",
+    "Name": "Via Ferrata"
+  },
+  {
+    "ID": "00000000-0000-0000-0000-000000000051",
+    "Category": "miscellaneous",
+    "Description": "",
+    "Identifier": "canyoning",
+    "Name": "Canyoning"
+  },
+  {
+    "ID": "00000000-0000-0000-0000-000000000052",
+    "Category": "miscellaneous",
+    "Description": "",
+    "Identifier": "skateboarding",
+    "Name": "Skateboarding"
+  },
+  {
+    "ID": "00000000-0000-0000-0000-000000000053",
+    "Category": "miscellaneous",
+    "Description": "",
+    "Identifier": "longboarding",
+    "Name": "Longboarding"
+  },
+  {
+    "ID": "00000000-0000-0000-0000-000000000054",
+    "Category": "fitness",
+    "Description": "",
+    "Identifier": "fitness",
+    "Name": "Fitness"
+  },
+  {
+    "ID": "00000000-0000-0000-0000-000000000055",
+    "Category": "fitness",
+    "Description": "",
+    "Identifier": "crossfit",
+    "Name": "Crossfit"
+  },
+  {
+    "ID": "00000000-0000-0000-0000-000000000056",
+    "Category": "fitness",
+    "Description": "",
+    "Identifier": "yoga",
+    "Name": "Yoga"
+  },
+  {
+    "ID": "00000000-0000-0000-0000-000000000057",
+    "Category": "fitness",
+    "Description": "",
+    "Identifier": "pilates",
+    "Name": "Pilates"
+  },
+  {
+    "ID": "00000000-0000-0000-0000-000000000058",
+    "Category": "fitness",
+    "Description": "",
+    "Identifier": "barre",
+    "Name": "Barre"
+  },
+  {
+    "ID": "00000000-0000-0000-0000-000000000059",
+    "Category": "fitness",
+    "Description": "",
+    "Identifier": "zumba",
+    "Name": "Zumba"
+  },
+  {
+    "ID": "00000000-0000-0000-0000-000000000060",
+    "Category": "fitness",
+    "Description": "",
+    "Identifier": "dance",
+    "Name": "Dance"
+  },
+  {
+    "ID": "00000000-0000-0000-0000-000000000061",
+    "Category": "fitness",
+    "Description": "",
+    "Identifier": "aerobics",
+    "Name": "Aerobics"
+  },
+  {
+    "ID": "00000000-0000-0000-0000-000000000062",
+    "Category": "fitness",
+    "Description": "",
+    "Identifier": "stepaerobics",
+    "Name": "Step Aerobics"
+  },
+  {
+    "ID": "00000000-0000-0000-0000-000000000063",
+    "Category": "fitness",
+    "Description": "",
+    "Identifier": "spinning",
+    "Name": "Spinning"
+  },
+  {
+    "ID": "00000000-0000-0000-0000-000000000064",
+    "Category": "fitness",
+    "Description": "",
+    "Identifier": "indoorcycling",
+    "Name": "Indoor Cycling"
+  },
+  {
+    "ID": "00000000-0000-0000-0000-000000000065",
+    "Category": "fighting sports",
+    "Description": "",
+    "Identifier": "boxing",
+    "Name": "Boxing"
+  },
+  {
+    "ID": "00000000-0000-0000-0000-000000000066",
+    "Category": "fighting sports",
+    "Description": "",
+    "Identifier": "kickboxing",
+    "Name": "Kickboxing"
+  },
+  {
+    "ID": "00000000-0000-0000-0000-000000000067",
+    "Category": "fighting sports",
+    "Description": "",
+    "Identifier": "martialarts",
+    "Name": "Martial Arts"
+  },
+  {
+    "ID": "00000000-0000-0000-0000-000000000068",
+    "Category": "fighting sports",
+    "Description": "",
+    "Identifier": "taekwondo",
+    "Name": "Taekwondo"
+  },
+  {
+    "ID": "00000000-0000-0000-0000-000000000069",
+    "Category": "fighting sports",
+    "Description": "",
+    "Identifier": "karate",
+    "Name": "Karate"
+  },
+  {
+    "ID": "00000000-0000-0000-0000-000000000070",
+    "Category": "fighting sports",
+    "Description": "",
+    "Identifier": "judo",
+    "Name": "Judo"
+  },
+  {
+    "ID": "00000000-0000-0000-0000-000000000071",
+    "Category": "fighting sports",
+    "Description": "",
+    "Identifier": "jiujitsu",
+    "Name": "Jiu Jitsu"
+  },
+  {
+    "ID": "00000000-0000-0000-0000-000000000072",
+    "Category": "fighting sports",
+    "Description": "",
+    "Identifier": "wrestling",
+    "Name": "Wrestling"
+  },
+  {
+    "ID": "00000000-0000-0000-0000-000000000073",
+    "Category": "ball sports",
+    "Description": "",
+    "Identifier": "football",
+    "Name": "Football"
+  },
+  {
+    "ID": "00000000-0000-0000-0000-000000000074",
+    "Category": "ball sports",
+    "Description": "",
+    "Identifier": "soccer",
+    "Name": "Soccer"
+  },
+  {
+    "ID": "00000000-0000-0000-0000-000000000075",
+    "Category": "ball sports",
+    "Description": "",
+    "Identifier": "volleyball",
+    "Name": "Volleyball"
+  },
+  {
+    "ID": "00000000-0000-0000-0000-000000000076",
+    "Category": "ball sports",
+    "Description": "",
+    "Identifier": "beachvolleyball",
+    "Name": "Beach Volleyball"
+  },
+  {
+    "ID": "00000000-0000-0000-0000-000000000077",
+    "Category": "ball sports",
+    "Description": "",
+    "Identifier": "tennis",
+    "Name": "Tennis"
+  },
+  {
+    "ID": "00000000-0000-0000-0000-000000000078",
+    "Category": "ball sports",
+    "Description": "",
+    "Identifier": "tabletennis",
+    "Name": "Table Tennis"
+  },
+  {
+    "ID": "00000000-0000-0000-0000-000000000079",
+    "Category": "ball sports",
+    "Description": "",
+    "Identifier": "badminton",
+    "Name": "Badminton"
+  },
+  {
+    "ID": "00000000-0000-0000-0000-000000000080",
+    "Category": "ball sports",
+    "Description": "",
+    "Identifier": "squash",
+    "Name": "Squash"
+  },
+  {
+    "ID": "00000000-0000-0000-0000-000000000081",
+    "Category": "ball sports",
+    "Description": "",
+    "Identifier": "racquetball",
+    "Name": "Racquetball"
+  },
+  {
+    "ID": "00000000-0000-0000-0000-000000000082",
+    "Category": "ball sports",
+    "Description": "",
+    "Identifier": "handball",
+    "Name": "Handball"
+  },
+  {
+    "ID": "00000000-0000-0000-0000-000000000083",
+    "Category": "ball sports",
+    "Description": "",
+    "Identifier": "basketball",
+    "Name": "Basketball"
+  },
+  {
+    "ID": "00000000-0000-0000-0000-000000000084",
+    "Category": "ball sports",
+    "Description": "",
+    "Identifier": "americanfootball",
+    "Name": "American Football"
+  }
+]

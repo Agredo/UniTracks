@@ -13,4 +13,10 @@ public interface IGpsDataStorageService
     Task StoreData(GPSInformatoion gpsInformatoion);
 
     Task<List<Models.Location.Location>> getAll();
+
+    /// <summary>Id of the trip type assigned to the next trip that gets created.</summary>
+    Guid? CurrentTripTypeId { get; set; }
+
+    /// <summary>Ends the current recording session so the next one creates a fresh trip.</summary>
+    void FinalizeTrip();
 }

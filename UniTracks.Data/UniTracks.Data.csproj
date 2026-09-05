@@ -26,4 +26,9 @@
     <ProjectReference Include="..\UniTracks.Models\UniTracks.Models.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <!-- TripType seed catalog stored as JSON and read into HasData in SqliteDBContext. -->
+    <EmbeddedResource Include="Data\triptypes.json" />
+  </ItemGroup>
+
 </Project>

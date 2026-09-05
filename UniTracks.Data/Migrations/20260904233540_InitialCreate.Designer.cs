@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using UniTracks.Data.SQLite;
 
@@ -10,14 +11,11 @@ using UniTracks.Data.SQLite;
 namespace UniTracks.Data.Migrations;
 
 [DbContext(typeof(SqliteDBContext))]
-partial class SqliteDBContextModelSnapshot : ModelSnapshot
+[Migration("20260904233540_InitialCreate")]
+partial class _20260904233540_InitialCreate
 {
-    // If you encounter a merge conflict in the line below, it means you need to
-    // discard one of the migration branches and recreate its migrations on top of
-    // the other branch. See https://aka.ms/efcore-docs-migrations-conflicts for more info.
-    public override string LastMigrationId => "20260904233540_InitialCreate";
-
-    protected override void BuildModel(ModelBuilder modelBuilder)
+    /// <inheritdoc />
+    protected override void BuildTargetModel(ModelBuilder modelBuilder)
     {
 #pragma warning disable 612, 618
         modelBuilder.HasAnnotation("ProductVersion", "11.0.0-preview.7.26381.103");

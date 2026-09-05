@@ -1,4 +1,7 @@
 using System.Data;
+using System.Linq;
+using System.Reflection;
+using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
 using UniTracks.Models.Constants;
 using UniTracks.Models.Environment;
@@ -38,16 +41,53 @@ public class SqliteDBContext : DbContext
         Database.Migrate();
     }
 
+    /// <summary>
+    /// Design-time / options-based constructor. Used by the <c>dotnet-ef</c> CLI (via
+    /// <see cref="SqliteDesignTimeDbContextFactory"/>) and must NOT run migrations, otherwise the
+    /// CLI throws <c>MigrationsNotFound</c> while generating the initial migration.
+    /// </summary>
+    public SqliteDBContext(DbContextOptions<SqliteDBContext> options) : base(options)
+    {
+        DatabasePath = string.Empty;
+    }
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
 
-        // TripType seed data is applied via EF migration: AddedTripTypeSeeds.
+        modelBuilder.Entity<Trip>(e =>
+        {
+            e.HasOne(t => t.TripType)
+                .WithMany()
+                .HasForeignKey(t => t.TripTypeId);
+        });
 
+        // TripType seed catalog is read from the embedded triptypes.json at
+        // model-build time and applied via HasData (flows into EF migrations).
+        modelBuilder.Entity<TripType>().HasData(LoadTripTypeSeeds());
+    }
+
+    /// <summary>
+    /// Reads the embedded <c>Data/triptypes.json</c> seed catalog into <see cref="TripType"/> instances.
+    /// </summary>
+    private static List<TripType> LoadTripTypeSeeds()
+    {
+        var assembly = typeof(SqliteDBContext).Assembly;
+        var resourceName = assembly.GetManifestResourceNames()
+            .FirstOrDefault(n => n.EndsWith("triptypes.json", StringComparison.OrdinalIgnoreCase))
+            ?? throw new InvalidOperationException(
+                $"Embedded resource 'triptypes.json' not found in assembly {assembly.FullName}.");
+
+        using var stream = assembly.GetManifestResourceStream(resourceName)!;
+        using var reader = new StreamReader(stream);
+        var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
+        return JsonSerializer.Deserialize<List<TripType>>(reader.ReadToEnd(), options)
+            ?? new List<TripType>();
     }
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
     {
-        optionsBuilder.UseSqlite($"Filename={DatabasePath}");
+        if (!optionsBuilder.IsConfigured)
+            optionsBuilder.UseSqlite($"Filename={DatabasePath}");
     }
 }

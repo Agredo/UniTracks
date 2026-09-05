@@ -34,7 +34,8 @@ public record Trip
     public double? MovingTime { get; set; }
     public double? StoppedTime { get; set; }
 
-    //public TripType TripType { get; set; }
+    public Guid? TripTypeId { get; set; }
+    public TripType? TripType { get; set; }
     public List<Location.Location> Locations { get; set; }
     public List<Health.HeartRate>? HeartRates { get; set; }
     public List<Health.Weight>? Weights { get; set; }
