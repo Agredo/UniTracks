@@ -494,7 +494,8 @@ public class DefenseMapView : SKCanvasView
             var (ex, ey) = enemy.Position;
             float px = (float)layout.ScreenX(ex, ey);
             float py = (float)layout.ScreenY(ex, ey);
-            float size = (float)(layout.TileW * 0.3);
+            // Boss insects render slightly larger so they read as heavy hitters.
+            float size = (float)(layout.TileW * (enemy.Definition.Id is "wasp" or "hornet" ? 0.34 : 0.3));
 
             using var shadowPaint = new SKPaint { Color = new SKColor(0, 0, 0, 60), Style = SKPaintStyle.Fill, IsAntialias = true };
             canvas.DrawOval(px, py + (float)(layout.TileH * 0.15), size * 0.4f, size * 0.14f, shadowPaint);
@@ -719,8 +720,8 @@ public class DefenseMapView : SKCanvasView
     /// <summary>Vector enemy sprites — no emoji, so insects render consistently everywhere.</summary>
     private static void DrawInsect(SKCanvas canvas, string id, float px, float py, float size, double phase)
     {
-        float flap = (float)(Math.Sin(phase / 70.0) * size * 0.14);
-        float bob = (float)(Math.Sin(phase / 95.0) * size * 0.06);
+        float flap = (float)(Math.Sin(phase / 60.0) * size * 0.09);
+        float bob = (float)(Math.Sin(phase / 95.0) * size * 0.05);
         float cx = px;
         float cy = py + bob;
 
@@ -733,31 +734,103 @@ public class DefenseMapView : SKCanvasView
         };
         var dark = id is "wasp" or "hornet" ? new SKColor(40, 30, 20) : new SKColor(55, 55, 62);
 
-        float bodyWidth = size * 1.5f;
-        float bodyHeight = size * 0.7f;
+        // Very slim, needle-like mosquito proportions.
+        float bodyWidth = size * 1.85f;
+        float bodyHeight = size * 0.34f;
 
-        // Flapping translucent wings above the body.
-        using (var wingPaint = new SKPaint { Color = new SKColor(225, 232, 245).WithAlpha(160), Style = SKPaintStyle.Fill, IsAntialias = true })
+        // Narrow, swept-back translucent wings drawn as thin curved blades that
+        // flare out sideways/backward from the thorax — like a real mosquito.
+        using (var wingPaint = new SKPaint { Color = new SKColor(222, 230, 245).WithAlpha(140), Style = SKPaintStyle.Fill, IsAntialias = true })
         {
-            canvas.DrawOval(cx - bodyWidth * 0.2f, cy - bodyHeight * 0.9f + flap, bodyWidth * 0.55f, bodyHeight * 1.05f, wingPaint);
-            canvas.DrawOval(cx + bodyWidth * 0.1f, cy - bodyHeight * 0.85f - flap, bodyWidth * 0.5f, bodyHeight * 0.95f, wingPaint);
-        }
+            float wingRootX = cx + bodyWidth * 0.05f;
+            float wingRootY = cy - bodyHeight * 0.35f;
+            float wingLen = bodyWidth * 0.85f;
+            float wingWidth = bodyHeight * 0.5f;
 
-        // Legs.
-        using (var legPaint = new SKPaint { Color = dark, Style = SKPaintStyle.Stroke, StrokeWidth = Math.Max(1, size * 0.06f), IsAntialias = true })
-        {
-            for (int i = -1; i <= 1; i++)
+            // Upper (far) wing — angled slightly up-back.
+            using (var upperWing = new SKPath())
             {
-                float lx = cx + i * bodyWidth * 0.3f;
-                canvas.DrawLine(lx, cy + bodyHeight * 0.1f, lx - bodyWidth * 0.15f, cy + bodyHeight * 0.9f, legPaint);
-                canvas.DrawLine(lx, cy + bodyHeight * 0.1f, lx + bodyWidth * 0.15f, cy + bodyHeight * 0.9f, legPaint);
+                upperWing.MoveTo(wingRootX, wingRootY);
+                upperWing.CubicTo(
+                    wingRootX - wingLen * 0.4f, wingRootY - wingWidth * 1.6f + flap,
+                    wingRootX - wingLen * 0.9f, wingRootY - wingWidth * 1.1f + flap,
+                    wingRootX - wingLen, wingRootY - wingWidth * 0.2f + flap);
+                upperWing.CubicTo(
+                    wingRootX - wingLen * 0.7f, wingRootY + wingWidth * 0.3f + flap,
+                    wingRootX - wingLen * 0.25f, wingRootY + wingWidth * 0.4f,
+                    wingRootX, wingRootY);
+                upperWing.Close();
+                canvas.DrawPath(upperWing, wingPaint);
+            }
+
+            // Lower (near) wing — angled down-back.
+            using (var lowerWing = new SKPath())
+            {
+                lowerWing.MoveTo(wingRootX, wingRootY + bodyHeight * 0.3f);
+                lowerWing.CubicTo(
+                    wingRootX - wingLen * 0.35f, wingRootY + wingWidth * 1.5f - flap,
+                    wingRootX - wingLen * 0.85f, wingRootY + wingWidth * 1.0f - flap,
+                    wingRootX - wingLen * 0.95f, wingRootY + wingWidth * 0.2f - flap);
+                lowerWing.CubicTo(
+                    wingRootX - wingLen * 0.6f, wingRootY - wingWidth * 0.2f - flap,
+                    wingRootX - wingLen * 0.2f, wingRootY - wingWidth * 0.3f,
+                    wingRootX, wingRootY + bodyHeight * 0.3f);
+                lowerWing.Close();
+                canvas.DrawPath(lowerWing, wingPaint);
             }
         }
 
-        // Body.
+        // Long, thin dangly legs — spindlier than before, angled outward.
+        using (var legPaint = new SKPaint { Color = dark, Style = SKPaintStyle.Stroke, StrokeWidth = Math.Max(1, size * 0.04f), IsAntialias = true })
+        {
+            for (int i = -1; i <= 1; i++)
+            {
+                float lx = cx + i * bodyWidth * 0.28f;
+                canvas.DrawLine(lx, cy + bodyHeight * 0.15f, lx - bodyWidth * 0.22f, cy + bodyHeight * 1.5f, legPaint);
+                canvas.DrawLine(lx, cy + bodyHeight * 0.15f, lx + bodyWidth * 0.22f, cy + bodyHeight * 1.5f, legPaint);
+            }
+        }
+
+        // Slender body.
         using (var bodyPaint = new SKPaint { Color = body, Style = SKPaintStyle.Fill, IsAntialias = true })
         {
-            canvas.DrawRoundRect(new SKRoundRect(new SKRect(cx - bodyWidth * 0.5f, cy - bodyHeight * 0.5f, cx + bodyWidth * 0.5f, cy + bodyHeight * 0.5f), bodyHeight * 0.45f), bodyPaint);
+            canvas.DrawRoundRect(new SKRoundRect(new SKRect(cx - bodyWidth * 0.5f, cy - bodyHeight * 0.5f, cx + bodyWidth * 0.5f, cy + bodyHeight * 0.5f), bodyHeight * 0.5f), bodyPaint);
+        }
+
+        // Long tapered abdomen (pointed rear).
+        using (var abdomenPaint = new SKPaint { Color = body, Style = SKPaintStyle.Fill, IsAntialias = true })
+        {
+            using var abdomen = new SKPath();
+            abdomen.MoveTo(cx - bodyWidth * 0.5f, cy);
+            abdomen.LineTo(cx - bodyWidth * 0.95f, cy - bodyHeight * 0.12f);
+            abdomen.LineTo(cx - bodyWidth * 0.95f, cy + bodyHeight * 0.12f);
+            abdomen.Close();
+            canvas.DrawPath(abdomen, abdomenPaint);
+        }
+
+        // Menacing red eyes on wasps / hornets / boss — otherwise dark.
+        float headX = cx + bodyWidth * 0.5f;
+        float headRadius = size * 0.2f;
+        using (var headPaint = new SKPaint { Color = dark, Style = SKPaintStyle.Fill, IsAntialias = true })
+        {
+            canvas.DrawCircle(headX, cy, headRadius, headPaint);
+        }
+
+        using (var eyePaint = new SKPaint { Color = new SKColor(220, 40, 40), Style = SKPaintStyle.Fill, IsAntialias = true })
+        {
+            canvas.DrawCircle(headX + headRadius * 0.25f, cy - headRadius * 0.3f, Math.Max(1, headRadius * 0.34f), eyePaint);
+        }
+
+        // Sharp stinger on wasps / hornets (rear spike).
+        if (id is "wasp" or "hornet")
+        {
+            using var stingPaint = new SKPaint { Color = dark, Style = SKPaintStyle.Fill, IsAntialias = true };
+            using var sting = new SKPath();
+            sting.MoveTo(cx - bodyWidth * 0.95f, cy - bodyHeight * 0.12f);
+            sting.LineTo(cx - bodyWidth * 1.3f, cy);
+            sting.LineTo(cx - bodyWidth * 0.95f, cy + bodyHeight * 0.12f);
+            sting.Close();
+            canvas.DrawPath(sting, stingPaint);
         }
 
         // Stripes on wasps and hornets.
@@ -767,15 +840,8 @@ public class DefenseMapView : SKCanvasView
             for (int i = -1; i <= 1; i++)
             {
                 float sx = cx + i * bodyWidth * 0.22f;
-                canvas.DrawRoundRect(new SKRoundRect(new SKRect(sx - bodyWidth * 0.06f, cy - bodyHeight * 0.5f, sx + bodyWidth * 0.06f, cy + bodyHeight * 0.5f), 2), stripePaint);
+                canvas.DrawRoundRect(new SKRoundRect(new SKRect(sx - bodyWidth * 0.05f, cy - bodyHeight * 0.5f, sx + bodyWidth * 0.05f, cy + bodyHeight * 0.5f), 2), stripePaint);
             }
-        }
-
-        // Head, antennae and proboscis.
-        float headX = cx + bodyWidth * 0.55f;
-        using (var headPaint = new SKPaint { Color = dark, Style = SKPaintStyle.Fill, IsAntialias = true })
-        {
-            canvas.DrawCircle(headX, cy, size * 0.3f, headPaint);
         }
 
         using (var antennaPaint = new SKPaint { Color = dark, Style = SKPaintStyle.Stroke, StrokeWidth = Math.Max(1, size * 0.05f), IsAntialias = true })
@@ -784,10 +850,19 @@ public class DefenseMapView : SKCanvasView
             canvas.DrawLine(headX, cy, headX + size * 0.35f, cy - size * 0.2f, antennaPaint);
         }
 
+        // Long, menacing piercing proboscis — the mosquito's weapon. Slightly
+        // thicker at the base, tapering to a sharp point, angled down-forward.
         if (id is "mosquito" or "gnat")
         {
-            using var probPaint = new SKPaint { Color = dark, Style = SKPaintStyle.Stroke, StrokeWidth = Math.Max(1, size * 0.05f), IsAntialias = true };
-            canvas.DrawLine(headX, cy, headX + size * 0.55f, cy + size * 0.2f, probPaint);
+            float tipX = headX + size * 0.85f;
+            float tipY = cy + size * 0.32f;
+            using var probPaint = new SKPaint { Color = dark, Style = SKPaintStyle.Fill, IsAntialias = true };
+            using var prob = new SKPath();
+            prob.MoveTo(headX, cy - size * 0.05f);
+            prob.LineTo(headX, cy + size * 0.05f);
+            prob.LineTo(tipX, tipY);
+            prob.Close();
+            canvas.DrawPath(prob, probPaint);
         }
     }
 
