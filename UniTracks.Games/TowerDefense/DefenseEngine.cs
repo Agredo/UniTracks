@@ -42,7 +42,7 @@ public static class DefenseEngine
             return DefenseResult.Fail(DefenseError.UnknownTower);
         }
 
-        if (!state.UnlockedTowerIds.Contains(towerId))
+        if (!tower.IsFree && !state.UnlockedTowerIds.Contains(towerId))
         {
             return DefenseResult.Fail(DefenseError.TowerLocked);
         }

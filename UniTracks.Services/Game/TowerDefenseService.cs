@@ -36,6 +36,11 @@ public class TowerDefenseService : ITowerDefenseService
             return UnlockResult.Fail("Unbekannter Turm.");
         }
 
+        if (tower.IsFree)
+        {
+            return UnlockResult.Ok();
+        }
+
         var unlocks = await store.LoadUnlocksAsync();
         if (unlocks.Any(u => u.TowerId == towerId))
         {

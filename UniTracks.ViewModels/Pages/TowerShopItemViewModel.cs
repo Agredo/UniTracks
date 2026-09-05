@@ -11,7 +11,7 @@ public class TowerShopItemViewModel
     public TowerShopItemViewModel(TowerDefinition tower, DefenseProfile profile)
     {
         Tower = tower;
-        IsUnlocked = tower.UnlockCost == 0 || profile.UnlockedTowerIds.Contains(tower.Id);
+        IsUnlocked = tower.IsFree || profile.UnlockedTowerIds.Contains(tower.Id);
         IsAffordable = profile.Coins >= tower.UnlockCost;
 
         LockLabel = IsUnlocked ? string.Empty : $"🔒 {tower.UnlockCost:N0} 🪙";
