@@ -221,10 +221,13 @@ public static class DefenseEngine
             {
                 X = tower.X + 0.5,
                 Y = tower.Y + 0.5,
+                OriginX = tower.X + 0.5,
+                OriginY = tower.Y + 0.5,
                 TargetEnemyId = target.Id,
                 Speed = definition.ProjectileSpeed,
                 Damage = definition.Damage,
                 ColorHex = definition.ColorHex,
+                AttackStyle = definition.AttackStyle,
             });
 
             tower.CooldownRemainingMs = definition.FireIntervalMs;
