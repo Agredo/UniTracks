@@ -19,6 +19,7 @@ public class CityMapView : SKCanvasView
 
     private readonly CitySprites sprites = new();
     private readonly Random random = new();
+    private readonly PedestrianSimulation pedestrians = new();
     private readonly List<Cloud> clouds = new();
     private readonly List<AmbientBird> birds = new();
     private readonly List<Sparkle> sparkles = new();
@@ -175,7 +176,65 @@ public class CityMapView : SKCanvasView
             }
         }
 
+        UpdateAndDrawPedestrians(canvas, city, originX, originY, tileW, tileH, night);
         UpdateAndDrawSparkles(canvas);
+    }
+
+    private static readonly SKColor[] PedestrianPalette =
+    {
+        new(214, 96, 90),   // warm red
+        new(90, 140, 220),  // blue
+        new(232, 178, 74),  // mustard
+        new(150, 100, 200), // violet
+        new(84, 180, 160),  // teal
+        new(220, 130, 170), // pink
+    };
+
+    private void UpdateAndDrawPedestrians(SKCanvas canvas, CityState city,
+        double originX, double originY, double tileW, double tileH, double night)
+    {
+        pedestrians.Update(city, 0.033);
+        if (pedestrians.Pedestrians.Count == 0)
+        {
+            return;
+        }
+
+        double time = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() / 1000.0;
+
+        // Painter's algorithm: sort back-to-front by iso depth so figures overlap correctly.
+        foreach (var pedestrian in pedestrians.Pedestrians.OrderBy(p => p.RenderX + p.RenderY))
+        {
+            double sx = originX + (pedestrian.RenderX - pedestrian.RenderY) * tileW / 2.0;
+            double sy = originY + (pedestrian.RenderX + pedestrian.RenderY) * tileH / 2.0;
+
+            double size = tileW * (pedestrian.Kind == PedestrianKind.Child ? 0.16 : 0.22);
+            double bob = pedestrian.IsWalking
+                ? Math.Abs(Math.Sin(time * 8 + pedestrian.Phase)) * size * 0.15
+                : 0;
+
+            DrawPedestrian(canvas, (float)sx, (float)(sy - bob), (float)size, pedestrian, night);
+        }
+    }
+
+    private static void DrawPedestrian(SKCanvas canvas, float x, float groundY, float size,
+        Pedestrian pedestrian, double night)
+    {
+        var shirt = ApplyNight(PedestrianPalette[pedestrian.ColorIndex], night);
+        var skin = ApplyNight(new SKColor(240, 200, 168), night);
+
+        using var bodyPaint = new SKPaint { Color = shirt, Style = SKPaintStyle.Fill, IsAntialias = true };
+        using var headPaint = new SKPaint { Color = skin, Style = SKPaintStyle.Fill, IsAntialias = true };
+
+        // Soft shadow on the tile.
+        using var shadowPaint = new SKPaint { Color = new SKColor(0, 0, 0, 60), IsAntialias = true };
+        canvas.DrawOval(x, groundY + size * 0.08f, size * 0.55f, size * 0.18f, shadowPaint);
+
+        // Body capsule and head.
+        float bodyTop = groundY - size * 0.95f;
+        float bodyBottom = groundY - size * 0.1f;
+        canvas.DrawRoundRect(new SKRoundRect(
+            new SKRect(x - size * 0.28f, bodyTop, x + size * 0.28f, bodyBottom), size * 0.22f), bodyPaint);
+        canvas.DrawCircle(x, bodyTop - size * 0.22f, size * 0.26f, headPaint);
     }
 
     private void OnTouch(object? sender, SKTouchEventArgs e)
