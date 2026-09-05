@@ -35,6 +35,9 @@ public record TowerDefinition
     /// <summary>Render color (hex) used for the tower base and its projectiles.</summary>
     public string ColorHex { get; init; } = "#8BC34A";
 
+    /// <summary>How the attack is rendered — gives every tower a distinct effect.</summary>
+    public AttackStyle AttackStyle { get; init; }
+
     /// <summary>Starter towers need no coin unlock and are always placeable.</summary>
     public bool IsFree => UnlockCost == 0;
 }

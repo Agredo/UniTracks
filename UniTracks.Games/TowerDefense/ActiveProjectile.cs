@@ -7,6 +7,11 @@ public class ActiveProjectile
 
     public double Y { get; set; }
 
+    /// <summary>Tile-space origin of the shot — the firing tower's center (renders the effect stem).</summary>
+    public double OriginX { get; init; }
+
+    public double OriginY { get; init; }
+
     /// <summary>Runtime id of the targeted <see cref="ActiveEnemy"/>.</summary>
     public int TargetEnemyId { get; init; }
 
@@ -17,4 +22,7 @@ public class ActiveProjectile
 
     /// <summary>Render color (hex), copied from the firing tower.</summary>
     public string ColorHex { get; init; } = "#FFFFFF";
+
+    /// <summary>How the shot is rendered — copied from the firing tower.</summary>
+    public AttackStyle AttackStyle { get; init; }
 }
