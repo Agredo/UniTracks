@@ -1,4 +1,4 @@
-namespace UniTracks.Games.Persistence;
+namespace UniTracks.Games.Shared.Persistence;
 
 /// <summary>Aggregated activity numbers feeding the coin economy.</summary>
 public record ActivityStats

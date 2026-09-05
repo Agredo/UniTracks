@@ -1,4 +1,4 @@
-using UniTracks.Games.Persistence;
+using UniTracks.Games.Shared.Persistence;
 
 namespace UniTracks.Services.Game;
 

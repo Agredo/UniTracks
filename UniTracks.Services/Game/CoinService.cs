@@ -1,5 +1,5 @@
 using UniTracks.Data.Repository;
-using UniTracks.Games.Persistence;
+using UniTracks.Games.Shared.Persistence;
 using UniTracks.Models.Trip;
 using UniTracks.Services.Stats;
 

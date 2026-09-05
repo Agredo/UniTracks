@@ -1,0 +1,160 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage
+    x:Class="UniTracks.Maui.Views.Pages.TowerDefensePage"
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    xmlns:gameControls="clr-namespace:UniTracks.Maui.Views.Controls.Game"
+    xmlns:mct="http://schemas.microsoft.com/dotnet/2022/maui/toolkit"
+    xmlns:viewModels="clr-namespace:UniTracks.ViewModels.Pages;assembly=UniTracks.ViewModels"
+    Title="Trail Defense"
+    x:DataType="viewModels:TowerDefensePageViewModel">
+
+    <Grid RowDefinitions="Auto,*,Auto">
+
+        <!-- Top bar: coins + energy + lives + wave + sell toggle -->
+        <Grid Grid.Row="0" Padding="12,10" ColumnDefinitions="Auto,Auto,Auto,*,Auto" ColumnSpacing="8">
+            <Border Padding="12,8" Style="{StaticResource CardBorder}">
+                <HorizontalStackLayout Spacing="6">
+                    <Label FontSize="16" Text="🪙" VerticalOptions="Center" />
+                    <Label Style="{StaticResource TitleLabel}" Text="{Binding Profile.Coins, StringFormat='{0:N0}'}" VerticalOptions="Center" />
+                </HorizontalStackLayout>
+            </Border>
+            <Border Grid.Column="1" Padding="12,8" Style="{StaticResource CardBorder}">
+                <HorizontalStackLayout Spacing="6">
+                    <Label FontSize="16" Text="⚡" VerticalOptions="Center" />
+                    <Label Style="{StaticResource TitleLabel}" Text="{Binding EnergyLabel}" VerticalOptions="Center" />
+                </HorizontalStackLayout>
+            </Border>
+            <Border Grid.Column="2" Padding="12,8" Style="{StaticResource CardBorder}">
+                <HorizontalStackLayout Spacing="6">
+                    <Label FontSize="16" Text="❤️" VerticalOptions="Center" />
+                    <Label Style="{StaticResource TitleLabel}" Text="{Binding LivesLabel}" VerticalOptions="Center" />
+                </HorizontalStackLayout>
+            </Border>
+            <Border Grid.Column="3" Padding="12,8" Style="{StaticResource CardBorder}">
+                <VerticalStackLayout Spacing="0">
+                    <Label Style="{StaticResource TitleLabel}" Text="{Binding WaveLabel}" />
+                    <Label FontSize="10" Style="{StaticResource SubtitleLabel}" Text="{Binding BestLabel}" />
+                </VerticalStackLayout>
+            </Border>
+            <Border Grid.Column="4" Padding="12,8" Style="{StaticResource CardBorder}">
+                <Border.GestureRecognizers>
+                    <TapGestureRecognizer Command="{Binding ToggleSellModeCommand}" />
+                </Border.GestureRecognizers>
+                <Label FontSize="18" Text="💥" VerticalOptions="Center" HorizontalOptions="Center" />
+                <Border.Triggers>
+                    <DataTrigger Binding="{Binding IsSellMode}" TargetType="Border" Value="True">
+                        <Setter Property="BackgroundColor" Value="{StaticResource AccentSoft}" />
+                        <Setter Property="Stroke" Value="{StaticResource Accent}" />
+                    </DataTrigger>
+                </Border.Triggers>
+            </Border>
+        </Grid>
+
+        <!-- Defense map with game-over overlay -->
+        <Grid Grid.Row="1">
+            <gameControls:DefenseMapView
+                GhostTower="{Binding SelectedTower}"
+                State="{Binding State}"
+                TickCommand="{Binding TickCommand}"
+                TileTappedCommand="{Binding TileTappedCommand}" />
+
+            <Border
+                BackgroundColor="#CC121A14"
+                IsVisible="{Binding IsLost}"
+                Padding="28"
+                Stroke="{StaticResource Accent}"
+                StrokeThickness="2"
+                HorizontalOptions="Center"
+                VerticalOptions="Center">
+                <Border.StrokeShape>
+                    <RoundRectangle CornerRadius="20" />
+                </Border.StrokeShape>
+                <VerticalStackLayout Spacing="12">
+                    <Label
+                        FontSize="26"
+                        HorizontalTextAlignment="Center"
+                        Style="{StaticResource TitleLabel}"
+                        Text="Der Trail ist überrannt! 🦟" />
+                    <Label
+                        FontSize="13"
+                        HorizontalTextAlignment="Center"
+                        Style="{StaticResource SubtitleLabel}"
+                        Text="{Binding ResultLabel}" />
+                    <Button Command="{Binding RestartCommand}" Text="🔄 Neue Runde" />
+                </VerticalStackLayout>
+            </Border>
+        </Grid>
+
+        <!-- Bottom panel: wave button + hint + tower shop -->
+        <VerticalStackLayout Grid.Row="2" Padding="16,8,16,16" Spacing="8">
+
+            <Border Padding="14,10" IsVisible="{Binding CanStartWave}" Style="{StaticResource CardBorder}">
+                <Border.GestureRecognizers>
+                    <TapGestureRecognizer Command="{Binding StartWaveCommand}" />
+                </Border.GestureRecognizers>
+                <Label
+                    HorizontalTextAlignment="Center"
+                    Style="{StaticResource TitleLabel}"
+                    Text="{Binding WaveLabel, StringFormat='▶ {0} starten'}" />
+                <Border.Triggers>
+                    <DataTrigger Binding="{Binding CanStartWave}" TargetType="Border" Value="True">
+                        <Setter Property="Stroke" Value="{StaticResource Accent}" />
+                    </DataTrigger>
+                </Border.Triggers>
+            </Border>
+
+            <Label
+                FontSize="12"
+                HorizontalTextAlignment="Center"
+                Style="{StaticResource SubtitleLabel}"
+                Text="{Binding ModeHint}" />
+
+            <ScrollView HorizontalScrollBarVisibility="Never" Orientation="Horizontal">
+                <HorizontalStackLayout Spacing="10" BindableLayout.ItemsSource="{Binding ShopItems}">
+                    <BindableLayout.ItemTemplate>
+                        <DataTemplate x:DataType="viewModels:TowerShopItemViewModel">
+                            <Border Padding="12,8" Style="{StaticResource CardBorder}" WidthRequest="92">
+                                <Border.GestureRecognizers>
+                                    <TapGestureRecognizer Command="{Binding Source={RelativeSource AncestorType={x:Type viewModels:TowerDefensePageViewModel}}, Path=SelectTowerCommand}" CommandParameter="{Binding .}" />
+                                </Border.GestureRecognizers>
+                                <VerticalStackLayout Spacing="2">
+                                    <Label FontSize="24" HorizontalTextAlignment="Center" Text="{Binding Icon}" />
+                                    <Label
+                                        FontSize="11"
+                                        HorizontalTextAlignment="Center"
+                                        Style="{StaticResource TitleLabel}"
+                                        Text="{Binding Name}" />
+                                    <Label
+                                        FontSize="10"
+                                        HorizontalTextAlignment="Center"
+                                        IsVisible="{Binding IsUnlocked}"
+                                        Style="{StaticResource StatLabel}"
+                                        Text="{Binding EnergyCost, StringFormat='{0} ⚡'}" />
+                                    <Label
+                                        FontSize="9"
+                                        HorizontalTextAlignment="Center"
+                                        IsVisible="{Binding IsUnlocked, Converter={mct:InvertedBoolConverter}}"
+                                        Style="{StaticResource StatLabel}"
+                                        Text="{Binding LockLabel}" />
+                                </VerticalStackLayout>
+                                <Border.Triggers>
+                                    <DataTrigger
+                                        Binding="{Binding Source={RelativeSource AncestorType={x:Type viewModels:TowerDefensePageViewModel}}, Path=SelectedTower.Id}"
+                                        TargetType="Border"
+                                        Value="{Binding Id}">
+                                        <Setter Property="BackgroundColor" Value="{StaticResource AccentSoft}" />
+                                        <Setter Property="Stroke" Value="{StaticResource Accent}" />
+                                    </DataTrigger>
+                                    <DataTrigger Binding="{Binding IsUnlocked}" TargetType="Border" Value="False">
+                                        <Setter Property="Opacity" Value="0.45" />
+                                    </DataTrigger>
+                                </Border.Triggers>
+                            </Border>
+                        </DataTemplate>
+                    </BindableLayout.ItemTemplate>
+                </HorizontalStackLayout>
+            </ScrollView>
+        </VerticalStackLayout>
+    </Grid>
+</ContentPage>

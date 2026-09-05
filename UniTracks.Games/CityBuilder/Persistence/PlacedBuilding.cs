@@ -1,6 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 
-namespace UniTracks.Games.Persistence;
+namespace UniTracks.Games.CityBuilder.Persistence;
 
 /// <summary>
 /// A building placed on the city map. This is the only persisted game state —

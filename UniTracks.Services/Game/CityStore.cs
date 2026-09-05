@@ -1,5 +1,5 @@
 using UniTracks.Data.Repository;
-using UniTracks.Games.Persistence;
+using UniTracks.Games.CityBuilder.Persistence;
 
 namespace UniTracks.Services.Game;
 

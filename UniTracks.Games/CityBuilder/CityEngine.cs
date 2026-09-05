@@ -1,5 +1,6 @@
-using UniTracks.Games.Economy;
-using UniTracks.Games.Persistence;
+using UniTracks.Games.Shared.Economy;
+using UniTracks.Games.CityBuilder.Persistence;
+using UniTracks.Games.Shared.Persistence;
 
 namespace UniTracks.Games.CityBuilder;
 

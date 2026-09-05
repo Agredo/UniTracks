@@ -11,7 +11,9 @@ using UniTracks.Maui.Services.Location;
 using UniTracks.Maui.Views.Controls.Popups;
 using UniTracks.Maui.Views.Pages;
 using UniTracks.Maui.Views.Pages.Tabs;
-using UniTracks.Games.Persistence;
+using UniTracks.Games.CityBuilder.Persistence;
+using UniTracks.Games.Shared.Persistence;
+using UniTracks.Games.TowerDefense.Persistence;
 using UniTracks.Models.Constants;
 using UniTracks.Services.Data;
 using UniTracks.Services.Game;
@@ -117,6 +119,8 @@ public static class MauiProgram
         services.AddSingleton<IActivityStatsSource>(sp => sp.GetRequiredService<ICoinService>());
         services.AddSingleton<ICityStore, CityStore>();
         services.AddSingleton<ICityBuilderService, CityBuilderService>();
+        services.AddSingleton<ITowerDefenseStore, TowerDefenseStore>();
+        services.AddSingleton<ITowerDefenseService, TowerDefenseService>();
         services.AddSingleton<IGameCatalogService, GameCatalogService>();
         services.AddSingleton<UniTracks.Services.ApplicationModel.IPermissions, UniTracks.Maui.Services.ApplicationModel.Permissions>();
         services.AddSingleton<UniTracks.Services.Dispatching.IDispatcher, UniTracks.Maui.Services.Dispatching.Dispatcher>();
@@ -157,6 +161,7 @@ public static class MauiProgram
         services.AddTransient<TripOverviewPage, TripOverviewViewModel>();
         services.AddTransient<GameTabPage, GameTabPageViewModel>();
         services.AddTransient<CityBuilderPage, CityBuilderPageViewModel>();
+        services.AddTransient<TowerDefensePage, TowerDefensePageViewModel>();
     }
 
     private static void RegisterPopups(IServiceCollection services)
