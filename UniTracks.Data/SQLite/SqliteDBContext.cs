@@ -24,6 +24,7 @@ public class SqliteDBContext : DbContext
     public DbSet<TripType> TripTypes { get; set; }
     public DbSet<User> Users { get; set; }
     public DbSet<PlacedBuilding> PlacedBuildings { get; set; }
+    public DbSet<CityExpansion> CityExpansions { get; set; }
 
     public DbContext Context => this;
     public string DatabasePath { get; }

@@ -22,4 +22,9 @@ public class CityStore : ICityStore
     public Task SaveAsync(PlacedBuilding building) => repository.Add(building);
 
     public Task DeleteAsync(PlacedBuilding building) => repository.Delete(building);
+
+    public async Task<IReadOnlyList<CityExpansion>> LoadExpansionsAsync() =>
+        (await repository.GetAllAsync<CityExpansion>()).ToList();
+
+    public Task SaveExpansionAsync(CityExpansion expansion) => repository.Add(expansion);
 }

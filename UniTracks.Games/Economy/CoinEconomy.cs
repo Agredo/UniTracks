@@ -1,3 +1,5 @@
+using UniTracks.Games.Persistence;
+
 namespace UniTracks.Games.Economy;
 
 /// <summary>
@@ -19,12 +21,39 @@ public static class CoinEconomy
     /// <summary>Fraction of the building cost refunded on demolition.</summary>
     public const double DemolitionRefundFraction = 0.5;
 
-    /// <summary>Total coins earned so far for the given activity numbers (includes the starting bonus).</summary>
-    public static int ComputeEarned(double totalDistanceKm, int totalTrips, int unlockedAchievements) =>
-        StartingCoins
-        + (int)Math.Floor(totalDistanceKm) * CoinsPerKm
-        + totalTrips * CoinsPerTrip
-        + unlockedAchievements * CoinsPerAchievement;
+    /// <summary>Coins awarded per gamification level reached (multiplied by the level number).</summary>
+    public const int CoinsPerLevel = 100;
+
+    /// <summary>XP needed per gamification level (mirrors the gamification service).</summary>
+    public const int XpPerLevel = 100;
+
+    /// <summary>
+    /// Total coins earned so far (includes the starting bonus). Distance coins scale with the
+    /// per-trip-type effort factor (<see cref="TripTypeFactors"/>), so a 20 km bike ride earns
+    /// far less than a 20 km run. Level-ups grant a growing bonus: 100×2 + 100×3 + … + 100×level.
+    /// </summary>
+    public static int ComputeEarned(
+        IEnumerable<TripActivity> trips,
+        int xp,
+        int unlockedAchievements)
+    {
+        int distanceCoins = 0;
+        int tripCoins = 0;
+        foreach (var trip in trips)
+        {
+            distanceCoins += (int)Math.Floor(trip.DistanceKm * TripTypeFactors.For(trip.Category, trip.Identifier) * CoinsPerKm);
+            tripCoins += CoinsPerTrip;
+        }
+
+        int level = xp / XpPerLevel + 1;
+        int levelBonus = level > 1 ? CoinsPerLevel * (level - 1) * (level + 2) / 2 : 0; // 100×(2+3+…+level)
+
+        return StartingCoins
+            + distanceCoins
+            + tripCoins
+            + levelBonus
+            + unlockedAchievements * CoinsPerAchievement;
+    }
 
     public static int DemolitionRefund(int cost) => (int)Math.Floor(cost * DemolitionRefundFraction);
 }

@@ -17,16 +17,11 @@ public partial class CityBuilderPageViewModel : ObservableObject
         this.cityBuilderService = cityBuilderService;
         this.dialogService = dialogService;
 
-        foreach (var building in BuildingCatalog.Buildings)
-        {
-            ShopItems.Add(building);
-        }
-
         _ = LoadAsync();
     }
 
-    /// <summary>Shop entries in catalog order (cheapest first).</summary>
-    public ObservableCollection<BuildingDefinition> ShopItems { get; } = new();
+    /// <summary>Shop entries in catalog order (cheapest first), rebuilt with unlock state on every refresh.</summary>
+    public ObservableCollection<ShopItemViewModel> ShopItems { get; } = new();
 
     [ObservableProperty]
     private CityState city = new();
@@ -36,6 +31,24 @@ public partial class CityBuilderPageViewModel : ObservableObject
 
     [ObservableProperty]
     private string coinsLabel = "0 🪙";
+
+    [ObservableProperty]
+    private string levelLabel = "Level 1";
+
+    [ObservableProperty]
+    private string nextLevelTeaser = string.Empty;
+
+    /// <summary>Expansion call-to-action ("＋ Erweitern"), empty when maxed out.</summary>
+    [ObservableProperty]
+    private string expansionLabel = string.Empty;
+
+    /// <summary>Whether the next expansion can be bought right now.</summary>
+    [ObservableProperty]
+    private bool canExpand;
+
+    /// <summary>Whether any expansion step remains (controls button visibility).</summary>
+    [ObservableProperty]
+    private bool hasExpansion;
 
     [ObservableProperty]
     private BuildingDefinition? selectedBuilding;
@@ -81,16 +94,33 @@ public partial class CityBuilderPageViewModel : ObservableObject
     }
 
     [RelayCommand]
-    private void SelectBuilding(BuildingDefinition? building)
+    private async Task SelectBuilding(ShopItemViewModel? item)
     {
+        if (item is null)
+        {
+            return;
+        }
+
+        if (!item.IsUnlocked)
+        {
+            await dialogService.AlertAsync("Gesperrt", item.LockLabel.TrimStart(), "OK");
+            return;
+        }
+
         // Tapping the active building again deselects it.
-        SelectedBuilding = SelectedBuilding?.Id == building?.Id ? null : building;
+        SelectedBuilding = SelectedBuilding?.Id == item.Id ? null : item.Building;
     }
 
     [RelayCommand]
     private void ToggleDemolishMode()
     {
         IsDemolishMode = !IsDemolishMode;
+    }
+
+    [RelayCommand]
+    private async Task Expand()
+    {
+        await ApplyResultAsync(await cityBuilderService.TryExpandAsync());
     }
 
     [RelayCommand]
@@ -146,5 +176,26 @@ public partial class CityBuilderPageViewModel : ObservableObject
         City = city;
         Coins = city.Coins;
         CoinsLabel = $"{Coins:N0} 🪙";
+        LevelLabel = $"Level {city.Level}";
+
+        int xpIntoLevel = city.Xp % 100;
+        NextLevelTeaser = $"Noch {100 - xpIntoLevel} XP bis Level {city.Level + 1} (+{(city.Level + 1) * 100:N0} 🪙)";
+
+        var step = city.NextExpansion;
+        HasExpansion = step is not null;
+        CanExpand = city.CanExpand;
+        ExpansionLabel = step is null
+            ? string.Empty
+            : city.Level < step.RequiredLevel
+                ? $"＋ {step.GridSize}×{step.GridSize} — 🔒 Level {step.RequiredLevel}"
+                : $"＋ {step.GridSize}×{step.GridSize} ({step.Cost:N0} 🪙)";
+
+        // Rebuild shop items with fresh unlock/affordability state.
+        SelectedBuilding = null;
+        ShopItems.Clear();
+        foreach (var building in BuildingCatalog.Buildings)
+        {
+            ShopItems.Add(new ShopItemViewModel(building, city));
+        }
     }
 }

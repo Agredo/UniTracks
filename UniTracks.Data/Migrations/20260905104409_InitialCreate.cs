@@ -8,11 +8,24 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace UniTracks.Data.Migrations;
 
 /// <inheritdoc />
-public partial class _20260905004229_InitialCreate : Migration
+public partial class _20260905104409_InitialCreate : Migration
 {
     /// <inheritdoc />
     protected override void Up(MigrationBuilder migrationBuilder)
     {
+        migrationBuilder.CreateTable(
+            name: "CityExpansions",
+            columns: table => new
+            {
+                ID = table.Column<Guid>(type: "TEXT", nullable: false),
+                GridSize = table.Column<int>(type: "INTEGER", nullable: false),
+                PurchasedAt = table.Column<DateTimeOffset>(type: "TEXT", nullable: false)
+            },
+            constraints: table =>
+            {
+                table.PrimaryKey("PK_CityExpansions", x => x.ID);
+            });
+
         migrationBuilder.CreateTable(
             name: "PlacedBuildings",
             columns: table => new
@@ -220,7 +233,6 @@ public partial class _20260905004229_InitialCreate : Migration
                 { new Guid("00000000-0000-0000-0000-000000000001"), "running", "", "run", "Run" },
                 { new Guid("00000000-0000-0000-0000-000000000002"), "running", "", "trailrun", "Trail Run" },
                 { new Guid("00000000-0000-0000-0000-000000000003"), "running", "", "walk", "Walk" },
-                { new Guid("00000000-0000-0000-0000-000000000085"), "running", "", "dogwalk", "Gassi gehen" },
                 { new Guid("00000000-0000-0000-0000-000000000004"), "running", "", "hiking", "Hiking" },
                 { new Guid("00000000-0000-0000-0000-000000000005"), "cycling", "", "cycling", "Cycling" },
                 { new Guid("00000000-0000-0000-0000-000000000006"), "cycling", "", "mountainbiking", "Mountain Biking" },
@@ -301,7 +313,8 @@ public partial class _20260905004229_InitialCreate : Migration
                 { new Guid("00000000-0000-0000-0000-000000000081"), "ball sports", "", "racquetball", "Racquetball" },
                 { new Guid("00000000-0000-0000-0000-000000000082"), "ball sports", "", "handball", "Handball" },
                 { new Guid("00000000-0000-0000-0000-000000000083"), "ball sports", "", "basketball", "Basketball" },
-                { new Guid("00000000-0000-0000-0000-000000000084"), "ball sports", "", "americanfootball", "American Football" }
+                { new Guid("00000000-0000-0000-0000-000000000084"), "ball sports", "", "americanfootball", "American Football" },
+                { new Guid("00000000-0000-0000-0000-000000000085"), "running", "", "dogwalk", "Gassi gehen" }
             });
 
         migrationBuilder.CreateIndex(
@@ -348,6 +361,9 @@ public partial class _20260905004229_InitialCreate : Migration
     /// <inheritdoc />
     protected override void Down(MigrationBuilder migrationBuilder)
     {
+        migrationBuilder.DropTable(
+            name: "CityExpansions");
+
         migrationBuilder.DropTable(
             name: "HeartRates");
 

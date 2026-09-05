@@ -11,14 +11,31 @@ using UniTracks.Data.SQLite;
 namespace UniTracks.Data.Migrations;
 
 [DbContext(typeof(SqliteDBContext))]
-[Migration("20260905004229_InitialCreate")]
-partial class _20260905004229_InitialCreate
+[Migration("20260905104409_InitialCreate")]
+partial class _20260905104409_InitialCreate
 {
     /// <inheritdoc />
     protected override void BuildTargetModel(ModelBuilder modelBuilder)
     {
 #pragma warning disable 612, 618
         modelBuilder.HasAnnotation("ProductVersion", "11.0.0-preview.7.26381.103");
+
+        modelBuilder.Entity("UniTracks.Games.Persistence.CityExpansion", b =>
+            {
+                b.Property<Guid>("ID")
+                    .ValueGeneratedOnAdd()
+                    .HasColumnType("TEXT");
+
+                b.Property<int>("GridSize")
+                    .HasColumnType("INTEGER");
+
+                b.Property<DateTimeOffset>("PurchasedAt")
+                    .HasColumnType("TEXT");
+
+                b.HasKey("ID");
+
+                b.ToTable("CityExpansions");
+            });
 
         modelBuilder.Entity("UniTracks.Games.Persistence.PlacedBuilding", b =>
             {

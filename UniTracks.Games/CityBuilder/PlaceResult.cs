@@ -9,6 +9,9 @@ public enum PlaceError
     TileOccupied,
     TileEmpty,
     NotEnoughCoins,
+    LevelTooLow,
+    AchievementLocked,
+    MaxSizeReached,
 }
 
 /// <summary>Outcome of a placement or demolition attempt against the city engine.</summary>
@@ -36,6 +39,9 @@ public record PlaceResult
         PlaceError.TileOccupied => "Dieses Feld ist schon bebaut.",
         PlaceError.TileEmpty => "Hier steht nichts zum Abriss.",
         PlaceError.NotEnoughCoins => "Nicht genug Coins — sammle mehr auf deinen Trips!",
+        PlaceError.LevelTooLow => "Dein Level ist noch zu niedrig — weiter aktiv bleiben!",
+        PlaceError.AchievementLocked => "Dieses Gebäude schaltest du durch einen Erfolg frei.",
+        PlaceError.MaxSizeReached => "Deine Stadt ist schon maximal gewachsen!",
         _ => string.Empty,
     };
 }

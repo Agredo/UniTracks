@@ -22,8 +22,9 @@ public class CityBuilderService : ICityBuilderService
     public async Task<CityState> GetCityAsync()
     {
         var placed = await cityStore.LoadAsync();
+        var expansions = await cityStore.LoadExpansionsAsync();
         var stats = await activityStats.GetAsync();
-        return CityEngine.Rebuild(placed, stats.TotalDistanceKm, stats.TotalTrips, stats.UnlockedAchievements);
+        return CityEngine.Rebuild(placed, expansions, stats);
     }
 
     public async Task<PlaceResult> TryPlaceAsync(string buildingId, int x, int y)
@@ -65,6 +66,26 @@ public class CityBuilderService : ICityBuilderService
         }
 
         await cityStore.DeleteAsync(entity);
+        return PlaceResult.Ok(await GetCityAsync(), validation.CoinsDelta);
+    }
+
+    public async Task<PlaceResult> TryExpandAsync()
+    {
+        var city = await GetCityAsync();
+        var validation = CityEngine.ValidateExpansion(city);
+        if (!validation.Success)
+        {
+            return validation;
+        }
+
+        var step = city.NextExpansion!;
+        await cityStore.SaveExpansionAsync(new CityExpansion
+        {
+            ID = Guid.NewGuid(),
+            GridSize = step.GridSize,
+            PurchasedAt = DateTimeOffset.UtcNow,
+        });
+
         return PlaceResult.Ok(await GetCityAsync(), validation.CoinsDelta);
     }
 }

@@ -16,8 +16,29 @@ public record CityState
     /// <summary>Total coins ever earned through trips and achievements.</summary>
     public int CoinsEarned { get; init; }
 
-    /// <summary>Total coins spent on buildings (minus demolition refunds).</summary>
+    /// <summary>Total coins spent on buildings and city expansions.</summary>
     public int CoinsSpent { get; init; }
+
+    /// <summary>Gamification level — gates buildings and expansions.</summary>
+    public int Level { get; init; } = 1;
+
+    /// <summary>Gamification XP.</summary>
+    public int Xp { get; init; }
+
+    /// <summary>Ids of unlocked achievements — gate prestige buildings.</summary>
+    public IReadOnlyList<string> UnlockedAchievementIds { get; init; } = Array.Empty<string>();
+
+    /// <summary>Next purchasable expansion step, or null when maxed out.</summary>
+    public CityExpansionStep? NextExpansion => CityExpansions.NextStep(GridSize);
+
+    /// <summary>True when the player can buy the next expansion right now (level + coins).</summary>
+    public bool CanExpand =>
+        NextExpansion is { } step && Level >= step.RequiredLevel && Coins >= step.Cost;
+
+    /// <summary>True when the building is unlocked for this player (level + achievement gates).</summary>
+    public bool IsUnlocked(BuildingDefinition building) =>
+        Level >= building.RequiredLevel
+        && (building.RequiredAchievementId is null || UnlockedAchievementIds.Contains(building.RequiredAchievementId));
 
     public CityTile? GetTile(int x, int y)
     {

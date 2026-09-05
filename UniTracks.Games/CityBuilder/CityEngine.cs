@@ -11,29 +11,28 @@ namespace UniTracks.Games.CityBuilder;
 public static class CityEngine
 {
     /// <summary>
-    /// Rebuilds the full city state from persisted buildings and activity stats.
+    /// Rebuilds the full city state from persisted buildings, purchased expansions and activity stats.
     /// </summary>
     /// <param name="placed">Persisted buildings (from the repository).</param>
-    /// <param name="totalDistanceKm">Lifetime distance across all trips.</param>
-    /// <param name="totalTrips">Lifetime trip count.</param>
-    /// <param name="unlockedAchievements">Number of unlocked achievements.</param>
-    /// <param name="gridSize">Edge length of the square city grid.</param>
+    /// <param name="expansions">Purchased grid expansions.</param>
+    /// <param name="stats">Lifetime activity (trips with type info, XP, achievements).</param>
     public static CityState Rebuild(
         IEnumerable<PlacedBuilding> placed,
-        double totalDistanceKm,
-        int totalTrips,
-        int unlockedAchievements,
-        int gridSize = CityState.DefaultGridSize)
+        IEnumerable<CityExpansion> expansions,
+        ActivityStats stats)
     {
-        int earned = CoinEconomy.ComputeEarned(totalDistanceKm, totalTrips, unlockedAchievements);
-        int spent = ComputeSpent(placed);
+        var placedList = placed.ToList();
+        var expansionList = expansions.ToList();
+        int gridSize = CityExpansions.ResolveGridSize(expansionList.Select(e => e.GridSize));
+        int earned = CoinEconomy.ComputeEarned(stats.Trips, stats.Xp, stats.UnlockedAchievements);
+        int spent = ComputeSpent(placedList) + ComputeExpansionSpent(expansionList);
 
         var tiles = new List<CityTile>(gridSize * gridSize);
         for (int y = 0; y < gridSize; y++)
         {
             for (int x = 0; x < gridSize; x++)
             {
-                var building = placed.FirstOrDefault(p => p.X == x && p.Y == y);
+                var building = placedList.FirstOrDefault(p => p.X == x && p.Y == y);
                 tiles.Add(new CityTile
                 {
                     X = x,
@@ -52,12 +51,19 @@ public static class CityEngine
             CoinsEarned = earned,
             CoinsSpent = spent,
             Coins = Math.Max(0, earned - spent),
+            Level = stats.Level,
+            Xp = stats.Xp,
+            UnlockedAchievementIds = stats.UnlockedAchievementIds,
         };
     }
 
     /// <summary>Coins currently invested in standing buildings (full cost minus demolition refunds).</summary>
     public static int ComputeSpent(IEnumerable<PlacedBuilding> placed) =>
         placed.Sum(p => BuildingCatalog.Find(p.BuildingId)?.Cost ?? 0);
+
+    /// <summary>Coins invested in purchased expansions (priced via the progression table).</summary>
+    public static int ComputeExpansionSpent(IEnumerable<CityExpansion> expansions) =>
+        expansions.Sum(e => CityExpansions.Steps.FirstOrDefault(s => s.GridSize == e.GridSize)?.Cost ?? 0);
 
     /// <summary>Validates a placement request. Does not mutate anything.</summary>
     public static PlaceResult ValidatePlacement(CityState city, string buildingId, int x, int y)
@@ -66,6 +72,16 @@ public static class CityEngine
         if (building is null)
         {
             return PlaceResult.Fail(PlaceError.UnknownBuilding);
+        }
+
+        if (city.Level < building.RequiredLevel)
+        {
+            return PlaceResult.Fail(PlaceError.LevelTooLow);
+        }
+
+        if (building.RequiredAchievementId is not null && !city.UnlockedAchievementIds.Contains(building.RequiredAchievementId))
+        {
+            return PlaceResult.Fail(PlaceError.AchievementLocked);
         }
 
         var tile = city.GetTile(x, y);
@@ -85,6 +101,28 @@ public static class CityEngine
         }
 
         return PlaceResult.Ok(city, building.Cost);
+    }
+
+    /// <summary>Validates a city-grid expansion purchase. Does not mutate anything.</summary>
+    public static PlaceResult ValidateExpansion(CityState city)
+    {
+        var step = city.NextExpansion;
+        if (step is null)
+        {
+            return PlaceResult.Fail(PlaceError.MaxSizeReached);
+        }
+
+        if (city.Level < step.RequiredLevel)
+        {
+            return PlaceResult.Fail(PlaceError.LevelTooLow);
+        }
+
+        if (city.Coins < step.Cost)
+        {
+            return PlaceResult.Fail(PlaceError.NotEnoughCoins);
+        }
+
+        return PlaceResult.Ok(city, step.Cost);
     }
 
     /// <summary>Validates a demolition request and computes the refund. Does not mutate anything.</summary>

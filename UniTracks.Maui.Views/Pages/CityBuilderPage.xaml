@@ -5,14 +5,15 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
     xmlns:city="clr-namespace:UniTracks.Games.CityBuilder;assembly=UniTracks.Games"
     xmlns:gameControls="clr-namespace:UniTracks.Maui.Views.Controls.Game"
+    xmlns:mct="http://schemas.microsoft.com/dotnet/2022/maui/toolkit"
     xmlns:viewModels="clr-namespace:UniTracks.ViewModels.Pages;assembly=UniTracks.ViewModels"
     Title="Cozy City"
     x:DataType="viewModels:CityBuilderPageViewModel">
 
     <Grid RowDefinitions="Auto,*,Auto">
 
-        <!-- Top bar: coins + demolish toggle -->
-        <Grid Grid.Row="0" Padding="16,12" ColumnDefinitions="*,Auto" ColumnSpacing="10">
+        <!-- Top bar: coins + level + demolish toggle -->
+        <Grid Grid.Row="0" Padding="16,12" ColumnDefinitions="Auto,*,Auto" ColumnSpacing="10">
             <Border Padding="14,10" Style="{StaticResource CardBorder}">
                 <HorizontalStackLayout Spacing="8">
                     <Label FontSize="20" Text="🪙" VerticalOptions="Center" />
@@ -20,6 +21,12 @@
                 </HorizontalStackLayout>
             </Border>
             <Border Grid.Column="1" Padding="14,10" Style="{StaticResource CardBorder}">
+                <VerticalStackLayout Spacing="0">
+                    <Label Style="{StaticResource TitleLabel}" Text="{Binding LevelLabel}" />
+                    <Label FontSize="10" Style="{StaticResource SubtitleLabel}" Text="{Binding NextLevelTeaser}" />
+                </VerticalStackLayout>
+            </Border>
+            <Border Grid.Column="2" Padding="14,10" Style="{StaticResource CardBorder}">
                 <Border.GestureRecognizers>
                     <TapGestureRecognizer Command="{Binding ToggleDemolishModeCommand}" />
                 </Border.GestureRecognizers>
@@ -41,8 +48,27 @@
             GhostBuilding="{Binding SelectedBuilding}"
             TileTappedCommand="{Binding TileTappedCommand}" />
 
-        <!-- Bottom panel: hint + shop -->
+        <!-- Bottom panel: expansion + hint + shop -->
         <VerticalStackLayout Grid.Row="2" Padding="16,8,16,16" Spacing="8">
+
+            <Border Padding="14,10" IsVisible="{Binding HasExpansion}" Style="{StaticResource CardBorder}">
+                <Border.GestureRecognizers>
+                    <TapGestureRecognizer Command="{Binding ExpandCommand}" />
+                </Border.GestureRecognizers>
+                <Label
+                    HorizontalTextAlignment="Center"
+                    Style="{StaticResource TitleLabel}"
+                    Text="{Binding ExpansionLabel}" />
+                <Border.Triggers>
+                    <DataTrigger Binding="{Binding CanExpand}" TargetType="Border" Value="True">
+                        <Setter Property="Stroke" Value="{StaticResource Accent}" />
+                    </DataTrigger>
+                    <DataTrigger Binding="{Binding CanExpand}" TargetType="Border" Value="False">
+                        <Setter Property="Opacity" Value="0.55" />
+                    </DataTrigger>
+                </Border.Triggers>
+            </Border>
+
             <Label
                 FontSize="12"
                 HorizontalTextAlignment="Center"
@@ -52,7 +78,7 @@
             <ScrollView HorizontalScrollBarVisibility="Never" Orientation="Horizontal">
                 <HorizontalStackLayout Spacing="10" BindableLayout.ItemsSource="{Binding ShopItems}">
                     <BindableLayout.ItemTemplate>
-                        <DataTemplate x:DataType="city:BuildingDefinition">
+                        <DataTemplate x:DataType="viewModels:ShopItemViewModel">
                             <Border Padding="12,8" Style="{StaticResource CardBorder}" WidthRequest="92">
                                 <Border.GestureRecognizers>
                                     <TapGestureRecognizer Command="{Binding Source={RelativeSource AncestorType={x:Type viewModels:CityBuilderPageViewModel}}, Path=SelectBuildingCommand}" CommandParameter="{Binding .}" />
@@ -67,8 +93,15 @@
                                     <Label
                                         FontSize="10"
                                         HorizontalTextAlignment="Center"
+                                        IsVisible="{Binding IsUnlocked}"
                                         Style="{StaticResource StatLabel}"
                                         Text="{Binding Cost, StringFormat='{0} 🪙'}" />
+                                    <Label
+                                        FontSize="9"
+                                        HorizontalTextAlignment="Center"
+                                        IsVisible="{Binding IsUnlocked, Converter={mct:InvertedBoolConverter}}"
+                                        Style="{StaticResource StatLabel}"
+                                        Text="{Binding LockLabel}" />
                                 </VerticalStackLayout>
                                 <Border.Triggers>
                                     <DataTrigger
@@ -77,6 +110,9 @@
                                         Value="{Binding Id}">
                                         <Setter Property="BackgroundColor" Value="{StaticResource AccentSoft}" />
                                         <Setter Property="Stroke" Value="{StaticResource Accent}" />
+                                    </DataTrigger>
+                                    <DataTrigger Binding="{Binding IsUnlocked}" TargetType="Border" Value="False">
+                                        <Setter Property="Opacity" Value="0.45" />
                                     </DataTrigger>
                                 </Border.Triggers>
                             </Border>

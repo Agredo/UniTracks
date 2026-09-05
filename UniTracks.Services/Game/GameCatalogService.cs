@@ -22,7 +22,8 @@ public class GameCatalogService : IGameCatalogService
     {
         var stats = await activityStats.GetAsync();
         var placed = await cityStore.LoadAsync();
-        int earned = CoinEconomy.ComputeEarned(stats.TotalDistanceKm, stats.TotalTrips, stats.UnlockedAchievements);
-        return Math.Max(0, earned - CityEngine.ComputeSpent(placed));
+        var expansions = await cityStore.LoadExpansionsAsync();
+        int earned = CoinEconomy.ComputeEarned(stats.Trips, stats.Xp, stats.UnlockedAchievements);
+        return Math.Max(0, earned - CityEngine.ComputeSpent(placed) - CityEngine.ComputeExpansionSpent(expansions));
     }
 }

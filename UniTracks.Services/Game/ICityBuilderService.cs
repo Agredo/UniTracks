@@ -13,4 +13,7 @@ public interface ICityBuilderService
 
     /// <summary>Demolishes the building on the given tile and refunds part of its cost.</summary>
     Task<PlaceResult> TryDemolishAsync(int x, int y);
+
+    /// <summary>Buys the next city-grid expansion (level-gated, coin-priced).</summary>
+    Task<PlaceResult> TryExpandAsync();
 }

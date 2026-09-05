@@ -27,4 +27,10 @@ public record BuildingDefinition
     public int Cost { get; init; }
 
     public BuildingTheme Theme { get; init; } = BuildingTheme.Residential;
+
+    /// <summary>Gamification level needed to unlock this building in the shop (1 = always available).</summary>
+    public int RequiredLevel { get; init; } = 1;
+
+    /// <summary>Achievement id that must be unlocked first (exclusive prestige buildings), or null.</summary>
+    public string? RequiredAchievementId { get; init; }
 }

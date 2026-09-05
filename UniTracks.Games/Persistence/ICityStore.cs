@@ -11,4 +11,8 @@ public interface ICityStore
     Task SaveAsync(PlacedBuilding building);
 
     Task DeleteAsync(PlacedBuilding building);
+
+    Task<IReadOnlyList<CityExpansion>> LoadExpansionsAsync();
+
+    Task SaveExpansionAsync(CityExpansion expansion);
 }
