@@ -1,0 +1,157 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage
+    x:Class="UniTracks.Maui.Views.Pages.Tabs.AchievementsPage"
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    xmlns:achievements="clr-namespace:UniTracks.Models.Achievement;assembly=UniTracks.Models"
+    xmlns:viewModels="clr-namespace:UniTracks.ViewModels.Pages.Tabs;assembly=UniTracks.ViewModels"
+    Title="Erfolge"
+    x:DataType="viewModels:AchievementsPageViewModel">
+
+    <Grid Padding="20,0">
+        <CollectionView ItemsSource="{Binding Achievements}">
+        <CollectionView.ItemsLayout>
+            <GridItemsLayout
+                HorizontalItemSpacing="10"
+                Orientation="Vertical"
+                Span="2"
+                VerticalItemSpacing="10" />
+        </CollectionView.ItemsLayout>
+
+        <CollectionView.Header>
+            <VerticalStackLayout Padding="0,20,0,10" Spacing="20">
+
+                <!-- Level hero -->
+                <Border Padding="20" Style="{StaticResource CardBorder}">
+                    <VerticalStackLayout Spacing="14">
+                        <HorizontalStackLayout Spacing="14">
+                            <Border
+                                Background="{StaticResource AccentSoft}"
+                                HeightRequest="56"
+                                Stroke="{StaticResource AccentDim}"
+                                StrokeThickness="1"
+                                WidthRequest="56">
+                                <Border.StrokeShape>
+                                    <RoundRectangle CornerRadius="28" />
+                                </Border.StrokeShape>
+                                <Label
+                                    FontSize="28"
+                                    HorizontalOptions="Center"
+                                    Text="🏆"
+                                    VerticalOptions="Center" />
+                            </Border>
+                            <VerticalStackLayout Spacing="2" VerticalOptions="Center">
+                                <Label Style="{StaticResource TitleLabel}" Text="{Binding LevelLabel}" />
+                                <Label Style="{StaticResource SubtitleLabel}" Text="{Binding XpLabel}" />
+                            </VerticalStackLayout>
+                        </HorizontalStackLayout>
+                        <ProgressBar
+                            HeightRequest="8"
+                            Progress="{Binding LevelProgressFraction}"
+                            ProgressColor="{StaticResource Accent}" />
+                    </VerticalStackLayout>
+                </Border>
+
+                <!-- Quick stats -->
+                <Grid ColumnDefinitions="*,*,*" ColumnSpacing="10">
+                    <Border Grid.Column="0" Style="{StaticResource CardBorder}">
+                        <VerticalStackLayout Spacing="2">
+                            <Label Style="{StaticResource StatValue}" Text="{Binding TotalTrips}" />
+                            <Label Style="{StaticResource StatLabel}" Text="TRIPS" />
+                        </VerticalStackLayout>
+                    </Border>
+                    <Border Grid.Column="1" Style="{StaticResource CardBorder}">
+                        <VerticalStackLayout Spacing="2">
+                            <Label Style="{StaticResource StatValue}" Text="{Binding TotalDistanceKm, StringFormat='{0:0.0} km'}" />
+                            <Label Style="{StaticResource StatLabel}" Text="DISTANZ" />
+                        </VerticalStackLayout>
+                    </Border>
+                    <Border Grid.Column="2" Style="{StaticResource CardBorder}">
+                        <VerticalStackLayout Spacing="2">
+                            <Label Style="{StaticResource StatValue}" Text="{Binding CurrentStreakDays}" />
+                            <Label Style="{StaticResource StatLabel}" Text="STREAK (TAGE)" />
+                        </VerticalStackLayout>
+                    </Border>
+                </Grid>
+
+                <!-- Best streak -->
+                <Border Style="{StaticResource CardBorder}">
+                    <HorizontalStackLayout Spacing="10">
+                        <Label FontSize="30" Text="🔥" VerticalOptions="Center" />
+                        <VerticalStackLayout Spacing="2">
+                            <Label Style="{StaticResource SectionHeader}" Text="BESTER STREAK" />
+                            <Label Style="{StaticResource SubtitleLabel}" Text="{Binding BestStreakDays, StringFormat='{0} Tage in Folge'}" />
+                        </VerticalStackLayout>
+                    </HorizontalStackLayout>
+                </Border>
+
+                <!-- Achievements -->
+                <Label Style="{StaticResource SectionHeader}" Text="ERFOLGE" />
+            </VerticalStackLayout>
+        </CollectionView.Header>
+
+        <CollectionView.ItemTemplate>
+            <DataTemplate x:DataType="achievements:Achievement">
+                <Border Padding="16" Style="{StaticResource CardBorder}">
+                    <VerticalStackLayout Spacing="10">
+                        <Border
+                            HeightRequest="48"
+                            HorizontalOptions="Center"
+                            StrokeThickness="1"
+                            WidthRequest="48">
+                            <Border.StrokeShape>
+                                <RoundRectangle CornerRadius="24" />
+                            </Border.StrokeShape>
+                            <Label
+                                FontSize="24"
+                                HorizontalOptions="Center"
+                                Text="{Binding Icon}"
+                                VerticalOptions="Center" />
+                            <Border.Triggers>
+                                <DataTrigger
+                                    Binding="{Binding IsUnlocked}"
+                                    TargetType="Border"
+                                    Value="True">
+                                    <Setter Property="BackgroundColor" Value="{StaticResource AccentSoft}" />
+                                    <Setter Property="Stroke" Value="{StaticResource AccentDim}" />
+                                </DataTrigger>
+                                <DataTrigger
+                                    Binding="{Binding IsUnlocked}"
+                                    TargetType="Border"
+                                    Value="False">
+                                    <Setter Property="BackgroundColor" Value="{StaticResource CardAlt}" />
+                                    <Setter Property="Stroke" Value="{StaticResource CardStroke}" />
+                                </DataTrigger>
+                            </Border.Triggers>
+                        </Border>
+                        <Label
+                            FontSize="15"
+                            HorizontalTextAlignment="Center"
+                            Style="{StaticResource TitleLabel}"
+                            Text="{Binding Title}" />
+                        <Label
+                            FontSize="11"
+                            HorizontalTextAlignment="Center"
+                            LineBreakMode="WordWrap"
+                            Style="{StaticResource SubtitleLabel}"
+                            Text="{Binding Description}" />
+                        <ProgressBar
+                            HeightRequest="6"
+                            Progress="{Binding ProgressFraction}"
+                            ProgressColor="{StaticResource Accent}" />
+                        <Label
+                            FontSize="10"
+                            HorizontalTextAlignment="Center"
+                            Style="{StaticResource StatLabel}"
+                            Text="{Binding ProgressText}" />
+                    </VerticalStackLayout>
+                </Border>
+            </DataTemplate>
+        </CollectionView.ItemTemplate>
+
+        <CollectionView.Footer>
+            <Grid HeightRequest="20" />
+        </CollectionView.Footer>
+        </CollectionView>
+    </Grid>
+</ContentPage>

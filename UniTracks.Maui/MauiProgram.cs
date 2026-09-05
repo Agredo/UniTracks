@@ -14,6 +14,7 @@ using UniTracks.Maui.Views.Pages.Tabs;
 using UniTracks.Models.Constants;
 using UniTracks.Services.Data;
 using UniTracks.Services.Location;
+using UniTracks.Services.Stats;
 using UniTracks.ViewModels.Controls.Popups;
 using UniTracks.ViewModels.Pages;
 using UniTracks.ViewModels.Pages.Tabs;
@@ -103,6 +104,7 @@ public static class MauiProgram
     {
         services.AddSingleton<ILocationService, LocationService>();
         services.AddSingleton<IGpsDataStorageService, GpsDataStorageService>();
+        services.AddSingleton<IGamificationService, GamificationService>();
         services.AddSingleton<UniTracks.Services.ApplicationModel.IPermissions, UniTracks.Maui.Services.ApplicationModel.Permissions>();
         services.AddSingleton<UniTracks.Services.Dispatching.IDispatcher, UniTracks.Maui.Services.Dispatching.Dispatcher>();
     }
@@ -138,6 +140,7 @@ public static class MauiProgram
         services.AddTransient<TripTabPage, TripTabPageViewModel>();
         services.AddTransient<RecordTripTabPage, RecordTripTabPageViewModel>();
         services.AddTransient<UserPage, UserPagevViewModel>();
+        services.AddTransient<AchievementsPage, AchievementsPageViewModel>();
         services.AddTransient<TripOverviewPage, TripOverviewViewModel>();
     }
 

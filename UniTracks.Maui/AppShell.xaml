@@ -18,6 +18,9 @@
         <Tab Title="User" Icon="user.png" Shell.NavBarIsVisible="False">
             <ShellContent Title="User" ContentTemplate="{DataTemplate tabPages:UserPage}" />
         </Tab>
+        <Tab Title="Erfolge" Icon="trophy.png" Shell.NavBarIsVisible="False">
+            <ShellContent Title="Erfolge" ContentTemplate="{DataTemplate tabPages:AchievementsPage}" />
+        </Tab>
     </TabBar>
 
     <!--<ShellContent
