@@ -1,4 +1,4 @@
-namespace UniTracks.Games.Persistence;
+namespace UniTracks.Games.Shared.Persistence;
 
 /// <summary>One recorded trip's contribution to the coin economy.</summary>
 public record TripActivity

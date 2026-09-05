@@ -1,4 +1,4 @@
-namespace UniTracks.Games.Persistence;
+namespace UniTracks.Games.CityBuilder.Persistence;
 
 /// <summary>
 /// Persistence port for the city builder. Implemented in UniTracks.Services on top of

@@ -1,6 +1,6 @@
-using UniTracks.Games.Persistence;
+using UniTracks.Games.Shared.Persistence;
 
-namespace UniTracks.Games.Economy;
+namespace UniTracks.Games.Shared.Economy;
 
 /// <summary>
 /// Coin economy rules. Coins are earned through real activity (trips, achievements)

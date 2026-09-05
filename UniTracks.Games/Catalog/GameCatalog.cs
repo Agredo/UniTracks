@@ -22,9 +22,9 @@ public static class GameCatalog
         {
             Id = "tower-defense",
             Title = "Trail Defense",
-            Description = "Verteidige deinen Trail gegen fiese Mücken. Bald verfügbar!",
+            Description = "Verteidige deinen Trail gegen fiese Mücken.",
             Icon = "🗼",
-            IsAvailable = false,
+            Route = "TowerDefensePage",
         },
     };
 

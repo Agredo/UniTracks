@@ -59,7 +59,8 @@ UniTracks.Maui.Views      → Pages, Tabs, Controls (XAML), Custom Controls mit 
 UniTracks.Maui.Services   → Plattform-Services (GPS-Listener, Dispatcher)
 UniTracks.ViewModels      → ViewModels ([ObservableProperty], [RelayCommand])
 UniTracks.Services        → App-Logik (Tracking, Data-Services, Gamification, Game-Services)
-UniTracks.Games           → Spiele-Logik, dependency-frei (CityBuilder-Engine, Coin-Wirtschaft, Spiele-Katalog)
+UniTracks.Games           → Spiele-Logik, dependency-frei; ein Ordner pro Spiel (CityBuilder/, TowerDefense/),
+                            geteilter Code in Shared/ (Coin-Wirtschaft), Spiele-Katalog in Catalog/
 UniTracks.Data            → Persistenz: Entity Framework Core (SQLite) + LiteDB
 UniTracks.Models          → Domänen-Modelle (Trip, Location, User, Weather)
 UniTracks.Core            → Basis-Abstraktionen

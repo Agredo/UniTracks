@@ -1,4 +1,4 @@
-namespace UniTracks.Games.Persistence;
+namespace UniTracks.Games.CityBuilder.Persistence;
 
 /// <summary>
 /// A purchased city-grid expansion. Persisted via the provider-agnostic repository

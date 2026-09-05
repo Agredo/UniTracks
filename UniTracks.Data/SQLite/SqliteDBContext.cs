@@ -3,7 +3,8 @@ using System.Linq;
 using System.Reflection;
 using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
-using UniTracks.Games.Persistence;
+using UniTracks.Games.CityBuilder.Persistence;
+using UniTracks.Games.TowerDefense.Persistence;
 using UniTracks.Models.Constants;
 using UniTracks.Models.Environment;
 using UniTracks.Models.Health;
@@ -25,6 +26,8 @@ public class SqliteDBContext : DbContext
     public DbSet<User> Users { get; set; }
     public DbSet<PlacedBuilding> PlacedBuildings { get; set; }
     public DbSet<CityExpansion> CityExpansions { get; set; }
+    public DbSet<TowerUnlock> TowerUnlocks { get; set; }
+    public DbSet<DefenseRecord> DefenseRecords { get; set; }
 
     public DbContext Context => this;
     public string DatabasePath { get; }

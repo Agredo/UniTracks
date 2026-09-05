@@ -1,4 +1,4 @@
-namespace UniTracks.Games.Economy;
+namespace UniTracks.Games.Shared.Economy;
 
 /// <summary>
 /// Per-trip-type distance factors for the coin economy. A road cyclist covers the same
