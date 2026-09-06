@@ -1,0 +1,134 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage
+    x:Class="UniTracks.Maui.Views.Pages.AboutPage"
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    xmlns:viewModels="clr-namespace:UniTracks.ViewModels.Pages;assembly=UniTracks.ViewModels"
+    Title="Über"
+    x:DataType="viewModels:AboutPageViewModel">
+
+    <ScrollView>
+        <VerticalStackLayout Padding="20" Spacing="20">
+
+            <!-- Hero -->
+            <Border
+                Background="{StaticResource HeroGradientBrush}"
+                Padding="24,20"
+                Stroke="{StaticResource CardStroke}"
+                StrokeThickness="1">
+                <Border.StrokeShape>
+                    <RoundRectangle CornerRadius="24" />
+                </Border.StrokeShape>
+                <HorizontalStackLayout Spacing="16">
+                    <Border
+                        Background="{StaticResource AccentSoft}"
+                        HeightRequest="72"
+                        Stroke="{StaticResource AccentDim}"
+                        StrokeThickness="1"
+                        WidthRequest="72">
+                        <Border.StrokeShape>
+                            <RoundRectangle CornerRadius="36" />
+                        </Border.StrokeShape>
+                        <Label
+                            FontSize="34"
+                            HorizontalOptions="Center"
+                            Text="ℹ️"
+                            VerticalOptions="Center" />
+                    </Border>
+                    <VerticalStackLayout Spacing="2" VerticalOptions="Center">
+                        <Label Style="{StaticResource TitleLabel}" Text="{Binding AppName}" />
+                        <Label Style="{StaticResource SubtitleLabel}" Text="{Binding AppVersion, StringFormat='Version {0}'}" />
+                    </VerticalStackLayout>
+                </HorizontalStackLayout>
+            </Border>
+
+            <!-- Bremen with love -->
+            <Border Style="{StaticResource CardBorder}">
+                <HorizontalStackLayout Spacing="12">
+                    <Label FontSize="34" Text="❤️" VerticalOptions="Center" />
+                    <VerticalStackLayout Spacing="4" VerticalOptions="Center">
+                        <Label Style="{StaticResource TitleLabel}" FontSize="18" Text="Aus Bremen" />
+                        <Label Style="{StaticResource SubtitleLabel}" Text="{Binding BremenText}" />
+                    </VerticalStackLayout>
+                </HorizontalStackLayout>
+            </Border>
+
+            <!-- Agredo Application -->
+            <VerticalStackLayout Spacing="8">
+                <Label Style="{StaticResource SectionHeader}" Text="ÜBER Agredo Application" />
+                <Border Style="{StaticResource CardBorder}">
+                    <VerticalStackLayout Spacing="10">
+                        <Label
+                            FontFamily="OpenSansSemibold"
+                            FontSize="16"
+                            Text="Agredo Application" />
+                        <Label Style="{StaticResource SubtitleLabel}" Text="{Binding AgredoText}" />
+                    </VerticalStackLayout>
+                </Border>
+            </VerticalStackLayout>
+
+            <!-- Libraries -->
+            <VerticalStackLayout Spacing="8">
+                <Label Style="{StaticResource SectionHeader}" Text="VERWENDETE BIBLIOTHEKEN" />
+                <VerticalStackLayout BindableLayout.ItemsSource="{Binding Libraries}" Spacing="10">
+                    <BindableLayout.ItemTemplate>
+                        <DataTemplate x:DataType="viewModels:LibraryInfo">
+                            <Border Style="{StaticResource CardBorder}">
+                                <Border.GestureRecognizers>
+                                    <TapGestureRecognizer Tapped="OnLibraryTapped" />
+                                </Border.GestureRecognizers>
+                                <Grid ColumnDefinitions="*,Auto" RowDefinitions="Auto,Auto" RowSpacing="2">
+                                    <Label
+                                        Grid.Row="0"
+                                        Grid.Column="0"
+                                        FontFamily="OpenSansSemibold"
+                                        FontSize="15"
+                                        Text="{Binding Name}" />
+                                    <Label
+                                        Grid.Row="1"
+                                        Grid.Column="0"
+                                        FontSize="12"
+                                        Text="{Binding Version}"
+                                        TextColor="{StaticResource TextSecondary}" />
+                                    <HorizontalStackLayout
+                                        Grid.Row="1"
+                                        Grid.Column="1"
+                                        Spacing="6"
+                                        VerticalOptions="Center">
+                                        <Border
+                                            Background="{StaticResource CardAlt}"
+                                            Padding="8,3"
+                                            Stroke="{StaticResource CardStroke}"
+                                            StrokeThickness="1">
+                                            <Border.StrokeShape>
+                                                <RoundRectangle CornerRadius="10" />
+                                            </Border.StrokeShape>
+                                            <Label
+                                                FontSize="10"
+                                                Style="{StaticResource StatLabel}"
+                                                Text="{Binding License}" />
+                                        </Border>
+                                        <Label
+                                            FontSize="16"
+                                            IsVisible="{Binding HasGitHubUrl}"
+                                            Text="↗"
+                                            TextColor="{StaticResource Accent}"
+                                            VerticalOptions="Center" />
+                                    </HorizontalStackLayout>
+                                </Grid>
+                            </Border>
+                        </DataTemplate>
+                    </BindableLayout.ItemTemplate>
+                </VerticalStackLayout>
+            </VerticalStackLayout>
+
+            <Label
+                FontSize="11"
+                HorizontalTextAlignment="Center"
+                Style="{StaticResource SubtitleLabel}"
+                Text="Tippe auf eine Bibliothek, um deren GitHub-Seite zu öffnen." />
+
+            <Grid HeightRequest="20" />
+        </VerticalStackLayout>
+    </ScrollView>
+</ContentPage>

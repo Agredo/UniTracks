@@ -188,6 +188,7 @@ public static class MauiProgram
         services.AddTransient<GameTabPage, GameTabPageViewModel>();
         services.AddTransient<CityBuilderPage, CityBuilderPageViewModel>();
         services.AddTransient<TowerDefensePage, TowerDefensePageViewModel>();
+        services.AddTransient<AboutPage, AboutPageViewModel>();
     }
 
     private static void RegisterPopups(IServiceCollection services)
