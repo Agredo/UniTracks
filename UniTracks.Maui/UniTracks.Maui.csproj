@@ -17,7 +17,7 @@
 		<ApplicationId>com.agredoapplication.unitracks</ApplicationId>
 
 		<!-- Versions -->
-		<ApplicationDisplayVersion>1.0</ApplicationDisplayVersion>
+		<ApplicationDisplayVersion>0.1</ApplicationDisplayVersion>
 		<ApplicationVersion>1</ApplicationVersion>
 
 		<DefaultLanguage>de-DE</DefaultLanguage>
