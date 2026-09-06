@@ -33,7 +33,19 @@ iOS (iPhone)
 
 Android
 
-![image](https://github.com/Agredo/UniTracks/assets/16531090/9b12c5f8-271c-46d0-b99a-4c6a57776576)
+![Trips](docs/screenshots/android-trips.png)
+
+![Record](docs/screenshots/android-record.png)
+
+![Profil](docs/screenshots/android-profile.png)
+
+![Erfolge](docs/screenshots/android-erfolge.png)
+
+![Spiel-Tab](docs/screenshots/android-spiel.png)
+
+![Cozy City Builder](docs/screenshots/android-city-builder.png)
+
+![Trail Defense](docs/screenshots/android-trail-defense.png)
 
 Windows
 
