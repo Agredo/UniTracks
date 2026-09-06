@@ -13,4 +13,13 @@ public interface ITowerDefenseStore
     Task<DefenseRecord?> LoadRecordAsync();
 
     Task SaveRecordAsync(DefenseRecord record);
+
+    /// <summary>Loads the persisted in-progress run, or <c>null</c> when none is stored.</summary>
+    Task<DefenseRunProgress?> LoadRunAsync();
+
+    /// <summary>Persists the in-progress run (inserts or updates the single stored row).</summary>
+    Task SaveRunAsync(DefenseRunProgress run);
+
+    /// <summary>Deletes the persisted in-progress run.</summary>
+    Task ClearRunAsync();
 }

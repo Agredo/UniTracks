@@ -1,4 +1,5 @@
 using UniTracks.Games.Catalog;
+using UniTracks.Games.Shared.Persistence;
 
 namespace UniTracks.Services.Game;
 
@@ -8,4 +9,7 @@ public interface IGameCatalogService
     IReadOnlyList<GameInfo> GetGames();
 
     Task<int> GetCoinBalanceAsync();
+
+    /// <summary>Lifetime activity stats — drives level/achievement gates on game unlocks.</summary>
+    Task<ActivityStats> GetActivityStatsAsync();
 }

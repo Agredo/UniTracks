@@ -18,7 +18,7 @@ namespace UniTracks.Maui.Views.Controls.Game;
 public class DefenseMapView : SKCanvasView
 {
     /// <summary>Half the number of tiles along a diamond diagonal — sizes the iso layout.</summary>
-    private const double HalfSpan = (DefensePath.GridWidth + DefensePath.GridHeight) / 2.0;
+    private double HalfSpan => State?.Map is { } map ? (map.GridWidth + map.GridHeight) / 2.0 : 12;
 
     private static readonly SKColor SkyTop = new(18, 26, 22);
     private static readonly SKColor SkyBottom = new(30, 44, 35);
@@ -269,7 +269,8 @@ public class DefenseMapView : SKCanvasView
         int tx = (int)Math.Floor(fx);
         int ty = (int)Math.Floor(fy);
 
-        if (tx < 0 || ty < 0 || tx >= DefensePath.GridWidth || ty >= DefensePath.GridHeight)
+        var map = State?.Map;
+        if (map is null || tx < 0 || ty < 0 || tx >= map.GridWidth || ty >= map.GridHeight)
         {
             selectedTile = null;
             InvalidateSurface();
@@ -328,10 +329,12 @@ public class DefenseMapView : SKCanvasView
 
     private void DrawTiles(SKCanvas canvas, IsoLayout layout)
     {
+        var map = State!.Map;
+
         // Painter's algorithm: back row (y=0) first, so front tiles overlap correctly.
-        for (int y = 0; y < DefensePath.GridHeight; y++)
+        for (int y = 0; y < map.GridHeight; y++)
         {
-            for (int x = 0; x < DefensePath.GridWidth; x++)
+            for (int x = 0; x < map.GridWidth; x++)
             {
                 bool isGhostTarget = selectedTile == (x, y) && GhostTower is not null && (State?.IsBuildable(x, y) ?? false);
                 DrawTile(canvas, layout, x, y, isGhostTarget);
@@ -346,8 +349,8 @@ public class DefenseMapView : SKCanvasView
 
         // Trail entry and goal markers just outside the grid (vector, since emoji glyphs
         // render inconsistently on some platforms).
-        DrawPineTree(canvas, (float)layout.ScreenX(2.5, -0.5), (float)layout.ScreenY(2.5, -0.5), (float)(layout.TileW * 0.42));
-        DrawTent(canvas, (float)layout.ScreenX(6.5, 15.5), (float)layout.ScreenY(6.5, 15.5), (float)(layout.TileW * 0.42));
+        DrawPineTree(canvas, (float)layout.ScreenX(map.Entry.X, map.Entry.Y), (float)layout.ScreenY(map.Entry.X, map.Entry.Y), (float)(layout.TileW * 0.42));
+        DrawTent(canvas, (float)layout.ScreenX(map.Exit.X, map.Exit.Y), (float)layout.ScreenY(map.Exit.X, map.Exit.Y), (float)(layout.TileW * 0.42));
     }
 
     private void DrawTile(SKCanvas canvas, IsoLayout layout, int x, int y, bool isGhostTarget)
@@ -357,16 +360,32 @@ public class DefenseMapView : SKCanvasView
         byte g = (byte)(84 + hash * 5);
         var top = new SKColor(58, g, 64);
         var side = new SKColor(42, 62, 47);
+        bool decorateForest = false;
 
-        if (DefensePath.IsPath(x, y))
+        switch (State!.Map.TileKind(x, y))
         {
-            top = new SKColor(112, 89, 64);
-            side = new SKColor(91, 71, 50);
-        }
-        else if (isGhostTarget)
-        {
-            top = new SKColor(96, 150, 108);
-            side = new SKColor(72, 118, 84);
+            case DefenseTileKind.Path:
+                top = new SKColor(112, 89, 64);
+                side = new SKColor(91, 71, 50);
+                break;
+            case DefenseTileKind.Water:
+                top = new SKColor(40, 78, 116);
+                side = new SKColor(26, 56, 90);
+                break;
+            case DefenseTileKind.Forest:
+                // A slightly deeper green ground — the pine decoration marks it as forest.
+                top = new SKColor(48, 74, 54);
+                side = new SKColor(34, 54, 40);
+                decorateForest = true;
+                break;
+            default:
+                if (isGhostTarget)
+                {
+                    top = new SKColor(96, 150, 108);
+                    side = new SKColor(72, 118, 84);
+                }
+
+                break;
         }
 
         float cx = (float)layout.ScreenX(x + 0.5, y + 0.5);
@@ -399,6 +418,11 @@ public class DefenseMapView : SKCanvasView
         if (isGhostTarget)
         {
             canvas.DrawPath(tileTopPath, tileGhostStrokePaint);
+        }
+
+        if (decorateForest)
+        {
+            DrawPineTree(canvas, cx, cy - hh * 0.35f, hw * 0.9f);
         }
     }
 

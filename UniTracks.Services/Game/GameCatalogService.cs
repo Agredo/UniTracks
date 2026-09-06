@@ -28,6 +28,8 @@ public class GameCatalogService : IGameCatalogService
 
     public IReadOnlyList<GameInfo> GetGames() => GameCatalog.Games;
 
+    public async Task<ActivityStats> GetActivityStatsAsync() => await activityStats.GetAsync();
+
     public async Task<int> GetCoinBalanceAsync()
     {
         var stats = await activityStats.GetAsync();

@@ -12,9 +12,19 @@ public class TowerShopItemViewModel
     {
         Tower = tower;
         IsUnlocked = tower.IsFree || profile.UnlockedTowerIds.Contains(tower.Id);
+
+        // "Affordable" purely reflects the coin requirement — the lock reason is shown
+        // separately so players understand what is still missing (level, achievement, coins).
         IsAffordable = profile.Coins >= tower.UnlockCost;
 
-        LockLabel = IsUnlocked ? string.Empty : $"🔒 {tower.UnlockCost:N0} 🪙";
+        bool levelOk = profile.Level >= tower.RequiredLevel;
+        bool achievementOk = tower.RequiredAchievementId is null || profile.UnlockedAchievementIds.Contains(tower.RequiredAchievementId);
+
+        LockLabel =
+            IsUnlocked ? string.Empty
+            : tower.RequiredAchievementId is not null && !achievementOk ? "🏅 Erfolg nötig"
+            : !levelOk ? $"🔒 Level {tower.RequiredLevel}"
+            : $"🔒 {tower.UnlockCost:N0} 🪙";
     }
 
     public TowerDefinition Tower { get; }
@@ -34,6 +44,6 @@ public class TowerShopItemViewModel
     /// <summary>Enough coins for the unlock purchase.</summary>
     public bool IsAffordable { get; }
 
-    /// <summary>Unlock price shown on locked items ("" when unlocked).</summary>
+    /// <summary>Reason shown on locked items ("" when unlocked).</summary>
     public string LockLabel { get; }
 }

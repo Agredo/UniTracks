@@ -17,6 +17,12 @@ public record TowerDefinition
     /// <summary>One-time coin price to unlock the tower permanently (0 = starter tower).</summary>
     public int UnlockCost { get; init; }
 
+    /// <summary>Gamification level needed to unlock this tower in the shop (1 = always available).</summary>
+    public int RequiredLevel { get; init; } = 1;
+
+    /// <summary>Achievement id that must be unlocked first (prestige tower), or null.</summary>
+    public string? RequiredAchievementId { get; init; }
+
     /// <summary>Energy price to place the tower during a run.</summary>
     public int EnergyCost { get; init; }
 

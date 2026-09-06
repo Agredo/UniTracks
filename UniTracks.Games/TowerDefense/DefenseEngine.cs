@@ -10,23 +10,25 @@ namespace UniTracks.Games.TowerDefense;
 /// </summary>
 public static class DefenseEngine
 {
-    /// <summary>Energy every run starts with, so the first towers are placeable right away.</summary>
-    public const int StartingEnergy = 100;
-
-    public const int StartingLives = 20;
-
     /// <summary>Fraction of the energy cost refunded when selling a tower.</summary>
     public const double SellRefundFraction = 0.5;
 
     /// <summary>Distance in tile units below which a projectile counts as a hit.</summary>
     private const double HitRadius = 0.25;
 
-    /// <summary>Starts a fresh run for a player with the given permanently unlocked towers.</summary>
-    public static DefenseState NewRun(IEnumerable<string> unlockedTowerIds) => new()
+    /// <summary>
+    /// Starts a fresh run for a player with the given permanently unlocked towers on the
+    /// given map. Energy and the sport-based wave bonus are precomputed from the player's
+    /// activity (see <see cref="Shared.Economy.EnergyEconomy"/>) and passed in by the service
+    /// layer; lives come from the map's difficulty.
+    /// </summary>
+    public static DefenseState NewRun(IEnumerable<string> unlockedTowerIds, DefenseMap map, int startingEnergy, int clearBonus) => new()
     {
         UnlockedTowerIds = unlockedTowerIds.ToList(),
-        Energy = StartingEnergy,
-        Lives = StartingLives,
+        Map = map,
+        Energy = startingEnergy,
+        ClearBonus = clearBonus,
+        Lives = map.StartLives,
     };
 
     /// <summary>Coins permanently invested in tower unlocks (feeds the shared coin balance).</summary>
@@ -47,12 +49,12 @@ public static class DefenseEngine
             return DefenseResult.Fail(DefenseError.TowerLocked);
         }
 
-        if (x < 0 || x >= DefensePath.GridWidth || y < 0 || y >= DefensePath.GridHeight)
+        if (x < 0 || x >= state.Map.GridWidth || y < 0 || y >= state.Map.GridHeight)
         {
             return DefenseResult.Fail(DefenseError.OutOfBounds);
         }
 
-        if (DefensePath.IsPath(x, y))
+        if (state.Map.TileKind(x, y) != DefenseTileKind.Grass)
         {
             return DefenseResult.Fail(DefenseError.NotBuildable);
         }
@@ -107,7 +109,7 @@ public static class DefenseEngine
             return DefenseResult.Fail(DefenseError.WaveRunning);
         }
 
-        foreach (var enemy in WaveCatalog.For(state.NextWave))
+        foreach (var enemy in WaveCatalog.For(state.NextWave, state.Map))
         {
             state.PendingSpawns.Enqueue(enemy);
         }
@@ -147,7 +149,7 @@ public static class DefenseEngine
 
         if (state.PendingSpawns.Count == 0 && state.Enemies.Count == 0)
         {
-            state.Energy += WaveCatalog.ClearBonus(state.NextWave);
+            state.Energy += state.ClearBonus;
             state.NextWave++;
             state.Phase = DefensePhase.Building;
         }
@@ -156,7 +158,7 @@ public static class DefenseEngine
     private static void SpawnEnemies(DefenseState state, double deltaMs)
     {
         state.SpawnCooldownMs -= deltaMs;
-        double hpMultiplier = WaveCatalog.HpMultiplier(state.NextWave);
+        double hpMultiplier = WaveCatalog.HpMultiplier(state.NextWave) * state.Map.HpMultiplier;
 
         while (state.PendingSpawns.Count > 0 && state.SpawnCooldownMs <= 0)
         {
@@ -166,6 +168,7 @@ public static class DefenseEngine
             {
                 Id = state.NextEnemyId++,
                 Definition = definition,
+                Map = state.Map,
                 MaxHp = maxHp,
                 Hp = maxHp,
                 Distance = 0,
@@ -180,8 +183,8 @@ public static class DefenseEngine
         for (int i = state.Enemies.Count - 1; i >= 0; i--)
         {
             var enemy = state.Enemies[i];
-            enemy.Distance += enemy.Definition.SpeedTilesPerSecond * deltaSeconds;
-            if (enemy.Distance >= DefensePath.TotalLength)
+            enemy.Distance += enemy.Definition.SpeedTilesPerSecond * state.Map.SpeedMultiplier * deltaSeconds;
+            if (enemy.Distance >= state.Map.TotalLength)
             {
                 state.Lives -= enemy.Definition.LeakDamage;
                 state.Enemies.RemoveAt(i);
