@@ -24,6 +24,12 @@ public record DefenseRunProgress
 
     public int Score { get; set; }
 
+    /// <summary>Highest wave fully cleared with zero leaks in this run (0 = none yet).</summary>
+    public int BestClearWave { get; set; }
+
+    /// <summary>The score at the moment the zero-leak best wave was cleared.</summary>
+    public int BestClearScore { get; set; }
+
     /// <summary>JSON-serialized list of <see cref="PlacedTower"/> of the current layout.</summary>
     public string TowersJson { get; set; } = "[]";
 

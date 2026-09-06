@@ -32,6 +32,18 @@ public class DefenseState
     /// <summary>Number of the wave that will start next (1-based).</summary>
     public int NextWave { get; set; } = 1;
 
+    /// <summary>Highest wave number fully cleared with zero leaks (0 = none yet).</summary>
+    public int BestClearWave { get; set; }
+
+    /// <summary>The score at the moment the zero-leak best wave (<see cref="BestClearWave"/>) was cleared.</summary>
+    public int BestClearScore { get; set; }
+
+    /// <summary>Enemies spawned so far in the current wave.</summary>
+    public int WaveSpawned { get; set; }
+
+    /// <summary>Enemies that reached the end of the trail in the current wave.</summary>
+    public int WaveLeaked { get; set; }
+
     public DefensePhase Phase { get; set; } = DefensePhase.Building;
 
     /// <summary>Enemies of the running wave that still need to spawn.</summary>

@@ -22,5 +22,5 @@ public record EnemyDefinition
     public int ScoreReward { get; init; }
 
     /// <summary>Lives lost when this enemy reaches the end of the trail.</summary>
-    public int LeakDamage { get; init; } = 1;
+    public int LeakDamage { get; init; } = 2;
 }
