@@ -16,8 +16,14 @@ public class DefenseState
     /// <summary>Tower ids the player has permanently unlocked (drives placement validation).</summary>
     public IReadOnlyList<string> UnlockedTowerIds { get; init; } = Array.Empty<string>();
 
-    /// <summary>In-run placement currency, earned by killing enemies and clearing waves.</summary>
+    /// <summary>The map this run is played on (drives the trail geometry and difficulty modifiers).</summary>
+    public DefenseMap Map { get; init; } = MapCatalog.Default;
+
+    /// <summary>In-run placement currency, topped up by the sport-based wave clear bonus.</summary>
     public int Energy { get; set; }
+
+    /// <summary>Sport-based energy returned after each cleared wave (see <see cref="Shared.Economy.EnergyEconomy"/>).</summary>
+    public int ClearBonus { get; set; }
 
     public int Lives { get; set; }
 
@@ -42,10 +48,10 @@ public class DefenseState
 
     public PlacedTower? TowerAt(int x, int y) => Towers.FirstOrDefault(t => t.X == x && t.Y == y);
 
-    /// <summary>True when the tile is inside the grid, off the trail and not occupied.</summary>
+    /// <summary>True when the tile is inside the grid, is plain grass (no trail/water/forest) and not occupied.</summary>
     public bool IsBuildable(int x, int y) =>
-        x >= 0 && x < DefensePath.GridWidth
-        && y >= 0 && y < DefensePath.GridHeight
-        && !DefensePath.IsPath(x, y)
+        x >= 0 && x < Map.GridWidth
+        && y >= 0 && y < Map.GridHeight
+        && Map.TileKind(x, y) == DefenseTileKind.Grass
         && TowerAt(x, y) is null;
 }

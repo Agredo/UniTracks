@@ -25,4 +25,36 @@ public class TowerDefenseStore : ITowerDefenseStore
         (await repository.GetAllAsync<DefenseRecord>()).FirstOrDefault();
 
     public Task SaveRecordAsync(DefenseRecord record) => repository.Update(record);
+
+    public async Task<DefenseRunProgress?> LoadRunAsync() =>
+        (await repository.GetAllAsync<DefenseRunProgress>()).FirstOrDefault();
+
+    public async Task SaveRunAsync(DefenseRunProgress run)
+    {
+        var existing = (await repository.GetAllAsync<DefenseRunProgress>()).FirstOrDefault();
+        if (existing is null)
+        {
+            await repository.Add(run);
+            return;
+        }
+
+        // Mutate the already-tracked instance instead of creating a new one: EF Core
+        // throws an InvalidOperationException (IdentityConflict) when two instances share
+        // the same key, which surfaced as the 0xc000027b stowed exception on placement.
+        existing.Wave = run.Wave;
+        existing.Lives = run.Lives;
+        existing.Score = run.Score;
+        existing.TowersJson = run.TowersJson;
+        existing.UpdatedAt = run.UpdatedAt;
+        await repository.Update(existing);
+    }
+
+    public async Task ClearRunAsync()
+    {
+        var existing = (await repository.GetAllAsync<DefenseRunProgress>()).FirstOrDefault();
+        if (existing is not null)
+        {
+            await repository.Delete(existing);
+        }
+    }
 }

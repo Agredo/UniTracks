@@ -17,4 +17,16 @@ public interface ITowerDefenseService
 
     /// <summary>Persists a finished run when it beats the stored best wave or score.</summary>
     Task<DefenseProfile> SaveRunResultAsync(int clearedWave, int score);
+
+    /// <summary>
+    /// Loads the persisted in-progress run (towers + wave) with energy freshly recomputed
+    /// from the player's current activity, or <c>null</c> when no run is stored.
+    /// </summary>
+    Task<DefenseState?> LoadRunAsync();
+
+    /// <summary>Persists the in-progress run so the player can continue next time.</summary>
+    Task SaveRunAsync(DefenseState state);
+
+    /// <summary>Clears the stored in-progress run (for a fresh restart).</summary>
+    Task ClearRunAsync();
 }

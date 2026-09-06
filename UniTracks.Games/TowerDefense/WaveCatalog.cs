@@ -9,23 +9,23 @@ public static class WaveCatalog
     /// <summary>Milliseconds between two enemy spawns within a wave.</summary>
     public const int SpawnIntervalMs = 800;
 
-    /// <summary>Hit-point multiplier per wave (wave 1 = 100 %, growing by 15 % each wave).</summary>
-    public static double HpMultiplier(int wave) => 1 + 0.15 * (wave - 1);
-
-    /// <summary>Energy bonus awarded when a wave is fully cleared.</summary>
-    public static int ClearBonus(int wave) => 20 + 5 * wave;
+    /// <summary>Hit-point multiplier per wave (wave 1 = 100 %, growing by 18 % each wave).</summary>
+    public static double HpMultiplier(int wave) => 1 + 0.18 * (wave - 1);
 
     /// <summary>
     /// The enemy types spawning in the given wave, in spawn order. Waves stay endless —
-    /// composition and hit points simply keep scaling.
+    /// composition and hit points keep scaling. Tougher types (gnats, wasps) arrive earlier
+    /// so the free starter tower falls behind and players must unlock stronger towers.
+    /// Harder maps add a few extra swarmers on top of the per-wave scaling.
     /// </summary>
-    public static IReadOnlyList<EnemyDefinition> For(int wave)
+    public static IReadOnlyList<EnemyDefinition> For(int wave, DefenseMap map)
     {
         var enemies = new List<EnemyDefinition>();
 
-        int mosquitoes = 4 + wave;
-        int gnats = wave >= 3 ? (wave - 1) : 0;
-        int wasps = wave >= 5 ? (wave - 3) : 0;
+        int extraSwarm = Math.Max(0, map.Difficulty - 1);
+        int mosquitoes = 3 + wave + extraSwarm;
+        int gnats = wave >= 2 ? wave : 0;
+        int wasps = wave >= 4 ? (wave - 2) : 0;
 
         for (int i = 0; i < mosquitoes; i++)
         {

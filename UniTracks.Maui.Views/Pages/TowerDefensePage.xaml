@@ -6,6 +6,7 @@
     xmlns:gameControls="clr-namespace:UniTracks.Maui.Views.Controls.Game"
     xmlns:mct="http://schemas.microsoft.com/dotnet/2022/maui/toolkit"
     xmlns:viewModels="clr-namespace:UniTracks.ViewModels.Pages;assembly=UniTracks.ViewModels"
+    xmlns:games="clr-namespace:UniTracks.Games.TowerDefense;assembly=UniTracks.Games"
     Title="Trail Defense"
     x:DataType="viewModels:TowerDefensePageViewModel">
 
@@ -156,5 +157,91 @@
                 </HorizontalStackLayout>
             </ScrollView>
         </VerticalStackLayout>
+
+        <!-- Full-screen map-selection page shown at the start of a run. Rendered as the last
+             child of the root grid spanning all rows so it fully covers HUD + map + shop —
+             an opaque screen of its own, not an overlay on the play field. Each trail gets a
+             live isometric mini-map so the player sees its shape, curves and build space. -->
+        <Grid
+            Grid.RowSpan="3"
+            BackgroundColor="#FF0F1D18"
+            IsVisible="{Binding IsChoosingMap}"
+            Padding="24">
+            <Grid
+                RowDefinitions="Auto,Auto,Auto,*"
+                RowSpacing="14"
+                HorizontalOptions="Center"
+                MaximumWidthRequest="680">
+                <Label
+                    FontSize="28"
+                    HorizontalTextAlignment="Center"
+                    Style="{StaticResource TitleLabel}"
+                    Text="Wähle deinen Trail" />
+                <Label
+                    Grid.Row="1"
+                    FontSize="13"
+                    HorizontalTextAlignment="Center"
+                    Style="{StaticResource SubtitleLabel}"
+                    Text="Jede Karte hat ihren eigenen Weg und ihr eigenes Tempo. Wähle die Schwierigkeit, die zu deinem Sportpensum passt." />
+                <Button
+                    Grid.Row="2"
+                    BackgroundColor="{StaticResource Accent}"
+                    Command="{Binding ResumeMapCommand}"
+                    IsVisible="{Binding CanResume}"
+                    Text="{Binding ResumeLabel}" />
+                <ScrollView Grid.Row="3" VerticalScrollBarVisibility="Never">
+                    <VerticalStackLayout Spacing="14" BindableLayout.ItemsSource="{Binding Maps}">
+                        <BindableLayout.ItemTemplate>
+                            <DataTemplate x:DataType="games:DefenseMap">
+                                <Border Padding="14" Style="{StaticResource CardBorder}">
+                                    <Border.GestureRecognizers>
+                                        <TapGestureRecognizer Command="{Binding Source={RelativeSource AncestorType={x:Type viewModels:TowerDefensePageViewModel}}, Path=SelectMapCommand}" CommandParameter="{Binding .}" />
+                                    </Border.GestureRecognizers>
+                                    <Grid ColumnDefinitions="240,*" ColumnSpacing="16">
+                                        <gameControls:DefenseMapPreview
+                                            HeightRequest="170"
+                                            Map="{Binding .}" />
+                                        <VerticalStackLayout
+                                            Grid.Column="1"
+                                            Spacing="6"
+                                            VerticalOptions="Center">
+                                            <HorizontalStackLayout Spacing="8">
+                                                <Label
+                                                    FontSize="22"
+                                                    Text="{Binding Icon}"
+                                                    VerticalOptions="Center" />
+                                                <Label
+                                                    FontSize="18"
+                                                    Style="{StaticResource TitleLabel}"
+                                                    Text="{Binding Name}"
+                                                    VerticalOptions="Center" />
+                                            </HorizontalStackLayout>
+                                            <Label
+                                                FontSize="12"
+                                                Style="{StaticResource SubtitleLabel}"
+                                                Text="{Binding Description}" />
+                                            <HorizontalStackLayout Margin="0,4,0,0" Spacing="14">
+                                                <Label
+                                                    FontSize="14"
+                                                    Style="{StaticResource StatLabel}"
+                                                    Text="{Binding Stars}" />
+                                                <Label
+                                                    FontSize="13"
+                                                    Style="{StaticResource StatLabel}"
+                                                    Text="{Binding StartLives, StringFormat='❤️ {0}'}" />
+                                                <Label
+                                                    FontSize="13"
+                                                    Style="{StaticResource StatLabel}"
+                                                    Text="{Binding BuildableCount, StringFormat='🔨 {0} Felder'}" />
+                                            </HorizontalStackLayout>
+                                        </VerticalStackLayout>
+                                    </Grid>
+                                </Border>
+                            </DataTemplate>
+                        </BindableLayout.ItemTemplate>
+                    </VerticalStackLayout>
+                </ScrollView>
+            </Grid>
+        </Grid>
     </Grid>
 </ContentPage>

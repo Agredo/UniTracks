@@ -15,6 +15,9 @@ public partial class TowerDefensePageViewModel : ObservableObject
     /// <summary>Guards against saving the same finished run twice.</summary>
     private bool runSaved;
 
+    /// <summary>A previously persisted run that the player may resume from the map-selection overlay.</summary>
+    private DefenseState? resumeRun;
+
     public TowerDefensePageViewModel(ITowerDefenseService towerDefenseService, IDialogService dialogService)
     {
         this.towerDefenseService = towerDefenseService;
@@ -26,9 +29,28 @@ public partial class TowerDefensePageViewModel : ObservableObject
     /// <summary>Shop entries in catalog order (cheapest first), rebuilt with unlock state on every profile refresh.</summary>
     public ObservableCollection<TowerShopItemViewModel> ShopItems { get; } = new();
 
+    /// <summary>The selectable maps, easiest to hardest (see <see cref="MapCatalog"/>).</summary>
+    public ObservableCollection<DefenseMap> Maps { get; } = new(MapCatalog.All);
+
+    /// <summary>The map chosen for the current (or next) run.</summary>
+    [ObservableProperty]
+    private DefenseMap selectedMap;
+
+    /// <summary>Whether the map-selection overlay is shown at the start of a run.</summary>
+    [ObservableProperty]
+    private bool isChoosingMap = true;
+
+    /// <summary>Whether there is a persisted run that the player can resume from the selection overlay.</summary>
+    [ObservableProperty]
+    private bool canResume;
+
+    /// <summary>Label for the resume button in the selection overlay.</summary>
+    [ObservableProperty]
+    private string resumeLabel = string.Empty;
+
     /// <summary>The active run. Mutated in place by <see cref="DefenseEngine.Tick"/>; replaced on restart.</summary>
     [ObservableProperty]
-    private DefenseState state = DefenseEngine.NewRun(Array.Empty<string>());
+    private DefenseState state = DefenseEngine.NewRun(Array.Empty<string>(), MapCatalog.Default, 0, 0);
 
     [ObservableProperty]
     private DefenseProfile profile = new();
@@ -122,7 +144,7 @@ public partial class TowerDefensePageViewModel : ObservableObject
     [RelayCommand]
     private async Task TileTapped(DefenseTile? tile)
     {
-        if (tile is null || IsLost)
+        if (tile is null || IsLost || IsChoosingMap)
         {
             return;
         }
@@ -139,11 +161,22 @@ public partial class TowerDefensePageViewModel : ObservableObject
         }
 
         RefreshLabels();
+
+        if (result.Success)
+        {
+            // Keep the tower layout so it survives an app restart.
+            await towerDefenseService.SaveRunAsync(State);
+        }
     }
 
     [RelayCommand]
     private void StartWave()
     {
+        if (IsChoosingMap)
+        {
+            return;
+        }
+
         DefenseEngine.StartWave(State);
         RefreshLabels();
     }
@@ -152,6 +185,12 @@ public partial class TowerDefensePageViewModel : ObservableObject
     [RelayCommand]
     private async Task Tick(int elapsedMs)
     {
+        if (IsChoosingMap)
+        {
+            return;
+        }
+
+        bool wasRunning = State.Phase == DefensePhase.WaveRunning;
         DefenseEngine.Tick(State, elapsedMs);
         RefreshLabels();
 
@@ -159,18 +198,75 @@ public partial class TowerDefensePageViewModel : ObservableObject
         {
             runSaved = true;
             ApplyProfile(await towerDefenseService.SaveRunResultAsync(State.ClearedWave, State.Score));
+
+            // Keep the failed layout + wave so the player can retry next time with fresh energy.
+            await towerDefenseService.SaveRunAsync(State);
+        }
+        else if (wasRunning && State.Phase == DefensePhase.Building)
+        {
+            // Wave cleared — persist the new wave + energy so the player resumes exactly here.
+            await towerDefenseService.SaveRunAsync(State);
         }
     }
 
     [RelayCommand]
-    private void Restart()
+    private async Task Restart()
     {
-        State = DefenseEngine.NewRun(Profile.UnlockedTowerIds);
+        // Let the player pick a map again before starting the next run.
+        IsChoosingMap = true;
+        runSaved = false;
+        IsLost = false;
+        SelectedTower = null;
+        IsSellMode = false;
+
+        // Drop the stored progress so the run cannot be resumed mid-game-over.
+        await towerDefenseService.ClearRunAsync();
+        resumeRun = null;
+        CanResume = false;
+        ResumeLabel = string.Empty;
+        SelectedMap = MapCatalog.Default;
+        State = DefenseEngine.NewRun(Profile.UnlockedTowerIds, MapCatalog.Default, Profile.StartingEnergy, Profile.ClearBonus);
+    }
+
+    /// <summary>Resumes the persisted run (towers + wave + map) chosen from the selection overlay.</summary>
+    [RelayCommand]
+    private void ResumeMap()
+    {
+        if (resumeRun is null)
+        {
+            return;
+        }
+
+        State = resumeRun;
+        SelectedMap = resumeRun.Map;
+        IsChoosingMap = false;
         runSaved = false;
         IsLost = false;
         SelectedTower = null;
         IsSellMode = false;
         RefreshLabels();
+    }
+
+    /// <summary>Starts a fresh run on the chosen map and stores it as the current run.</summary>
+    [RelayCommand]
+    private async Task SelectMap(DefenseMap? map)
+    {
+        if (map is null)
+        {
+            return;
+        }
+
+        SelectedMap = map;
+        IsChoosingMap = false;
+        State = DefenseEngine.NewRun(Profile.UnlockedTowerIds, map, Profile.StartingEnergy, Profile.ClearBonus);
+        runSaved = false;
+        IsLost = false;
+        SelectedTower = null;
+        IsSellMode = false;
+        RefreshLabels();
+
+        // Persist the fresh run so a restart resumes exactly here.
+        await towerDefenseService.SaveRunAsync(State);
     }
 
     [RelayCommand]
@@ -197,8 +293,21 @@ public partial class TowerDefensePageViewModel : ObservableObject
         var profile = await towerDefenseService.GetProfileAsync();
         ApplyProfile(profile);
 
-        // First load starts the run with the player's unlocked towers.
-        State = DefenseEngine.NewRun(profile.UnlockedTowerIds);
+        // Always show the map-selection overlay on entry so the player picks a trail. If a
+        // persisted run exists (towers + wave + map), offer it as a "resume" option; energy
+        // is freshly recomputed from activity when the player resumes.
+        var savedRun = await towerDefenseService.LoadRunAsync();
+        resumeRun = savedRun;
+        CanResume = savedRun is not null;
+        ResumeLabel = savedRun is null
+            ? string.Empty
+            : $"▶ Welle {savedRun.NextWave} auf {savedRun.Map.Name} fortsetzen";
+
+        SelectedMap = savedRun?.Map ?? MapCatalog.Default;
+        State = savedRun
+            ?? DefenseEngine.NewRun(profile.UnlockedTowerIds, MapCatalog.Default, profile.StartingEnergy, profile.ClearBonus);
+        IsChoosingMap = true;
+
         runSaved = false;
         IsLost = false;
         RefreshLabels();

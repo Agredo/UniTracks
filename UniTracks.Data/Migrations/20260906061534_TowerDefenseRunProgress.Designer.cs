@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using UniTracks.Data.SQLite;
 
@@ -10,14 +11,11 @@ using UniTracks.Data.SQLite;
 namespace UniTracks.Data.Migrations;
 
 [DbContext(typeof(SqliteDBContext))]
-partial class SqliteDBContextModelSnapshot : ModelSnapshot
+[Migration("20260906061534_TowerDefenseRunProgress")]
+partial class _20260906061534_TowerDefenseRunProgress
 {
-    // If you encounter a merge conflict in the line below, it means you need to
-    // discard one of the migration branches and recreate its migrations on top of
-    // the other branch. See https://aka.ms/efcore-docs-migrations-conflicts for more info.
-    public override string LastMigrationId => "20260906072822_AddTowerDefenseMapId";
-
-    protected override void BuildModel(ModelBuilder modelBuilder)
+    /// <inheritdoc />
+    protected override void BuildTargetModel(ModelBuilder modelBuilder)
     {
 #pragma warning disable 612, 618
         modelBuilder.HasAnnotation("ProductVersion", "11.0.0-preview.7.26381.103");
@@ -91,10 +89,6 @@ partial class SqliteDBContextModelSnapshot : ModelSnapshot
 
                 b.Property<int>("Lives")
                     .HasColumnType("INTEGER");
-
-                b.Property<string>("MapId")
-                    .IsRequired()
-                    .HasColumnType("TEXT");
 
                 b.Property<int>("Score")
                     .HasColumnType("INTEGER");
