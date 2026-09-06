@@ -44,6 +44,7 @@ public static class MapCatalog
             Description = "Ein gemütlicher S-förmiger Weg durch den Park mit einem Weiher.",
             Icon = "🌸",
             Difficulty = 2,
+            RequiredLevel = 2,
             GridWidth = 9,
             GridHeight = 15,
             Waypoints = new[]
@@ -74,6 +75,7 @@ public static class MapCatalog
             Description = "Ein gewundener Uferweg am großen See — wenig Platz am Ufer.",
             Icon = "🌊",
             Difficulty = 3,
+            RequiredAchievementIds = new[] { "streak-3" },
             GridWidth = 9,
             GridHeight = 15,
             Waypoints = new[]
@@ -110,6 +112,7 @@ public static class MapCatalog
             Description = "Enge Gassen zwischen Häuserblocks — kaum Platz zum Bauen.",
             Icon = "🏰",
             Difficulty = 4,
+            RequiredAchievementIds = new[] { "fifty-km" },
             GridWidth = 9,
             GridHeight = 15,
             Waypoints = new[]
@@ -146,6 +149,7 @@ public static class MapCatalog
             Description = "Der härteste Trail: Fluss und dichter Wald — nur winzige Bau-Inseln.",
             Icon = "⛰️",
             Difficulty = 5,
+            RequiredAchievementIds = new[] { "hundred-km", "streak-7" },
             GridWidth = 9,
             GridHeight = 15,
             Waypoints = new[]
