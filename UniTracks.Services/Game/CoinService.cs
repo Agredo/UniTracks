@@ -23,7 +23,9 @@ public class CoinService : ICoinService
 
     public async Task<ActivityStats> GetAsync()
     {
-        var trips = (await repository.GetAllAsync<Trip>(t => t.TripType!)).ToList();
+        var trips = (await repository.GetAllAsync<Trip>(t => t.TripType!))
+            .Where(TripQualification.IsQualifying)
+            .ToList();
         var stats = await gamificationService.ComputeAsync();
 
         return new ActivityStats

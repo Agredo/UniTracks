@@ -21,7 +21,9 @@ public class GamificationService : IGamificationService
 
     public async Task<GamificationStats> ComputeAsync()
     {
-        var trips = (await repository.GetAllAsync<Trip>()).ToList();
+        var trips = (await repository.GetAllAsync<Trip>())
+            .Where(TripQualification.IsQualifying)
+            .ToList();
 
         double totalDistanceKm = trips.Sum(t => t.Distance ?? 0) / 1000.0;
         int totalTrips = trips.Count;

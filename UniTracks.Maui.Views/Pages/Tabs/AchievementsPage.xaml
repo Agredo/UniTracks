@@ -87,6 +87,10 @@
 
                 <!-- Achievements -->
                 <Label Style="{StaticResource SectionHeader}" Text="ERFOLGE" />
+                <Label
+                    FontSize="11"
+                    Style="{StaticResource SubtitleLabel}"
+                    Text="Nur Trips ab 2 Minuten und 100 Metern zählen für Erfolge, XP und Streaks." />
             </VerticalStackLayout>
         </CollectionView.Header>
 
