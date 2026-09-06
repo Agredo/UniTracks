@@ -1,8 +1,7 @@
 using System.Data;
 using System.Linq;
-using System.Reflection;
-using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
+using UniTracks.Data.Seeding;
 using UniTracks.Games.CityBuilder.Persistence;
 using UniTracks.Games.TowerDefense.Persistence;
 using UniTracks.Models.Constants;
@@ -81,20 +80,7 @@ public class SqliteDBContext : DbContext
     /// <summary>
     /// Reads the embedded <c>Data/triptypes.json</c> seed catalog into <see cref="TripType"/> instances.
     /// </summary>
-    private static List<TripType> LoadTripTypeSeeds()
-    {
-        var assembly = typeof(SqliteDBContext).Assembly;
-        var resourceName = assembly.GetManifestResourceNames()
-            .FirstOrDefault(n => n.EndsWith("triptypes.json", StringComparison.OrdinalIgnoreCase))
-            ?? throw new InvalidOperationException(
-                $"Embedded resource 'triptypes.json' not found in assembly {assembly.FullName}.");
-
-        using var stream = assembly.GetManifestResourceStream(resourceName)!;
-        using var reader = new StreamReader(stream);
-        var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
-        return JsonSerializer.Deserialize<List<TripType>>(reader.ReadToEnd(), options)
-            ?? new List<TripType>();
-    }
+    private static List<TripType> LoadTripTypeSeeds() => TripTypeSeeds.Load();
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
     {

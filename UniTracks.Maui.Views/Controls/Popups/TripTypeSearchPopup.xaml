@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<toolkit:Popup
+    x:Class="UniTracks.Maui.Views.Controls.Popups.TripTypeSearchPopup"
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    xmlns:toolkit="http://schemas.microsoft.com/dotnet/2022/maui/toolkit"
+    xmlns:vm="clr-namespace:UniTracks.ViewModels.Controls.Popups;assembly=UniTracks.ViewModels"
+    xmlns:models="clr-namespace:UniTracks.Models.Trip;assembly=UniTracks.Models"
+    x:DataType="vm:TripTypeSearchPopupViewModel"
+    BackgroundColor="Transparent"
+    CanBeDismissedByTappingOutsideOfPopup="True">
+
+    <toolkit:Popup.Resources>
+        <Style x:Key="FieldBorder" TargetType="Border">
+            <Setter Property="BackgroundColor" Value="{StaticResource CardAlt}" />
+            <Setter Property="Stroke" Value="{StaticResource CardStroke}" />
+            <Setter Property="StrokeThickness" Value="1" />
+            <Setter Property="Padding" Value="12,0" />
+            <Setter Property="StrokeShape">
+                <Setter.Value>
+                    <RoundRectangle CornerRadius="12" />
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </toolkit:Popup.Resources>
+
+    <Border
+        Padding="24"
+        Style="{StaticResource CardBorder}"
+        Stroke="Transparent"
+        StrokeThickness="0"
+        WidthRequest="420">
+        <VerticalStackLayout Spacing="12">
+
+            <Label Style="{StaticResource TitleLabel}" Text="Trip-Typ suchen" />
+            <Label
+                Style="{StaticResource SubtitleLabel}"
+                Text="Tippe einen Typ an, um ihn auszuwählen." />
+
+            <Border Style="{StaticResource FieldBorder}">
+                <Entry
+                    Placeholder="Suchen..."
+                    Text="{Binding SearchText}" />
+            </Border>
+
+            <CollectionView
+                HeightRequest="320"
+                ItemsSource="{Binding Types}"
+                SelectionMode="None">
+                <CollectionView.ItemTemplate>
+                    <DataTemplate x:DataType="models:TripType">
+                        <Border
+                            Margin="0,4"
+                            Padding="16,12"
+                            Stroke="{StaticResource CardStroke}"
+                            StrokeThickness="1">
+                            <Border.StrokeShape>
+                                <RoundRectangle CornerRadius="12" />
+                            </Border.StrokeShape>
+                            <Border.GestureRecognizers>
+                                <TapGestureRecognizer Tapped="OnTypeTapped" />
+                            </Border.GestureRecognizers>
+                            <Label
+                                FontSize="14"
+                                Text="{Binding Name}"
+                                TextColor="{StaticResource TextSecondary}" />
+                        </Border>
+                    </DataTemplate>
+                </CollectionView.ItemTemplate>
+            </CollectionView>
+
+            <Button
+                Command="{Binding CancelCommand}"
+                Margin="0,8,0,0"
+                Style="{StaticResource SecondaryButton}"
+                Text="Abbrechen" />
+        </VerticalStackLayout>
+    </Border>
+</toolkit:Popup>

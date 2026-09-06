@@ -66,15 +66,48 @@
         </Border>
 
         <!-- Trip type selector -->
-        <CollectionView
+        <Grid
             Grid.Row="1"
             Margin="0,20,0,0"
-            HeightRequest="56"
-            HorizontalScrollBarVisibility="Never"
-            ItemsSource="{Binding TripTypes}"
-            SelectedItem="{Binding SelectedTripType}"
-            SelectionMode="Single"
-            VerticalScrollBarVisibility="Never">
+            ColumnDefinitions="Auto,*"
+            ColumnSpacing="8">
+
+            <!-- Search (Lupe) -->
+            <Border
+                Grid.Column="0"
+                Padding="14,10"
+                Stroke="{StaticResource Accent}"
+                StrokeThickness="2"
+                VerticalOptions="Center">
+                <Border.StrokeShape>
+                    <RoundRectangle CornerRadius="20" />
+                </Border.StrokeShape>
+                <Border.GestureRecognizers>
+                    <TapGestureRecognizer Command="{Binding SearchTripTypeCommand}" />
+                </Border.GestureRecognizers>
+                <HorizontalStackLayout Spacing="6">
+                    <Image
+                        HeightRequest="18"
+                        Source="search.png"
+                        VerticalOptions="Center"
+                        WidthRequest="18" />
+                    <Label
+                        FontAttributes="Bold"
+                        FontSize="12"
+                        Text="Suchen"
+                        TextColor="{StaticResource TextSecondary}"
+                        VerticalOptions="Center" />
+                </HorizontalStackLayout>
+            </Border>
+
+            <CollectionView
+                Grid.Column="1"
+                HeightRequest="56"
+                HorizontalScrollBarVisibility="Never"
+                ItemsSource="{Binding TripTypes}"
+                SelectedItem="{Binding SelectedTripType}"
+                SelectionMode="Single"
+                VerticalScrollBarVisibility="Never">
             <CollectionView.ItemsLayout>
                 <LinearItemsLayout ItemSpacing="8" Orientation="Horizontal" />
             </CollectionView.ItemsLayout>
@@ -115,6 +148,7 @@
                 </DataTemplate>
             </CollectionView.ItemTemplate>
         </CollectionView>
+        </Grid>
 
         <!-- Timer -->
         <Label

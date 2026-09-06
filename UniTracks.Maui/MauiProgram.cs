@@ -6,6 +6,7 @@ using Microsoft.Maui.LifecycleEvents;
 using SkiaSharp.Views.Maui.Controls.Hosting;
 using UniTracks.Data.LiteDB;
 using UniTracks.Data.Repository;
+using UniTracks.Data.Seeding;
 using UniTracks.Data.SQLite;
 using UniTracks.Maui.Services.Location;
 using UniTracks.Maui.Views.Controls.Popups;
@@ -35,7 +36,18 @@ public static class MauiProgram
 
         builder
             .UseMauiApp<App>()
-            .UseMauiCommunityToolkit()
+            .UseMauiCommunityToolkit(options =>
+            {
+                options.SetPopupOptionsDefaults(new DefaultPopupOptionsSettings
+                {
+                    Shape = new Microsoft.Maui.Controls.Shapes.RoundRectangle
+                    {
+                        CornerRadius = new CornerRadius(20, 20, 20, 20),
+                        StrokeThickness = 0,
+                        Stroke = new SolidColorBrush(Colors.Transparent),
+                    },
+                });
+            })
             .UseSkiaSharp()
             .ConfigureLifecycleEvents(events =>
             {
@@ -82,6 +94,11 @@ public static class MauiProgram
         RegisterAgredoServices(services);
         RegisterUniTracksServices(services);
         RegisterDataAccess(services);
+
+        // Seeds the active repository (EF Core SQLite or LiteDB) with the TripType catalog when
+        // empty. On iOS the store is LiteDB and receives its seed here; elsewhere it is a no-op.
+        services.AddSingleton<DatabaseInitializer>();
+
         RegisterPages(services);
         RegisterPopups(services);
 
@@ -169,5 +186,9 @@ public static class MauiProgram
         services.AddTransientPopup<UserCreationPopup, UserCreationPopupViewModel>();
         services.AddTransient<UserCreationPopupViewModel>();
         services.AddKeyedTransient<Popup, UserCreationPopup>(typeof(UserCreationPopupViewModel));
+
+        services.AddTransientPopup<TripTypeSearchPopup, TripTypeSearchPopupViewModel>();
+        services.AddTransient<TripTypeSearchPopupViewModel>();
+        services.AddKeyedTransient<Popup, TripTypeSearchPopup>(typeof(TripTypeSearchPopupViewModel));
     }
 }
