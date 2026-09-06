@@ -206,8 +206,9 @@ public static class MauiProgram
         services.AddTransient<CityBuilderPage, CityBuilderPageViewModel>();
         services.AddTransient<TowerDefensePage, TowerDefensePageViewModel>();
         services.AddTransient<AboutPageViewModel>(_ => new AboutPageViewModel(GetDisplayVersion()));
-        services.AddTransient<AboutPage, AboutPageViewModel>();
-        services.AddTransient<FeedbackPage, FeedbackPageViewModel>();
+        services.AddTransient<AboutPage>();
+        services.AddTransient<FeedbackPageViewModel>();
+        services.AddTransient<FeedbackPage>();
     }
 
     private static void RegisterPopups(IServiceCollection services)
