@@ -35,6 +35,12 @@ public sealed class DefenseMap
     /// <summary>1 (easy) … 5 (hard). Drives lives, enemy HP/speed scaling and pricing text.</summary>
     public int Difficulty { get; init; } = 1;
 
+    /// <summary>Minimum gamification level required to play this map (1 = always available).</summary>
+    public int RequiredLevel { get; init; } = 1;
+
+    /// <summary>Achievement gates — any single one of these ids unlocks the map.</summary>
+    public string[] RequiredAchievementIds { get; init; } = Array.Empty<string>();
+
     public required int GridWidth { get; init; }
 
     public required int GridHeight { get; init; }

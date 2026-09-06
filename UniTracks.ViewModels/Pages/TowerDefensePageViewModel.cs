@@ -29,8 +29,8 @@ public partial class TowerDefensePageViewModel : ObservableObject
     /// <summary>Shop entries in catalog order (cheapest first), rebuilt with unlock state on every profile refresh.</summary>
     public ObservableCollection<TowerShopItemViewModel> ShopItems { get; } = new();
 
-    /// <summary>The selectable maps, easiest to hardest (see <see cref="MapCatalog"/>).</summary>
-    public ObservableCollection<DefenseMap> Maps { get; } = new(MapCatalog.All);
+    /// <summary>The selectable maps with their unlock state, rebuilt on every profile refresh.</summary>
+    public ObservableCollection<DefenseMapItemViewModel> Maps { get; } = new();
 
     /// <summary>The map chosen for the current (or next) run.</summary>
     [ObservableProperty]
@@ -249,12 +249,20 @@ public partial class TowerDefensePageViewModel : ObservableObject
 
     /// <summary>Starts a fresh run on the chosen map and stores it as the current run.</summary>
     [RelayCommand]
-    private async Task SelectMap(DefenseMap? map)
+    private async Task SelectMap(DefenseMapItemViewModel? item)
     {
-        if (map is null)
+        if (item is null)
         {
             return;
         }
+
+        if (item.IsLocked)
+        {
+            await dialogService.AlertAsync("Karte gesperrt", item.LockLabel, "OK");
+            return;
+        }
+
+        var map = item.Map;
 
         SelectedMap = map;
         IsChoosingMap = false;
@@ -326,6 +334,12 @@ public partial class TowerDefensePageViewModel : ObservableObject
         foreach (var tower in TowerCatalog.Towers)
         {
             ShopItems.Add(new TowerShopItemViewModel(tower, profile));
+        }
+
+        Maps.Clear();
+        foreach (var map in MapCatalog.All)
+        {
+            Maps.Add(new DefenseMapItemViewModel(map, profile));
         }
     }
 
