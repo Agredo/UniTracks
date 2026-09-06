@@ -101,8 +101,24 @@ public static class TrackSmoother
             anchor = point;
         }
 
+        // Never swallow the recorded end. When the user stops recording the final fixes
+        // lie within the standing-jitter window of the last kept anchor, so they get
+        // dropped and the rendered route stops short of where the trip actually ended.
+        // Re-append the last recorded point (when it has usable accuracy) so the track
+        // reaches its true endpoint.
+        if (ordered.Count > 0
+            && kept.Count > 0
+            && !ReferenceEquals(kept[kept.Count - 1], ordered[ordered.Count - 1])
+            && IsUsable(ordered[ordered.Count - 1]))
+        {
+            kept.Add(ordered[ordered.Count - 1]);
+        }
+
         return kept;
     }
+
+    private static bool IsUsable(LocationModel point)
+        => point.Accuracy <= 0 || point.Accuracy <= MaxAccuracyMeters;
 
     /// <summary>
     /// Light moving average over the coordinates (lat/lon/altitude). Timestamps, speed and
@@ -114,6 +130,30 @@ public static class TrackSmoother
 
         for (var i = 0; i < points.Count; i++)
         {
+            // Never pull the start/end of the track inward. The first and last points are the
+            // recorded boundaries of the trip; averaging them with their neighbours drags the
+            // rendered route metres away from where the user actually started/stopped (most
+            // visible when a recording gap or a stationary cluster sits next to an endpoint).
+            if (i == 0 || i == points.Count - 1)
+            {
+                var end = points[i];
+                result.Add(new LocationModel
+                {
+                    ID = end.ID,
+                    TripID = end.TripID,
+                    Latitude = end.Latitude,
+                    Longitude = end.Longitude,
+                    Altitude = end.Altitude,
+                    Accuracy = end.Accuracy,
+                    Speed = end.Speed,
+                    Heading = end.Heading,
+                    HeadingAccuracy = end.HeadingAccuracy,
+                    SpeedAccuracy = end.SpeedAccuracy,
+                    Timestamp = end.Timestamp
+                });
+                continue;
+            }
+
             int from = Math.Max(0, i - SmoothingHalfWindow);
             int to = Math.Min(points.Count - 1, i + SmoothingHalfWindow);
 
