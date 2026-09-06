@@ -6,7 +6,7 @@ namespace UniTracks.ViewModels.Pages;
 public partial class AboutPageViewModel : ObservableObject
 {
     public string AppName { get; } = "UniTracks";
-    public string AppVersion { get; } = "0.1";
+    public string AppVersion { get; }
 
     /// <summary>
     /// Kurze Erklärung, was Agredo Application ist.
@@ -24,8 +24,9 @@ public partial class AboutPageViewModel : ObservableObject
 
     public ObservableCollection<LibraryInfo> Libraries { get; }
 
-    public AboutPageViewModel()
+    public AboutPageViewModel(string appVersion)
     {
+        AppVersion = appVersion;
         Libraries = new ObservableCollection<LibraryInfo>(BuildLibraries());
     }
 

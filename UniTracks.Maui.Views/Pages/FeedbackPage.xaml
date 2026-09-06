@@ -1,0 +1,136 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage
+    x:Class="UniTracks.Maui.Views.Pages.FeedbackPage"
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    xmlns:viewModels="clr-namespace:UniTracks.ViewModels.Pages;assembly=UniTracks.ViewModels"
+    Title="Feedback"
+    x:DataType="viewModels:FeedbackPageViewModel">
+
+    <ScrollView>
+        <VerticalStackLayout Padding="20" Spacing="16">
+
+            <!-- Header -->
+            <Label Style="{StaticResource TitleLabel}" Text="Feedback senden" />
+            <Label
+                Style="{StaticResource SubtitleLabel}"
+                Text="Vorschläge oder Probleme? Teile sie uns über BugBear mit." />
+
+            <!-- Kategorie & Beschreibung & E-Mail -->
+            <Border Style="{StaticResource CardBorder}">
+                <VerticalStackLayout Spacing="16">
+
+                    <!-- Kategorie -->
+                    <VerticalStackLayout Spacing="6">
+                        <Label
+                            FontFamily="OpenSansSemibold"
+                            FontSize="14"
+                            Text="Kategorie"
+                            TextColor="{StaticResource TextSecondary}" />
+                        <Border
+                            BackgroundColor="{StaticResource CardAlt}"
+                            Padding="12,2"
+                            StrokeThickness="0">
+                            <Border.StrokeShape>
+                                <RoundRectangle CornerRadius="10" />
+                            </Border.StrokeShape>
+                            <Picker
+                                ItemDisplayBinding="{Binding DisplayName}"
+                                ItemsSource="{Binding Categories}"
+                                SelectedItem="{Binding SelectedCategory}"
+                                TextColor="{StaticResource TextPrimary}"
+                                TitleColor="{StaticResource TextPrimary}" />
+                        </Border>
+                    </VerticalStackLayout>
+
+                    <!-- Beschreibung -->
+                    <VerticalStackLayout Spacing="6">
+                        <Label
+                            FontFamily="OpenSansSemibold"
+                            FontSize="14"
+                            Text="Beschreibung *"
+                            TextColor="{StaticResource TextSecondary}" />
+                        <Border
+                            BackgroundColor="{StaticResource CardAlt}"
+                            Padding="12,8"
+                            StrokeThickness="0">
+                            <Border.StrokeShape>
+                                <RoundRectangle CornerRadius="10" />
+                            </Border.StrokeShape>
+                            <Editor
+                                AutoSize="TextChanges"
+                                MinimumHeightRequest="100"
+                                Placeholder="Was möchtest du mitteilen?"
+                                PlaceholderColor="{StaticResource TextMuted}"
+                                Text="{Binding Description}"
+                                TextColor="{StaticResource TextPrimary}" />
+                        </Border>
+                    </VerticalStackLayout>
+
+                    <!-- E-Mail (optional) -->
+                    <VerticalStackLayout Spacing="6">
+                        <Label
+                            FontFamily="OpenSansSemibold"
+                            FontSize="14"
+                            Text="E-Mail (optional)"
+                            TextColor="{StaticResource TextSecondary}" />
+                        <Border
+                            BackgroundColor="{StaticResource CardAlt}"
+                            Padding="12,2"
+                            StrokeThickness="0">
+                            <Border.StrokeShape>
+                                <RoundRectangle CornerRadius="10" />
+                            </Border.StrokeShape>
+                            <Entry
+                                Keyboard="Email"
+                                Placeholder="deine@email.de"
+                                PlaceholderColor="{StaticResource TextMuted}"
+                                Text="{Binding Email}"
+                                TextColor="{StaticResource TextPrimary}" />
+                        </Border>
+                        <Label
+                            FontSize="12"
+                            Text="Nur angeben, wenn wir dich bei Rückfragen kontaktieren dürfen."
+                            TextColor="{StaticResource TextMuted}" />
+                    </VerticalStackLayout>
+
+                </VerticalStackLayout>
+            </Border>
+
+            <!-- Submit -->
+            <Button
+                Command="{Binding SubmitCommand}"
+                HorizontalOptions="Fill"
+                IsEnabled="{Binding IsNotBusy}"
+                Text="Feedback absenden" />
+
+            <ActivityIndicator
+                HorizontalOptions="Center"
+                IsRunning="{Binding IsBusy}"
+                IsVisible="{Binding IsBusy}" />
+
+            <!-- Powered by BugBear -->
+            <VerticalStackLayout
+                Margin="0,12,0,0"
+                HorizontalOptions="Center"
+                Spacing="6">
+                <Image
+                    HeightRequest="40"
+                    HorizontalOptions="Center"
+                    Source="bugbear_logo.png" />
+                <Label
+                    FontSize="12"
+                    HorizontalOptions="Center"
+                    Text="Powered by BugBear"
+                    TextColor="{StaticResource Accent}"
+                    TextDecorations="Underline">
+                    <Label.GestureRecognizers>
+                        <TapGestureRecognizer Tapped="OnBugBearLinkTapped" />
+                    </Label.GestureRecognizers>
+                </Label>
+            </VerticalStackLayout>
+
+        </VerticalStackLayout>
+    </ScrollView>
+
+</ContentPage>
