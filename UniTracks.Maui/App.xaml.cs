@@ -1,3 +1,4 @@
+using UniTracks.Data.Seeding;
 using UniTracks.Maui.Views;
 using UniTracks.Maui.Views.Pages;
 
@@ -5,11 +6,16 @@ namespace UniTracks.Maui
 {
     public partial class App : Application
     {
-        public App()
+        public App(DatabaseInitializer databaseInitializer)
         {
             HookUnhandledExceptionLogging();
 
             InitializeComponent();
+
+            // Seed the TripType catalog if the active repository is empty (relevant on iOS, where
+            // the store is LiteDB and there is no EF Core HasData/migration seeding). The call
+            // completes synchronously for both stores, so a short block here is safe.
+            databaseInitializer.EnsureSeededAsync().GetAwaiter().GetResult();
 
             MainPage = new AppShell();
 

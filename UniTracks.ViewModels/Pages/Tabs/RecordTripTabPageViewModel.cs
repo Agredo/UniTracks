@@ -102,6 +102,16 @@ public partial class RecordTripTabPageViewModel : ObservableObject
         OnPropertyChanged(nameof(IsTripTypeSelectionVisible));
     }
 
+    [RelayCommand]
+    private async Task SearchTripType()
+    {
+        var selected = await PopupNavigation.ShowPopupAsync<TripTypeSearchPopupViewModel, TripType?>();
+        if (selected is not null)
+        {
+            SelectedTripType = selected;
+        }
+    }
+
     partial void OnSelectedTripTypeChanged(TripType? value)
     {
         GpsDataStorageService.CurrentTripTypeId = value?.ID;
