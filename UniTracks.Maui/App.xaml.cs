@@ -27,6 +27,7 @@ namespace UniTracks.Maui
             Routing.RegisterRoute(nameof(TripOverviewPage), typeof(TripOverviewPage));
             Routing.RegisterRoute(nameof(CityBuilderPage), typeof(CityBuilderPage));
             Routing.RegisterRoute(nameof(TowerDefensePage), typeof(TowerDefensePage));
+            Routing.RegisterRoute(nameof(AboutPage), typeof(AboutPage));
         }
 
         /// <summary>

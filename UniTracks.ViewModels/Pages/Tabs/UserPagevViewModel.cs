@@ -1,4 +1,5 @@
 using AgredoApplication.MVVM.Services.Abstractions.IO;
+using AgredoApplication.MVVM.Services.Abstractions.Navigation;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using UniTracks.Data.Repository;
@@ -11,13 +12,21 @@ public partial class UserPagevViewModel : ObservableObject
 {
     public IFileSystem FileSystem { get; }
     public IRepository Repository { get; }
+    public INavigationService Navigation { get; }
     public string DatabasePath { get; }
 
-    public UserPagevViewModel(IFileSystem fileSystem, IRepository repository)
+    public UserPagevViewModel(IFileSystem fileSystem, IRepository repository, INavigationService navigation)
     {
         FileSystem = fileSystem;
         Repository = repository;
+        Navigation = navigation;
         DatabasePath = repository.DatabasePath;
+    }
+
+    [RelayCommand]
+    private async Task OpenAbout()
+    {
+        await Navigation.ShellNavigationTo("AboutPage", new Dictionary<string, object>());
     }
 
     [RelayCommand]

@@ -62,5 +62,27 @@
                 </Grid>
             </Border>
         </VerticalStackLayout>
+
+        <!-- About section -->
+        <VerticalStackLayout Spacing="8">
+            <Label Style="{StaticResource SectionHeader}" Text="ÜBER" />
+            <Border Style="{StaticResource CardBorder}">
+                <Grid ColumnDefinitions="*,Auto">
+                    <VerticalStackLayout Grid.Column="0" Spacing="2" VerticalOptions="Center">
+                        <Label FontFamily="OpenSansSemibold" FontSize="15" Text="Über diese App" />
+                        <Label
+                            FontSize="12"
+                            Text="Agredo Application · Aus Bremen mit Liebe"
+                            TextColor="{StaticResource TextSecondary}" />
+                    </VerticalStackLayout>
+                    <Button
+                        Command="{Binding OpenAboutCommand}"
+                        Grid.Column="1"
+                        Style="{StaticResource SecondaryButton}"
+                        Text="Öffnen"
+                        VerticalOptions="Center" />
+                </Grid>
+            </Border>
+        </VerticalStackLayout>
     </VerticalStackLayout>
 </ContentPage>
