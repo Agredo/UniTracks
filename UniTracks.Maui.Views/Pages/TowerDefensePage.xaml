@@ -197,14 +197,12 @@
                                     <Border.GestureRecognizers>
                                         <TapGestureRecognizer Command="{Binding Source={RelativeSource AncestorType={x:Type viewModels:TowerDefensePageViewModel}}, Path=SelectMapCommand}" CommandParameter="{Binding .}" />
                                     </Border.GestureRecognizers>
-                                    <Grid ColumnDefinitions="240,*" ColumnSpacing="16">
+                                    <VerticalStackLayout Spacing="10">
                                         <gameControls:DefenseMapPreview
-                                            HeightRequest="170"
+                                            HeightRequest="150"
+                                            HorizontalOptions="Fill"
                                             Map="{Binding .}" />
-                                        <VerticalStackLayout
-                                            Grid.Column="1"
-                                            Spacing="6"
-                                            VerticalOptions="Center">
+                                        <VerticalStackLayout Spacing="6">
                                             <HorizontalStackLayout Spacing="8">
                                                 <Label
                                                     FontSize="22"
@@ -212,12 +210,13 @@
                                                     VerticalOptions="Center" />
                                                 <Label
                                                     FontSize="18"
+                                                    LineBreakMode="TailTruncation"
                                                     Style="{StaticResource TitleLabel}"
                                                     Text="{Binding Name}"
                                                     VerticalOptions="Center" />
                                             </HorizontalStackLayout>
                                             <Label
-                                                FontSize="12"
+                                                FontSize="13"
                                                 Style="{StaticResource SubtitleLabel}"
                                                 Text="{Binding Description}" />
                                             <HorizontalStackLayout Margin="0,4,0,0" Spacing="14">
@@ -235,7 +234,7 @@
                                                     Text="{Binding BuildableCount, StringFormat='🔨 {0} Felder'}" />
                                             </HorizontalStackLayout>
                                         </VerticalStackLayout>
-                                    </Grid>
+                                    </VerticalStackLayout>
                                 </Border>
                             </DataTemplate>
                         </BindableLayout.ItemTemplate>
