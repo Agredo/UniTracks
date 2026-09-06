@@ -1,7 +1,9 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 	<application android:allowBackup="true" android:icon="@mipmap/appicon" android:supportsRtl="true">
-		<service android:name="com.agredoapplication.unitracks.BackgroundLocationService" android:exported="false" android:foregroundServiceType="location" />
+		<!-- Der ACW (Android Callable Wrapper) des Dienstes heisst crc64...BackgroundLocationService,
+		     nicht com.agredoapplication.unitracks... Nur so findet Android die registrierte Komponente. -->
+		<service android:name="crc64f55c63facadc3c93.BackgroundLocationService" android:exported="false" android:foregroundServiceType="location" />
 	</application>
 	<uses-permission android:name="android.permission.BATTERY_STATS" />
 	<uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
