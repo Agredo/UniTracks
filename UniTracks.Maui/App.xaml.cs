@@ -6,7 +6,7 @@ namespace UniTracks.Maui
 {
     public partial class App : Application
     {
-        public App(DatabaseInitializer databaseInitializer)
+        public App(DatabaseInitializer databaseInitializer, UniTracks.Services.Data.TripDistanceRecalculator distanceRecalculator)
         {
             HookUnhandledExceptionLogging();
 
@@ -16,6 +16,11 @@ namespace UniTracks.Maui
             // the store is LiteDB and there is no EF Core HasData/migration seeding). The call
             // completes synchronously for both stores, so a short block here is safe.
             databaseInitializer.EnsureSeededAsync().GetAwaiter().GetResult();
+
+            // Recalculate stored trip distances with the smoothing pipeline (trips recorded before
+            // smoothing existed carry the noisy raw distance). Fire-and-forget so startup is not
+            // blocked; already-recalculated trips are skipped, so later runs are cheap.
+            _ = distanceRecalculator.RecalculateAsync();
 
             MainPage = new AppShell();
 

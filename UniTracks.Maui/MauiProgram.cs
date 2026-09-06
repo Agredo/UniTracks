@@ -129,6 +129,7 @@ public static class MauiProgram
         services.AddSingleton<ILocationService, LocationService>();
         services.AddSingleton<IGpsDataStorageService, GpsDataStorageService>();
         services.AddSingleton<IGamificationService, GamificationService>();
+        services.AddSingleton<TripDistanceRecalculator>();
 
 #if ANDROID
         services.AddSingleton<IBackgroundLocationController, BackgroundLocationController>();
