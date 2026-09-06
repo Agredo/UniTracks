@@ -1,6 +1,7 @@
 using UniTracks.Data.Repository;
 using UniTracks.Models.GPS;
 using UniTracks.Models.Trip;
+using UniTracks.Services.Location;
 using LocationModel = UniTracks.Models.Location.Location;
 
 namespace UniTracks.Services.Data;
@@ -43,6 +44,15 @@ public class GpsDataStorageService : IGpsDataStorageService
         storeGate.Wait();
         try
         {
+            if (currentTrip is not null && currentTrip.Locations.Count > 2)
+            {
+                // Post-processing: replace the noisy incremental distance (accumulated from raw
+                // GPS points, which overestimates due to jitter) with the smoothed track distance.
+                // Raw points stay untouched in the database.
+                currentTrip.Distance = TrackSmoother.SmoothedDistanceMeters(currentTrip.Locations);
+                Repository.Update<Trip>(currentTrip).GetAwaiter().GetResult();
+            }
+
             currentTrip = null;
             ResetAggregates();
         }

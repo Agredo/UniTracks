@@ -43,7 +43,11 @@ public partial class MapView : ContentView
             return;
         }
 
-        var projected = locations
+        // Post-processing: draw the smoothed track (GPS jitter filtered/averaged). Raw points
+        // stay untouched in the database.
+        var smoothed = UniTracks.Services.Location.TrackSmoother.Smooth(locations);
+
+        var projected = smoothed
             .Select(location => SphericalMercator.FromLonLat(location.Longitude, location.Latitude))
             .ToArray();
 
@@ -51,7 +55,7 @@ public partial class MapView : ContentView
 
         if (projected.Length > 1)
         {
-            var speeds = ComputeSegmentSpeeds(locations);
+            var speeds = ComputeSegmentSpeeds(smoothed);
             var minSpeed = speeds.Min();
             var maxSpeed = speeds.Max();
 
