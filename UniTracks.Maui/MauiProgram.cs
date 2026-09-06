@@ -2,6 +2,7 @@ using CommunityToolkit.Maui;
 using CommunityToolkit.Maui.Views;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Microsoft.Maui.ApplicationModel;
 using Microsoft.Maui.LifecycleEvents;
 using SkiaSharp.Views.Maui.Controls.Hosting;
 using UniTracks.Data.LiteDB;
@@ -17,6 +18,7 @@ using UniTracks.Games.Shared.Persistence;
 using UniTracks.Games.TowerDefense.Persistence;
 using UniTracks.Models.Constants;
 using UniTracks.Services.Data;
+using UniTracks.Services.Feedback;
 using UniTracks.Services.Game;
 using UniTracks.Services.Location;
 using UniTracks.Services.Stats;
@@ -109,6 +111,18 @@ public static class MauiProgram
         return builder.Build();
     }
 
+    // Reads the app's display version (e.g. "0.2") automatically. On unpackaged Windows the
+    // AppInfo display version falls back to the 4-part assembly version ("0.2.0.0"), so trailing
+    // zero components are trimmed to match the <ApplicationDisplayVersion> in the csproj.
+    private static string GetDisplayVersion()
+    {
+        var parts = AppInfo.Current.VersionString.Split('.');
+        var length = parts.Length;
+        while (length > 2 && parts[length - 1] == "0")
+            length--;
+        return string.Join('.', parts.Take(length));
+    }
+
     private static void RegisterAgredoServices(IServiceCollection services)
     {
         // Navigation
@@ -130,6 +144,9 @@ public static class MauiProgram
         services.AddSingleton<IGpsDataStorageService, GpsDataStorageService>();
         services.AddSingleton<IGamificationService, GamificationService>();
         services.AddSingleton<TripDistanceRecalculator>();
+
+        // BugBear feedback (version is read automatically from the app's display version).
+        services.AddSingleton<IFeedbackService>(_ => new FeedbackService(GetDisplayVersion()));
 
 #if ANDROID
         services.AddSingleton<IBackgroundLocationController, BackgroundLocationController>();
@@ -188,7 +205,9 @@ public static class MauiProgram
         services.AddTransient<GameTabPage, GameTabPageViewModel>();
         services.AddTransient<CityBuilderPage, CityBuilderPageViewModel>();
         services.AddTransient<TowerDefensePage, TowerDefensePageViewModel>();
+        services.AddTransient<AboutPageViewModel>(_ => new AboutPageViewModel(GetDisplayVersion()));
         services.AddTransient<AboutPage, AboutPageViewModel>();
+        services.AddTransient<FeedbackPage, FeedbackPageViewModel>();
     }
 
     private static void RegisterPopups(IServiceCollection services)

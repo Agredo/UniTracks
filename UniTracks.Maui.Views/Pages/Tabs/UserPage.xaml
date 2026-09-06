@@ -84,5 +84,27 @@
                 </Grid>
             </Border>
         </VerticalStackLayout>
+
+        <!-- Feedback section -->
+        <VerticalStackLayout Spacing="8">
+            <Label Style="{StaticResource SectionHeader}" Text="FEEDBACK" />
+            <Border Style="{StaticResource CardBorder}">
+                <Grid ColumnDefinitions="*,Auto">
+                    <VerticalStackLayout Grid.Column="0" Spacing="2" VerticalOptions="Center">
+                        <Label FontFamily="OpenSansSemibold" FontSize="15" Text="Feedback senden" />
+                        <Label
+                            FontSize="12"
+                            Text="Hilf uns, UniTracks besser zu machen · BugBear"
+                            TextColor="{StaticResource TextSecondary}" />
+                    </VerticalStackLayout>
+                    <Button
+                        Command="{Binding OpenFeedbackCommand}"
+                        Grid.Column="1"
+                        Style="{StaticResource SecondaryButton}"
+                        Text="Öffnen"
+                        VerticalOptions="Center" />
+                </Grid>
+            </Border>
+        </VerticalStackLayout>
     </VerticalStackLayout>
 </ContentPage>
