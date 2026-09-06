@@ -130,6 +130,14 @@ public static class MauiProgram
         services.AddSingleton<IGpsDataStorageService, GpsDataStorageService>();
         services.AddSingleton<IGamificationService, GamificationService>();
 
+#if ANDROID
+        services.AddSingleton<IBackgroundLocationController, BackgroundLocationController>();
+#elif IOS || MACCATALYST
+        services.AddSingleton<IBackgroundLocationController, BackgroundLocationController>();
+#else
+        services.AddSingleton<IBackgroundLocationController, BackgroundLocationController>();
+#endif
+
         // Games: coin economy + city builder. CoinService doubles as the games-layer
         // activity-stats port; the city store adapts the games persistence port to IRepository.
         services.AddSingleton<ICoinService, CoinService>();

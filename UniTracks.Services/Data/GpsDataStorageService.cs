@@ -92,6 +92,8 @@ public class GpsDataStorageService : IGpsDataStorageService
                 // Link the location to the tracked trip and update aggregates incrementally.
                 location.TripID = currentTrip.ID;
                 currentTrip.Locations.Add(location);
+                // Keep the trip end fresh so the duration (= EndTime - StartTime) is correct.
+                currentTrip.EndTime = DateTimeOffset.Now;
                 AccountFor(location);
                 ApplyAggregates(currentTrip);
 
@@ -109,6 +111,7 @@ public class GpsDataStorageService : IGpsDataStorageService
                 {
                     ID = Guid.NewGuid(),
                     StartTime = DateTimeOffset.Now,
+                    EndTime = DateTimeOffset.Now,
                     TripTypeId = CurrentTripTypeId,
                     Locations = new List<LocationModel>() { location }
                 };
