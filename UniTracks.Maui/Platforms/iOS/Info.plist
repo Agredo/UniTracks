@@ -30,13 +30,13 @@
 	<string>Assets.xcassets/appicon.appiconset</string>
 
 	<key>NSLocationAlwaysUsageDescription</key>
-        <string>Say something useful here that your users will understand</string>
+        <string>UniTracks benötigt laufenden Zugriff auf deinen Standort, um Trips auch im Hintergrund aufzuzeichnen.</string>
         
         <key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
-        <string>Say something useful here that your users will understand</string>
+        <string>UniTracks verwendet den Standort, um deine Route aufzuzeichnen. Die Aufnahme läuft auch, wenn die App im Hintergrund ist.</string>
         
         <key>NSLocationWhenInUseUsageDescription</key>
-        <string>Say something useful here that your users will understand</string>
+        <string>UniTracks verwendet den Standort, um während der Aufnahme deine aktuelle Position zu erfassen.</string>
         
         <key>UIBackgroundModes</key>
         <array>
