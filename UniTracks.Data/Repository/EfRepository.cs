@@ -29,9 +29,29 @@ public class EfRepository : IRepository
 
     public async Task<TEntity> Update<TEntity>(TEntity entity) where TEntity : class
     {
-        var entry = _context.Update(entity).Entity;
+        // Update only the root entity's own (scalar) properties. A full _context.Update(entity)
+        // would also mark every reachable child (e.g. a Trip's growing Locations collection) as
+        // Modified. A newly-created Location row that does not exist in the store yet would then
+        // be the target of an UPDATE ... WHERE ID = <new guid>, which affects 0 rows and throws
+        // DbUpdateConcurrencyException. Child rows are persisted independently as they arrive.
+        var entry = _context.Entry(entity);
+        if (entry.State == EntityState.Detached)
+        {
+            // Attach the root and its already-loaded graph so it is tracked in Unchanged state.
+            _context.Attach(entity);
+        }
+
+        foreach (var property in entry.Properties)
+        {
+            // Marking the primary key (or any key) property as modified is not allowed and throws.
+            if (!property.Metadata.IsPrimaryKey())
+            {
+                property.IsModified = true;
+            }
+        }
+
         await _context.SaveChangesAsync();
-        return entry;
+        return entity;
     }
 
     public async Task Delete<TEntity>(TEntity entity) where TEntity : class
