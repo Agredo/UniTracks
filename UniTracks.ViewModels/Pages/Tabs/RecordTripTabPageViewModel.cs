@@ -180,9 +180,17 @@ public partial class RecordTripTabPageViewModel : ObservableObject
 
             GpsDataStorageService.CurrentTripTypeId = SelectedTripType?.ID;
 
-            PermissionStatus locationAlwaysPermissionStatus = await PermissionHelper.CheckAndRequestPermission(Permissions, Permission.LocationAlways);
+            PermissionStatus locationPermissionStatus = await PermissionHelper.CheckAndRequestPermission(Permissions, Permission.LocationAlways);
 
-            if (locationAlwaysPermissionStatus is PermissionStatus.Granted)
+            // Ab Android 11 kann "Immer zulassen" nur noch in den Systemeinstellungen erteilt
+            // werden und ist hier nicht noetig: Der location-Foreground-Service wird im Vordergrund
+            // gestartet und darf damit auch im Hintergrund weiter aufzeichnen (While-in-Use reicht).
+            if (locationPermissionStatus is not PermissionStatus.Granted && OperatingSystem.IsAndroid())
+            {
+                locationPermissionStatus = await PermissionHelper.CheckAndRequestPermission(Permissions, Permission.LocationWhenInUse);
+            }
+
+            if (locationPermissionStatus is PermissionStatus.Granted)
             {
                 await LocationService.StartListening();
             }

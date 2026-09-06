@@ -13,9 +13,10 @@ namespace UniTracks.Maui;
 
 /// <summary>
 /// Foreground service that keeps GPS recording alive while the app is in the background.
-/// Declared as a location foreground service in AndroidManifest.xml so the system keeps it
-/// running and does not throttle it in the background.
+/// The [Service] attribute generates the manifest entry (incl. location foregroundServiceType)
+/// with the correct Android Callable Wrapper name automatically.
 /// </summary>
+[Service(Exported = false, ForegroundServiceType = ForegroundService.TypeLocation)]
 public class BackgroundLocationService : Service
 {
     private const string ChannelId = "unitracks.location";
@@ -83,7 +84,14 @@ public class BackgroundLocationService : Service
             .SetOngoing(true)
             .Build();
 
-        StartForeground(NotificationId, notification);
+        if (Build.VERSION.SdkInt >= BuildVersionCodes.Q)
+        {
+            StartForeground(NotificationId, notification, ForegroundService.TypeLocation);
+        }
+        else
+        {
+            StartForeground(NotificationId, notification);
+        }
         isForeground = true;
     }
 
@@ -105,8 +113,15 @@ public class BackgroundLocationService : Service
             System.Diagnostics.Debug.WriteLine($"[UniTracks] GPS provider unavailable: {ex.Message}");
         }
 
-        locationManager.RequestLocationUpdates(
-            LocationManager.NetworkProvider, MinTimeMs, MinDistanceMeters, locationListener, Looper.MainLooper);
+        try
+        {
+            locationManager.RequestLocationUpdates(
+                LocationManager.NetworkProvider, MinTimeMs, MinDistanceMeters, locationListener, Looper.MainLooper);
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"[UniTracks] Network provider unavailable: {ex.Message}");
+        }
 
         isUpdating = true;
     }
