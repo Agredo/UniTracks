@@ -9,6 +9,26 @@ public class GpsDataStorageService : IGpsDataStorageService
 {
     private Trip? currentTrip;
 
+    private LocationModel? previousLocation;
+    private int locationCount;
+    private double totalSpeed;
+    private double totalAltitude;
+    private double totalHeading;
+    private double totalAccuracy;
+    private double minSpeed;
+    private double maxSpeed;
+    private double minAltitude;
+    private double maxAltitude;
+    private double minHeading;
+    private double maxHeading;
+    private double minAccuracy;
+    private double maxAccuracy;
+    private double distance;
+
+    // Serializes StoreData / FinalizeTrip so the singleton EF context and the in-flight
+    // currentTrip are never mutated concurrently (EF Core's DbContext is not thread-safe).
+    private readonly SemaphoreSlim storeGate = new(1, 1);
+
     public GpsDataStorageService(IRepository repository)
     {
         Repository = repository;
@@ -20,7 +40,16 @@ public class GpsDataStorageService : IGpsDataStorageService
 
     public void FinalizeTrip()
     {
-        currentTrip = null;
+        storeGate.Wait();
+        try
+        {
+            currentTrip = null;
+            ResetAggregates();
+        }
+        finally
+        {
+            storeGate.Release();
+        }
     }
 
     public async Task<List<LocationModel>> getAll()
@@ -55,56 +84,105 @@ public class GpsDataStorageService : IGpsDataStorageService
             Timestamp = gpsInformatoion.Timestamp
         };
 
-        if (currentTrip != null)
+        await storeGate.WaitAsync();
+        try
         {
-            currentTrip.Locations.Add(location);
-            currentTrip.MaxSpeed = currentTrip.Locations.Max(x => x.Speed);
-            currentTrip.MinSpeed = currentTrip.Locations.Min(x => x.Speed);
-            currentTrip.MaxAltitude = currentTrip.Locations.Max(x => x.Altitude);
-            currentTrip.MinAltitude = currentTrip.Locations.Min(x => x.Altitude);
-            currentTrip.MaxHeading = currentTrip.Locations.Max(x => x.Heading);
-            currentTrip.MinHeading = currentTrip.Locations.Min(x => x.Heading);
-            currentTrip.MaxAccuracy = currentTrip.Locations.Max(x => x.Accuracy);
-            currentTrip.MinAccuracy = currentTrip.Locations.Min(x => x.Accuracy);
-            currentTrip.AverageSpeed = currentTrip.Locations.Average(x => x.Speed);
-
-            currentTrip.Distance = CalculateDistance(currentTrip.Locations);
-
-            await Repository.Update<Trip>(currentTrip);
-        }
-        else
-        {
-            var trip = new Trip()
+            if (currentTrip != null)
             {
-                ID = Guid.NewGuid(),
-                StartTime = DateTimeOffset.Now,
-                TripTypeId = CurrentTripTypeId,
-                Locations = new List<LocationModel>() { location },
-                MaxSpeed = location.Speed,
-                MinSpeed = location.Speed,
-                MaxAltitude = location.Altitude,
-                MinAltitude = location.Altitude,
-                MaxHeading = location.Heading,
-                MinHeading = location.Heading,
-                MaxAccuracy = location.Accuracy,
-                MinAccuracy = location.Accuracy
-            };
+                // Link the location to the tracked trip and update aggregates incrementally.
+                location.TripID = currentTrip.ID;
+                currentTrip.Locations.Add(location);
+                AccountFor(location);
+                ApplyAggregates(currentTrip);
 
-            currentTrip = await Repository.Add<Trip>(trip);
+                // Persist the new location as a brand-new row, then write the trip's stats.
+                // Update<Trip> only touches the trip's scalar properties now (no graph cascade).
+                await Repository.Add<LocationModel>(location);
+                await Repository.Update<Trip>(currentTrip);
+            }
+            else
+            {
+                ResetAggregates();
+                AccountFor(location);
+
+                var trip = new Trip()
+                {
+                    ID = Guid.NewGuid(),
+                    StartTime = DateTimeOffset.Now,
+                    TripTypeId = CurrentTripTypeId,
+                    Locations = new List<LocationModel>() { location }
+                };
+
+                location.TripID = trip.ID;
+                ApplyAggregates(trip);
+
+                currentTrip = await Repository.Add<Trip>(trip);
+            }
+        }
+        finally
+        {
+            storeGate.Release();
         }
 
         Console.WriteLine($"CurrentTrip: {currentTrip.ID} {currentTrip.StartTime} Latitude: {currentTrip.Locations.Last().Latitude}, Longitude: {currentTrip.Locations.Last().Longitude}");
     }
 
-    private static double CalculateDistance(List<LocationModel> locations)
+    private void AccountFor(LocationModel location)
     {
-        double distance = 0;
-        for (int i = 0; i < locations.Count - 1; i++)
+        locationCount++;
+        totalSpeed += location.Speed;
+        totalAltitude += location.Altitude;
+        totalHeading += location.Heading;
+        totalAccuracy += location.Accuracy;
+
+        if (locationCount == 1)
         {
-            distance += HaversineDistance(locations[i], locations[i + 1]);
+            minSpeed = maxSpeed = location.Speed;
+            minAltitude = maxAltitude = location.Altitude;
+            minHeading = maxHeading = location.Heading;
+            minAccuracy = maxAccuracy = location.Accuracy;
+        }
+        else
+        {
+            minSpeed = Math.Min(minSpeed, location.Speed);
+            maxSpeed = Math.Max(maxSpeed, location.Speed);
+            minAltitude = Math.Min(minAltitude, location.Altitude);
+            maxAltitude = Math.Max(maxAltitude, location.Altitude);
+            minHeading = Math.Min(minHeading, location.Heading);
+            maxHeading = Math.Max(maxHeading, location.Heading);
+            minAccuracy = Math.Min(minAccuracy, location.Accuracy);
+            maxAccuracy = Math.Max(maxAccuracy, location.Accuracy);
         }
 
-        return distance;
+        if (previousLocation != null)
+        {
+            distance += HaversineDistance(previousLocation, location);
+        }
+
+        previousLocation = location;
+    }
+
+    private void ApplyAggregates(Trip trip)
+    {
+        trip.MaxSpeed = maxSpeed;
+        trip.MinSpeed = minSpeed;
+        trip.MaxAltitude = maxAltitude;
+        trip.MinAltitude = minAltitude;
+        trip.MaxHeading = maxHeading;
+        trip.MinHeading = minHeading;
+        trip.MaxAccuracy = maxAccuracy;
+        trip.MinAccuracy = minAccuracy;
+        trip.AverageSpeed = locationCount > 0 ? totalSpeed / locationCount : 0;
+        trip.Distance = distance;
+    }
+
+    private void ResetAggregates()
+    {
+        previousLocation = null;
+        locationCount = 0;
+        totalSpeed = totalAltitude = totalHeading = totalAccuracy = 0;
+        minSpeed = maxSpeed = minAltitude = maxAltitude = minHeading = maxHeading = minAccuracy = maxAccuracy = 0;
+        distance = 0;
     }
 
     /// <summary>Distance between two coordinates in meters, using the Haversine formula.</summary>

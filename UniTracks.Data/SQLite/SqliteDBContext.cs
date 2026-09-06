@@ -67,6 +67,10 @@ public class SqliteDBContext : DbContext
             e.HasOne(t => t.TripType)
                 .WithMany()
                 .HasForeignKey(t => t.TripTypeId);
+
+            e.HasMany(t => t.Locations)
+                .WithOne()
+                .HasForeignKey(l => l.TripID);
         });
 
         // TripType seed catalog is read from the embedded triptypes.json at

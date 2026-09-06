@@ -22,4 +22,8 @@ public record Location()
     public double Heading { get; set; }
     public double HeadingAccuracy { get; set; }
     public DateTimeOffset Timestamp { get; set; }
+
+    /// <summary>Weight to the owning trip. Explicit so EF Core persists the FK correctly when
+    /// locations are added one at a time (rather than in a single graph write).</summary>
+    public Guid? TripID { get; set; }
 }
