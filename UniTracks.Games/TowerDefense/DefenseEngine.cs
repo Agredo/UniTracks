@@ -114,6 +114,8 @@ public static class DefenseEngine
             state.PendingSpawns.Enqueue(enemy);
         }
 
+        state.WaveSpawned = 0;
+        state.WaveLeaked = 0;
         state.SpawnCooldownMs = 0;
         state.Phase = DefensePhase.WaveRunning;
         return DefenseResult.Ok(0);
@@ -149,7 +151,19 @@ public static class DefenseEngine
 
         if (state.PendingSpawns.Count == 0 && state.Enemies.Count == 0)
         {
-            state.Energy += state.ClearBonus;
+            // Meritocratic energy: full clear-bonus only when nothing leaked, otherwise
+            // scaled by the share of the wave actually defeated.
+            int defeated = state.WaveSpawned - state.WaveLeaked;
+            double ratio = state.WaveSpawned == 0 ? 0 : (double)defeated / state.WaveSpawned;
+            state.Energy += (int)Math.Round(state.ClearBonus * ratio);
+
+            // A zero-leak clear is the only one that counts toward the record.
+            if (state.WaveLeaked == 0 && state.NextWave > state.BestClearWave)
+            {
+                state.BestClearWave = state.NextWave;
+                state.BestClearScore = state.Score;
+            }
+
             state.NextWave++;
             state.Phase = DefensePhase.Building;
         }
@@ -163,6 +177,7 @@ public static class DefenseEngine
         while (state.PendingSpawns.Count > 0 && state.SpawnCooldownMs <= 0)
         {
             var definition = state.PendingSpawns.Dequeue();
+            state.WaveSpawned++;
             int maxHp = (int)Math.Ceiling(definition.BaseHp * hpMultiplier);
             state.Enemies.Add(new ActiveEnemy
             {
@@ -187,6 +202,7 @@ public static class DefenseEngine
             if (enemy.Distance >= state.Map.TotalLength)
             {
                 state.Lives -= enemy.Definition.LeakDamage;
+                state.WaveLeaked++;
                 state.Enemies.RemoveAt(i);
                 state.Projectiles.RemoveAll(p => p.TargetEnemyId == enemy.Id);
             }

@@ -100,7 +100,10 @@ public class TowerDefenseService : ITowerDefenseService
             record = new DefenseRecord { ID = Guid.NewGuid() };
         }
 
-        if (clearedWave > record.BestWave || score > record.BestScore)
+        // Only a wave cleared with zero leaks counts toward the record. A leaky run can
+        // still reach a high wave, but it does not set a new best.
+        if (clearedWave > record.BestWave
+            || (clearedWave == record.BestWave && score > record.BestScore))
         {
             record.BestWave = Math.Max(record.BestWave, clearedWave);
             record.BestScore = Math.Max(record.BestScore, score);
@@ -131,6 +134,8 @@ public class TowerDefenseService : ITowerDefenseService
             ClearBonus = EnergyEconomy.ComputeClearBonus(stats),
             Lives = progress.Lives > 0 ? progress.Lives : map.StartLives,
             Score = progress.Score,
+            BestClearWave = progress.BestClearWave,
+            BestClearScore = progress.BestClearScore,
             NextWave = Math.Max(1, progress.Wave),
             Phase = DefensePhase.Building,
         };
@@ -152,6 +157,8 @@ public class TowerDefenseService : ITowerDefenseService
             MapId = state.Map.Id,
             Lives = state.Lives,
             Score = state.Score,
+            BestClearWave = state.BestClearWave,
+            BestClearScore = state.BestClearScore,
             TowersJson = SerializeTowers(state.Towers),
             UpdatedAt = DateTimeOffset.UtcNow,
         };

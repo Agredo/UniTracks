@@ -197,7 +197,7 @@ public partial class TowerDefensePageViewModel : ObservableObject
         if (State.Phase == DefensePhase.Lost && !runSaved)
         {
             runSaved = true;
-            ApplyProfile(await towerDefenseService.SaveRunResultAsync(State.ClearedWave, State.Score));
+            ApplyProfile(await towerDefenseService.SaveRunResultAsync(State.BestClearWave, State.BestClearScore));
 
             // Keep the failed layout + wave so the player can retry next time with fresh energy.
             await towerDefenseService.SaveRunAsync(State);
