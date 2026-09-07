@@ -36,10 +36,12 @@ public class GameCatalogService : IGameCatalogService
         var placed = await cityStore.LoadAsync();
         var expansions = await cityStore.LoadExpansionsAsync();
         var unlocks = await towerDefenseStore.LoadUnlocksAsync();
+        var energyPurchases = await towerDefenseStore.LoadEnergyPurchasesAsync();
         int earned = CoinEconomy.ComputeEarned(stats.Trips, stats.Xp, stats.UnlockedAchievements);
         int spent = CityEngine.ComputeSpent(placed)
             + CityEngine.ComputeExpansionSpent(expansions)
-            + DefenseEngine.ComputeUnlockSpent(unlocks);
+            + DefenseEngine.ComputeUnlockSpent(unlocks)
+            + DefenseEngine.ComputeEnergySpent(energyPurchases);
         return Math.Max(0, earned - spent);
     }
 }

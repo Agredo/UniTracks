@@ -5,15 +5,25 @@ namespace UniTracks.Games.Shared.Economy;
 /// <summary>
 /// In-run energy rules for the tower-defense game. Energy is the placement currency that
 /// lets a player build towers during a run. Unlike the coin balance, energy is not earned
-/// by playing — killing enemies grants nothing and clearing a wave only trickles a small,
-/// sport-based amount back. The budget therefore grows with the player's real activity
-/// (level-ups from XP, achievements, lifetime kilometers) rather than with in-game kills,
-/// so progress is tied to running and exercising, not to grinding a wave.
+/// by killing enemies — clearing a wave only trickles a small, sport-based amount back.
+/// The budget therefore grows with the player's real activity (level-ups from XP,
+/// achievements, lifetime kilometers) rather than with in-game kills, so progress is tied
+/// to running and exercising, not to grinding a wave. A player may additionally top the
+/// budget up with coins (a durable spend that is part of the computed coin balance).
 /// </summary>
 public static class EnergyEconomy
 {
     /// <summary>Enough to place a couple of starter towers and clear the first wave or two.</summary>
     public const int StartingEnergy = 60;
+
+    /// <summary>Coins paid for each point of energy bought with coin during a run.</summary>
+    public const int CoinsPerEnergy = 2;
+
+    /// <summary>Energy granted by a single coin-funded purchase (the buy button in the HUD).</summary>
+    public const int EnergyPackSize = 25;
+
+    /// <summary>Coins a coin-funded energy purchase of <paramref name="energy"/> points costs.</summary>
+    public static int CoinCostForEnergy(int energy) => energy * CoinsPerEnergy;
 
     /// <summary>Floor of energy trickled back after each cleared wave, so a brand-new player is never hard-stuck.</summary>
     public const int BaseClearBonus = 20;

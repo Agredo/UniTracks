@@ -12,45 +12,57 @@
 
     <Grid RowDefinitions="Auto,*,Auto">
 
-        <!-- Top bar: coins + energy + lives + wave + sell toggle -->
-        <Grid Grid.Row="0" Padding="12,10" ColumnDefinitions="Auto,Auto,Auto,*,Auto" ColumnSpacing="8">
-            <Border Padding="12,8" Style="{StaticResource CardBorder}">
-                <HorizontalStackLayout Spacing="6">
-                    <Label FontSize="16" Text="🪙" VerticalOptions="Center" />
-                    <Label Style="{StaticResource TitleLabel}" Text="{Binding Profile.Coins, StringFormat='{0:N0}'}" VerticalOptions="Center" />
-                </HorizontalStackLayout>
-            </Border>
-            <Border Grid.Column="1" Padding="12,8" Style="{StaticResource CardBorder}">
-                <HorizontalStackLayout Spacing="6">
-                    <Label FontSize="16" Text="⚡" VerticalOptions="Center" />
-                    <Label Style="{StaticResource TitleLabel}" Text="{Binding EnergyLabel}" VerticalOptions="Center" />
-                </HorizontalStackLayout>
-            </Border>
-            <Border Grid.Column="2" Padding="12,8" Style="{StaticResource CardBorder}">
-                <HorizontalStackLayout Spacing="6">
-                    <Label FontSize="16" Text="❤️" VerticalOptions="Center" />
-                    <Label Style="{StaticResource TitleLabel}" Text="{Binding LivesLabel}" VerticalOptions="Center" />
-                </HorizontalStackLayout>
-            </Border>
-            <Border Grid.Column="3" Padding="12,8" Style="{StaticResource CardBorder}">
-                <VerticalStackLayout Spacing="0">
-                    <Label Style="{StaticResource TitleLabel}" Text="{Binding WaveLabel}" />
-                    <Label FontSize="10" Style="{StaticResource SubtitleLabel}" Text="{Binding BestLabel}" />
-                </VerticalStackLayout>
-            </Border>
-            <Border Grid.Column="4" Padding="12,8" Style="{StaticResource CardBorder}">
-                <Border.GestureRecognizers>
-                    <TapGestureRecognizer Command="{Binding ToggleSellModeCommand}" />
-                </Border.GestureRecognizers>
-                <Label FontSize="18" Text="💥" VerticalOptions="Center" HorizontalOptions="Center" />
-                <Border.Triggers>
-                    <DataTrigger Binding="{Binding IsSellMode}" TargetType="Border" Value="True">
-                        <Setter Property="BackgroundColor" Value="{StaticResource AccentSoft}" />
-                        <Setter Property="Stroke" Value="{StaticResource Accent}" />
-                    </DataTrigger>
-                </Border.Triggers>
-            </Border>
-        </Grid>
+        <!-- Top bar: coins + energy + buy-energy + lives + wave + sell toggle. Horizontally
+             scrollable so every stat stays reachable on narrow screens. -->
+        <ScrollView Grid.Row="0" HorizontalScrollBarVisibility="Never" Orientation="Horizontal">
+            <HorizontalStackLayout Padding="12,10" Spacing="8">
+                <Border Padding="12,8" Style="{StaticResource CardBorder}">
+                    <HorizontalStackLayout Spacing="6">
+                        <Label FontSize="16" Text="🪙" VerticalOptions="Center" />
+                        <Label Style="{StaticResource TitleLabel}" Text="{Binding Profile.Coins, StringFormat='{0:N0}'}" VerticalOptions="Center" />
+                    </HorizontalStackLayout>
+                </Border>
+                <Border Padding="12,8" Style="{StaticResource CardBorder}">
+                    <HorizontalStackLayout Spacing="6">
+                        <Label FontSize="16" Text="⚡" VerticalOptions="Center" />
+                        <Label Style="{StaticResource TitleLabel}" Text="{Binding EnergyLabel}" VerticalOptions="Center" />
+                    </HorizontalStackLayout>
+                </Border>
+                <Border Padding="12,8" Style="{StaticResource CardBorder}">
+                    <Border.GestureRecognizers>
+                        <TapGestureRecognizer Command="{Binding BuyEnergyCommand}" CommandParameter="{Binding EnergyPackSize}" />
+                    </Border.GestureRecognizers>
+                    <VerticalStackLayout Spacing="0" HorizontalOptions="Center">
+                        <Label FontSize="15" HorizontalTextAlignment="Center" Style="{StaticResource TitleLabel}" Text="{Binding EnergyPackSize, StringFormat='+{0} ⚡'}" />
+                        <Label FontSize="10" HorizontalTextAlignment="Center" Style="{StaticResource SubtitleLabel}" Text="{Binding EnergyPackCost, StringFormat='{0} 🪙'}" />
+                    </VerticalStackLayout>
+                </Border>
+                <Border Padding="12,8" Style="{StaticResource CardBorder}">
+                    <HorizontalStackLayout Spacing="6">
+                        <Label FontSize="16" Text="❤️" VerticalOptions="Center" />
+                        <Label Style="{StaticResource TitleLabel}" Text="{Binding LivesLabel}" VerticalOptions="Center" />
+                    </HorizontalStackLayout>
+                </Border>
+                <Border Padding="12,8" Style="{StaticResource CardBorder}">
+                    <VerticalStackLayout Spacing="0">
+                        <Label Style="{StaticResource TitleLabel}" Text="{Binding WaveLabel}" />
+                        <Label FontSize="10" Style="{StaticResource SubtitleLabel}" Text="{Binding BestLabel}" />
+                    </VerticalStackLayout>
+                </Border>
+                <Border Padding="12,8" Style="{StaticResource CardBorder}">
+                    <Border.GestureRecognizers>
+                        <TapGestureRecognizer Command="{Binding ToggleSellModeCommand}" />
+                    </Border.GestureRecognizers>
+                    <Label FontSize="18" Text="💥" VerticalOptions="Center" HorizontalOptions="Center" />
+                    <Border.Triggers>
+                        <DataTrigger Binding="{Binding IsSellMode}" TargetType="Border" Value="True">
+                            <Setter Property="BackgroundColor" Value="{StaticResource AccentSoft}" />
+                            <Setter Property="Stroke" Value="{StaticResource Accent}" />
+                        </DataTrigger>
+                    </Border.Triggers>
+                </Border>
+            </HorizontalStackLayout>
+        </ScrollView>
 
         <!-- Defense map with game-over overlay -->
         <Grid Grid.Row="1">

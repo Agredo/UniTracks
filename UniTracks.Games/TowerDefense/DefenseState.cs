@@ -19,7 +19,7 @@ public class DefenseState
     /// <summary>The map this run is played on (drives the trail geometry and difficulty modifiers).</summary>
     public DefenseMap Map { get; init; } = MapCatalog.Default;
 
-    /// <summary>In-run placement currency, topped up by the sport-based wave clear bonus.</summary>
+    /// <summary>In-run placement currency, topped up by the sport-based wave clear bonus and coin-funded top-ups.</summary>
     public int Energy { get; set; }
 
     /// <summary>Sport-based energy returned after each cleared wave (see <see cref="Shared.Economy.EnergyEconomy"/>).</summary>

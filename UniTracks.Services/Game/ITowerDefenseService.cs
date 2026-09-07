@@ -15,6 +15,13 @@ public interface ITowerDefenseService
     /// <summary>Unlocks a tower permanently if it is known, new and affordable with coins.</summary>
     Task<UnlockResult> TryUnlockAsync(string towerId);
 
+    /// <summary>
+    /// Spends coins to top the current run's energy budget up by <paramref name="energy"/>
+    /// points. The spend is durable (fed into the computed coin balance) and the granted
+    /// energy is persisted with the run.
+    /// </summary>
+    Task<UnlockResult> BuyEnergyAsync(DefenseState state, int energy);
+
     /// <summary>Persists a finished run when it beats the stored best wave or score.</summary>
     Task<DefenseProfile> SaveRunResultAsync(int clearedWave, int score);
 

@@ -21,10 +21,28 @@ public class TowerDefenseStore : ITowerDefenseStore
 
     public Task SaveUnlockAsync(TowerUnlock unlock) => repository.Add(unlock);
 
+    public async Task<IReadOnlyList<EnergyPurchase>> LoadEnergyPurchasesAsync() =>
+        (await repository.GetAllAsync<EnergyPurchase>()).ToList();
+
+    public Task SaveEnergyPurchaseAsync(EnergyPurchase purchase) => repository.Add(purchase);
+
     public async Task<DefenseRecord?> LoadRecordAsync() =>
         (await repository.GetAllAsync<DefenseRecord>()).FirstOrDefault();
 
-    public Task SaveRecordAsync(DefenseRecord record) => repository.Update(record);
+    public async Task SaveRecordAsync(DefenseRecord record)
+    {
+        var existing = (await repository.GetAllAsync<DefenseRecord>()).FirstOrDefault();
+        if (existing is null)
+        {
+            await repository.Add(record);
+            return;
+        }
+
+        existing.BestWave = record.BestWave;
+        existing.BestScore = record.BestScore;
+        existing.UpdatedAt = record.UpdatedAt;
+        await repository.Update(existing);
+    }
 
     public async Task<DefenseRunProgress?> LoadRunAsync() =>
         (await repository.GetAllAsync<DefenseRunProgress>()).FirstOrDefault();
@@ -42,6 +60,7 @@ public class TowerDefenseStore : ITowerDefenseStore
         // throws an InvalidOperationException (IdentityConflict) when two instances share
         // the same key, which surfaced as the 0xc000027b stowed exception on placement.
         existing.Wave = run.Wave;
+        existing.Energy = run.Energy;
         existing.Lives = run.Lives;
         existing.Score = run.Score;
         existing.TowersJson = run.TowersJson;

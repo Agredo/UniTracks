@@ -26,6 +26,7 @@ public class SqliteDBContext : DbContext
     public DbSet<PlacedBuilding> PlacedBuildings { get; set; }
     public DbSet<CityExpansion> CityExpansions { get; set; }
     public DbSet<TowerUnlock> TowerUnlocks { get; set; }
+    public DbSet<EnergyPurchase> EnergyPurchases { get; set; }
     public DbSet<DefenseRecord> DefenseRecords { get; set; }
     public DbSet<DefenseRunProgress> DefenseRunProgresses { get; set; }
 

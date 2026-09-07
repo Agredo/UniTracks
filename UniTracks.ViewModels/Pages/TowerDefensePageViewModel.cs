@@ -2,6 +2,7 @@ using System.Collections.ObjectModel;
 using AgredoApplication.MVVM.Services.Abstractions.UI;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using UniTracks.Games.Shared.Economy;
 using UniTracks.Games.TowerDefense;
 using UniTracks.Services.Game;
 
@@ -139,6 +140,32 @@ public partial class TowerDefensePageViewModel : ObservableObject
     private void ToggleSellMode()
     {
         IsSellMode = !IsSellMode;
+    }
+
+    /// <summary>Energy granted by a single coin-funded purchase (the buy button in the HUD).</summary>
+    public int EnergyPackSize => EnergyEconomy.EnergyPackSize;
+
+    /// <summary>Coins a coin-funded energy pack costs.</summary>
+    public int EnergyPackCost => EnergyEconomy.CoinCostForEnergy(EnergyPackSize);
+
+    [RelayCommand]
+    private async Task BuyEnergy(int packSize)
+    {
+        if (IsChoosingMap || IsLost)
+        {
+            return;
+        }
+
+        int energy = packSize > 0 ? packSize : EnergyPackSize;
+        var result = await towerDefenseService.BuyEnergyAsync(State, energy);
+        if (!result.Success)
+        {
+            await dialogService.AlertAsync("Energie kaufen", result.ErrorMessage, "OK");
+            return;
+        }
+
+        RefreshLabels();
+        ApplyProfile(await towerDefenseService.GetProfileAsync());
     }
 
     [RelayCommand]
@@ -302,8 +329,8 @@ public partial class TowerDefensePageViewModel : ObservableObject
         ApplyProfile(profile);
 
         // Always show the map-selection overlay on entry so the player picks a trail. If a
-        // persisted run exists (towers + wave + map), offer it as a "resume" option; energy
-        // is freshly recomputed from activity when the player resumes.
+        // persisted run exists (towers + wave + map + energy, including any coin-funded
+        // top-ups), offer it as a "resume" option so the run continues where it was left.
         var savedRun = await towerDefenseService.LoadRunAsync();
         resumeRun = savedRun;
         CanResume = savedRun is not null;

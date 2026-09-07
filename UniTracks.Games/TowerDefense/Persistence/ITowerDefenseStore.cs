@@ -10,6 +10,12 @@ public interface ITowerDefenseStore
 
     Task SaveUnlockAsync(TowerUnlock unlock);
 
+    /// <summary>Loads all coin-funded energy purchases (feeds the computed coin balance).</summary>
+    Task<IReadOnlyList<EnergyPurchase>> LoadEnergyPurchasesAsync();
+
+    /// <summary>Persists a coin-funded energy purchase.</summary>
+    Task SaveEnergyPurchaseAsync(EnergyPurchase purchase);
+
     Task<DefenseRecord?> LoadRecordAsync();
 
     Task SaveRecordAsync(DefenseRecord record);
