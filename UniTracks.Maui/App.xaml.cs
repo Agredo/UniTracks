@@ -25,6 +25,7 @@ namespace UniTracks.Maui
             MainPage = new AppShell();
 
             Routing.RegisterRoute(nameof(TripOverviewPage), typeof(TripOverviewPage));
+            Routing.RegisterRoute(nameof(TripChartsPage), typeof(TripChartsPage));
             Routing.RegisterRoute(nameof(CityBuilderPage), typeof(CityBuilderPage));
             Routing.RegisterRoute(nameof(TowerDefensePage), typeof(TowerDefensePage));
             Routing.RegisterRoute(nameof(AboutPage), typeof(AboutPage));

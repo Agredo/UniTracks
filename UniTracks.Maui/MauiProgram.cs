@@ -203,6 +203,7 @@ public static class MauiProgram
         services.AddTransient<UserPage, UserPagevViewModel>();
         services.AddTransient<AchievementsPage, AchievementsPageViewModel>();
         services.AddTransient<TripOverviewPage, TripOverviewViewModel>();
+        services.AddTransient<TripChartsPage, TripChartsPageViewModel>();
         services.AddTransient<GameTabPage, GameTabPageViewModel>();
         services.AddTransient<CityBuilderPage, CityBuilderPageViewModel>();
         services.AddTransient<TowerDefensePage, TowerDefensePageViewModel>();

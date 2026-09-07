@@ -1,0 +1,153 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage
+    x:Class="UniTracks.Maui.Views.Pages.TripChartsPage"
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    xmlns:charts="clr-namespace:UniTracks.Maui.Views.Controls.Charts;assembly=UniTracks.Maui.Views"
+    xmlns:vm="clr-namespace:UniTracks.ViewModels.Pages;assembly=UniTracks.ViewModels"
+    Title="Analyse"
+    x:DataType="vm:TripChartsPageViewModel">
+
+    <ScrollView>
+        <VerticalStackLayout Padding="20" Spacing="20">
+
+            <!-- Header -->
+            <VerticalStackLayout Spacing="2">
+                <Label Style="{StaticResource TitleLabel}" Text="{Binding TripName}" />
+                <Label Style="{StaticResource SubtitleLabel}" Text="{Binding DateText}" />
+            </VerticalStackLayout>
+
+            <!-- All stats -->
+            <VerticalStackLayout Spacing="8">
+                <Label Style="{StaticResource SectionHeader}" Text="STATISTIKEN" />
+                <Grid ColumnDefinitions="*,*,*,*" ColumnSpacing="8" RowSpacing="8">
+                    <Border Grid.Column="0" Grid.Row="0" Style="{StaticResource AccentChipBorder}">
+                        <VerticalStackLayout Spacing="2">
+                            <Label Style="{StaticResource StatLabel}" Text="DISTANZ" />
+                            <HorizontalStackLayout Spacing="3">
+                                <Label
+                                    FontFamily="OpenSansSemibold"
+                                    FontSize="16"
+                                    Text="{Binding DistanceText}"
+                                    TextColor="{StaticResource Accent}" />
+                                <Label
+                                    FontSize="11"
+                                    Text="{Binding DistanceUnit}"
+                                    TextColor="{StaticResource TextMuted}"
+                                    VerticalOptions="End" />
+                            </HorizontalStackLayout>
+                        </VerticalStackLayout>
+                    </Border>
+                    <Border Grid.Column="1" Grid.Row="0" Style="{StaticResource ChipBorder}">
+                        <VerticalStackLayout Spacing="2">
+                            <Label Style="{StaticResource StatLabel}" Text="DAUER" />
+                            <Label
+                                FontFamily="OpenSansSemibold"
+                                FontSize="16"
+                                Text="{Binding DurationText}" />
+                        </VerticalStackLayout>
+                    </Border>
+                    <Border Grid.Column="2" Grid.Row="0" Style="{StaticResource ChipBorder}">
+                        <VerticalStackLayout Spacing="2">
+                            <Label Style="{StaticResource StatLabel}" Text="&#xD8; KM/H" />
+                            <Label
+                                FontFamily="OpenSansSemibold"
+                                FontSize="16"
+                                Text="{Binding AverageSpeedText}" />
+                        </VerticalStackLayout>
+                    </Border>
+                    <Border Grid.Column="3" Grid.Row="0" Style="{StaticResource ChipBorder}">
+                        <VerticalStackLayout Spacing="2">
+                            <Label Style="{StaticResource StatLabel}" Text="MAX KM/H" />
+                            <Label
+                                FontFamily="OpenSansSemibold"
+                                FontSize="16"
+                                Text="{Binding MaxSpeedText}" />
+                        </VerticalStackLayout>
+                    </Border>
+                    <Border Grid.Column="0" Grid.Row="1" Style="{StaticResource ChipBorder}">
+                        <VerticalStackLayout Spacing="2">
+                            <Label Style="{StaticResource StatLabel}" Text="BEWEGUNG" />
+                            <Label
+                                FontFamily="OpenSansSemibold"
+                                FontSize="16"
+                                Text="{Binding MovingTimeText}" />
+                        </VerticalStackLayout>
+                    </Border>
+                    <Border Grid.Column="1" Grid.Row="1" Style="{StaticResource ChipBorder}">
+                        <VerticalStackLayout Spacing="2">
+                            <Label Style="{StaticResource StatLabel}" Text="PAUSE" />
+                            <Label
+                                FontFamily="OpenSansSemibold"
+                                FontSize="16"
+                                Text="{Binding StoppedTimeText}" />
+                        </VerticalStackLayout>
+                    </Border>
+                    <Border Grid.Column="2" Grid.Row="1" Style="{StaticResource ChipBorder}">
+                        <VerticalStackLayout Spacing="2">
+                            <Label Style="{StaticResource StatLabel}" Text="HÖHE" />
+                            <Label
+                                FontFamily="OpenSansSemibold"
+                                FontSize="14"
+                                Text="{Binding AltitudeText}"
+                                VerticalOptions="Center" />
+                        </VerticalStackLayout>
+                    </Border>
+                    <Border Grid.Column="3" Grid.Row="1" Style="{StaticResource ChipBorder}">
+                        <VerticalStackLayout Spacing="2">
+                            <Label Style="{StaticResource StatLabel}" Text="PACE /KM" />
+                            <Label
+                                FontFamily="OpenSansSemibold"
+                                FontSize="16"
+                                Text="{Binding PaceText}" />
+                        </VerticalStackLayout>
+                    </Border>
+                </Grid>
+            </VerticalStackLayout>
+
+            <!-- Speed chart -->
+            <VerticalStackLayout IsVisible="{Binding HasSpeedProfile}" Spacing="8">
+                <Label Style="{StaticResource SectionHeader}" Text="GESCHWINDIGKEIT" />
+                <Border Padding="14,14,10,10" Style="{StaticResource CardBorder}">
+                    <charts:AxisLineChartView
+                        HeightRequest="220"
+                        Values="{Binding SpeedProfile}"
+                        XLabels="{Binding TimeAxisLabels}"
+                        YFormat="0"
+                        YUnit="km/h" />
+                </Border>
+            </VerticalStackLayout>
+
+            <!-- Altitude chart -->
+            <VerticalStackLayout IsVisible="{Binding HasAltitudeProfile}" Spacing="8">
+                <Label Style="{StaticResource SectionHeader}" Text="HÖHENPROFIL" />
+                <Border Padding="14,14,10,10" Style="{StaticResource CardBorder}">
+                    <charts:AxisLineChartView
+                        HeightRequest="200"
+                        FillColor="#336B7A6D"
+                        LineColor="{StaticResource TextMuted}"
+                        Values="{Binding AltitudeProfile}"
+                        XLabels="{Binding TimeAxisLabels}"
+                        YFormat="0"
+                        YUnit="m" />
+                </Border>
+            </VerticalStackLayout>
+
+            <!-- Pace chart -->
+            <VerticalStackLayout IsVisible="{Binding HasPaceProfile}" Spacing="8">
+                <Label Style="{StaticResource SectionHeader}" Text="PACE (MIN/KM)" />
+                <Border Padding="14,14,10,10" Style="{StaticResource CardBorder}">
+                    <charts:AxisLineChartView
+                        HeightRequest="200"
+                        FillColor="#334D9FE7"
+                        LineColor="#4D9FE7"
+                        Values="{Binding PaceProfile}"
+                        XLabels="{Binding TimeAxisLabels}"
+                        YFormat="0.0"
+                        YUnit="min" />
+                </Border>
+            </VerticalStackLayout>
+
+        </VerticalStackLayout>
+    </ScrollView>
+</ContentPage>

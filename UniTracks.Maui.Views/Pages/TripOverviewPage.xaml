@@ -13,11 +13,14 @@
     <Grid>
         <controls:MapView Locations="{Binding Locations}" />
 
-        <!-- Floating stats card -->
+        <!-- Floating stats card (tap for full analysis) -->
         <Border
             Margin="16"
             Style="{StaticResource CardBorder}"
             VerticalOptions="Start">
+            <Border.GestureRecognizers>
+                <TapGestureRecognizer Command="{Binding OpenDetailsCommand}" />
+            </Border.GestureRecognizers>
             <VerticalStackLayout Spacing="10">
 
                 <Grid ColumnDefinitions="*,Auto">
@@ -81,45 +84,11 @@
                     </Border>
                 </Grid>
 
-                <Grid ColumnDefinitions="*,*,*,*" ColumnSpacing="8">
-                    <Border Grid.Column="0" Style="{StaticResource ChipBorder}">
-                        <VerticalStackLayout Spacing="2">
-                            <Label Style="{StaticResource StatLabel}" Text="BEWEGUNG" />
-                            <Label
-                                FontFamily="OpenSansSemibold"
-                                FontSize="16"
-                                Text="{Binding MovingTimeText}" />
-                        </VerticalStackLayout>
-                    </Border>
-                    <Border Grid.Column="1" Style="{StaticResource ChipBorder}">
-                        <VerticalStackLayout Spacing="2">
-                            <Label Style="{StaticResource StatLabel}" Text="PAUSE" />
-                            <Label
-                                FontFamily="OpenSansSemibold"
-                                FontSize="16"
-                                Text="{Binding StoppedTimeText}" />
-                        </VerticalStackLayout>
-                    </Border>
-                    <Border Grid.Column="2" Style="{StaticResource ChipBorder}">
-                        <VerticalStackLayout Spacing="2">
-                            <Label Style="{StaticResource StatLabel}" Text="HÖHE" />
-                            <Label
-                                FontFamily="OpenSansSemibold"
-                                FontSize="14"
-                                Text="{Binding AltitudeText}"
-                                VerticalOptions="Center" />
-                        </VerticalStackLayout>
-                    </Border>
-                    <Border Grid.Column="3" Style="{StaticResource ChipBorder}">
-                        <VerticalStackLayout Spacing="2">
-                            <Label Style="{StaticResource StatLabel}" Text="PACE /KM" />
-                            <Label
-                                FontFamily="OpenSansSemibold"
-                                FontSize="16"
-                                Text="{Binding PaceText}" />
-                        </VerticalStackLayout>
-                    </Border>
-                </Grid>
+                <Label
+                    FontSize="11"
+                    HorizontalTextAlignment="End"
+                    Text="Details &amp; Charts ›"
+                    TextColor="{StaticResource TextMuted}" />
             </VerticalStackLayout>
         </Border>
 
@@ -130,6 +99,9 @@
             Style="{StaticResource CardBorder}"
             IsVisible="{Binding HasProfile}"
             VerticalOptions="End">
+            <Border.GestureRecognizers>
+                <TapGestureRecognizer Command="{Binding OpenDetailsCommand}" />
+            </Border.GestureRecognizers>
             <VerticalStackLayout Spacing="6">
                 <HorizontalStackLayout Spacing="14">
                     <HorizontalStackLayout Spacing="5">
@@ -152,7 +124,7 @@
                     </HorizontalStackLayout>
                 </HorizontalStackLayout>
                 <charts:LineChartView
-                    HeightRequest="110"
+                    HeightRequest="80"
                     PrimaryValues="{Binding SpeedProfile}"
                     SecondaryValues="{Binding AltitudeProfile}" />
             </VerticalStackLayout>
