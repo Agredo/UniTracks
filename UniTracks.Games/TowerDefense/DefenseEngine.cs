@@ -35,6 +35,13 @@ public static class DefenseEngine
     public static int ComputeUnlockSpent(IEnumerable<TowerUnlock> unlocks) =>
         unlocks.Sum(u => TowerCatalog.Find(u.TowerId)?.UnlockCost ?? 0);
 
+    /// <summary>Coins permanently spent on coin-funded energy top-ups (feeds the shared coin balance).</summary>
+    public static int ComputeEnergySpent(IEnumerable<EnergyPurchase> purchases) =>
+        purchases.Sum(p => p.Coins);
+
+    /// <summary>Grants energy to the running budget — used for coin-funded top-ups.</summary>
+    public static void GrantEnergy(DefenseState state, int energy) => state.Energy += energy;
+
     /// <summary>Validates a tower placement. Does not mutate anything.</summary>
     public static DefenseResult ValidatePlacement(DefenseState state, string towerId, int x, int y)
     {

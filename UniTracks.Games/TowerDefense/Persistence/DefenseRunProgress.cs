@@ -4,10 +4,9 @@ namespace UniTracks.Games.TowerDefense.Persistence;
 
 /// <summary>
 /// Persisted snapshot of the player's in-progress defense run. On reload the tower
-/// layout and current wave are restored, while energy is freshly recomputed from the
-/// player's activity (see <c>UniTracks.Games.Shared.Economy.EnergyEconomy</c>) so that
-/// progress always requires sport. A single row keeps the run as one unit and works the
-/// same on EF Core (SQLite) and LiteDB (iOS).
+/// layout, current wave and the energy budget (including any coin-funded top-ups) are
+/// restored, so a resumed run continues exactly where it was left. A single row keeps
+/// the run as one unit and works the same on EF Core (SQLite) and LiteDB (iOS).
 /// </summary>
 public record DefenseRunProgress
 {
@@ -19,6 +18,9 @@ public record DefenseRunProgress
 
     /// <summary>Id of the map the run is played on (see <c>MapCatalog</c>). Defaults to the easiest map.</summary>
     public string MapId { get; set; } = MapCatalog.Default.Id;
+
+    /// <summary>Current in-run energy budget, persisted so purchased energy survives a resume.</summary>
+    public int Energy { get; set; }
 
     public int Lives { get; set; }
 

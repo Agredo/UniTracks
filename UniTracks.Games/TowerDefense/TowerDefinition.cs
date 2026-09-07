@@ -2,7 +2,8 @@ namespace UniTracks.Games.TowerDefense;
 
 /// <summary>
 /// Static definition of a tower type. Towers are unlocked permanently with coins
-/// (financed by real activity) and placed during a run with energy earned from kills.
+/// (financed by real activity) and placed during a run with energy — topped up by the
+/// sport-based wave-clear bonus or bought with coins at the start of each run.
 /// </summary>
 public record TowerDefinition
 {

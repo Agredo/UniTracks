@@ -82,6 +82,36 @@ public class TowerDefenseService : ITowerDefenseService
         return UnlockResult.Ok();
     }
 
+    public async Task<UnlockResult> BuyEnergyAsync(DefenseState state, int energy)
+    {
+        if (energy <= 0)
+        {
+            return UnlockResult.Fail("Ungültige Energiemenge.");
+        }
+
+        int cost = EnergyEconomy.CoinCostForEnergy(energy);
+        int coins = await gameCatalogService.GetCoinBalanceAsync();
+        if (coins < cost)
+        {
+            return UnlockResult.Fail($"Nicht genug Münzen — {energy} ⚡ kosten {cost:N0} 🪙, du hast {coins:N0}.");
+        }
+
+        // Persist the durable coin spend first so the computed balance reflects it, then
+        // grant the energy to the live run and keep the run's energy up-to-date.
+        await store.SaveEnergyPurchaseAsync(new EnergyPurchase
+        {
+            ID = Guid.NewGuid(),
+            Energy = energy,
+            Coins = cost,
+            PurchasedAt = DateTimeOffset.UtcNow,
+        });
+
+        DefenseEngine.GrantEnergy(state, energy);
+        await SaveRunAsync(state);
+
+        return UnlockResult.Ok();
+    }
+
     /// <summary>Human-readable achievement name for gate messages.</summary>
     private static string AchievementName(string id) => id switch
     {
@@ -130,7 +160,9 @@ public class TowerDefenseService : ITowerDefenseService
         {
             UnlockedTowerIds = unlocks.Select(u => u.TowerId).ToList(),
             Map = map,
-            Energy = EnergyEconomy.ComputeStartingEnergy(stats),
+            // Restore the energy the run was left with (including coin-funded top-ups).
+            // Falls back to the starting credit so pre-existing saved runs stay playable.
+            Energy = progress.Energy > 0 ? progress.Energy : EnergyEconomy.ComputeStartingEnergy(stats),
             ClearBonus = EnergyEconomy.ComputeClearBonus(stats),
             Lives = progress.Lives > 0 ? progress.Lives : map.StartLives,
             Score = progress.Score,
@@ -155,6 +187,7 @@ public class TowerDefenseService : ITowerDefenseService
             ID = Guid.NewGuid(),
             Wave = state.NextWave,
             MapId = state.Map.Id,
+            Energy = state.Energy,
             Lives = state.Lives,
             Score = state.Score,
             BestClearWave = state.BestClearWave,
