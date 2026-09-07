@@ -1,0 +1,276 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage
+    x:Class="UniTracks.Maui.Views.Pages.StatisticsPage"
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    xmlns:charts="clr-namespace:UniTracks.Maui.Views.Controls.Charts;assembly=UniTracks.Maui.Views"
+    xmlns:vm="clr-namespace:UniTracks.ViewModels.Pages;assembly=UniTracks.ViewModels"
+    Title="Statistik"
+    x:DataType="vm:StatisticsPageViewModel">
+
+    <ScrollView>
+        <VerticalStackLayout Padding="20" Spacing="20">
+
+            <!-- Week overview (Strava style: time, distance, elevation first) -->
+            <VerticalStackLayout Spacing="8">
+                <Label Style="{StaticResource SectionHeader}" Text="DIESE WOCHE" />
+                <Grid ColumnDefinitions="*,*,*" ColumnSpacing="10">
+                    <Border Grid.Column="0" Style="{StaticResource AccentChipBorder}">
+                        <VerticalStackLayout Spacing="2">
+                            <Label Style="{StaticResource StatLabel}" Text="ZEIT" />
+                            <Label Style="{StaticResource StatValue}" Text="{Binding WeekMovingTimeText}" />
+                        </VerticalStackLayout>
+                    </Border>
+                    <Border Grid.Column="1" Style="{StaticResource CardBorder}">
+                        <VerticalStackLayout Spacing="2">
+                            <Label Style="{StaticResource StatLabel}" Text="DISTANZ" />
+                            <Label Style="{StaticResource StatValue}" Text="{Binding WeekDistanceText, StringFormat='{0} km'}" />
+                            <Label
+                                FontSize="11"
+                                Style="{StaticResource SubtitleLabel}"
+                                Text="{Binding WeekDeltaText}" />
+                        </VerticalStackLayout>
+                    </Border>
+                    <Border Grid.Column="2" Style="{StaticResource CardBorder}">
+                        <VerticalStackLayout Spacing="2">
+                            <Label Style="{StaticResource StatLabel}" Text="HÖHENMETER" />
+                            <Label Style="{StaticResource StatValue}" Text="{Binding WeekElevationText, StringFormat='{0} m'}" />
+                        </VerticalStackLayout>
+                    </Border>
+                </Grid>
+                <Grid ColumnDefinitions="*,*,*" ColumnSpacing="10">
+                    <Border Grid.Column="0" Style="{StaticResource CardBorder}">
+                        <VerticalStackLayout Spacing="2">
+                            <Label Style="{StaticResource StatValue}" Text="{Binding WeekTripsText}" />
+                            <Label Style="{StaticResource StatLabel}" Text="TRIPS" />
+                        </VerticalStackLayout>
+                    </Border>
+                    <Border Grid.Column="1" Style="{StaticResource CardBorder}">
+                        <VerticalStackLayout Spacing="2">
+                            <Label Style="{StaticResource StatValue}" Text="{Binding WeekActiveDaysText}" />
+                            <Label Style="{StaticResource StatLabel}" Text="AKTIVE TAGE" />
+                        </VerticalStackLayout>
+                    </Border>
+                    <Border Grid.Column="2" Style="{StaticResource CardBorder}">
+                        <VerticalStackLayout Spacing="2">
+                            <HorizontalStackLayout Spacing="6">
+                                <Label FontSize="20" Text="🔥" VerticalOptions="Center" />
+                                <Label Style="{StaticResource StatValue}" Text="{Binding StreakText}" VerticalOptions="Center" />
+                            </HorizontalStackLayout>
+                            <Label Style="{StaticResource StatLabel}" Text="STREAK (TAGE)" />
+                        </VerticalStackLayout>
+                    </Border>
+                </Grid>
+            </VerticalStackLayout>
+
+            <!-- Averages -->
+            <VerticalStackLayout Spacing="8">
+                <Label Style="{StaticResource SectionHeader}" Text="DURCHSCHNITT PRO TRIP" />
+                <Grid ColumnDefinitions="*,*,*" ColumnSpacing="10">
+                    <Border Grid.Column="0" Style="{StaticResource CardBorder}">
+                        <VerticalStackLayout Spacing="2">
+                            <Label Style="{StaticResource StatValue}" Text="{Binding AvgDistanceText}" />
+                            <Label Style="{StaticResource StatLabel}" Text="DISTANZ" />
+                        </VerticalStackLayout>
+                    </Border>
+                    <Border Grid.Column="1" Style="{StaticResource CardBorder}">
+                        <VerticalStackLayout Spacing="2">
+                            <Label Style="{StaticResource StatValue}" Text="{Binding AvgMovingTimeText}" />
+                            <Label Style="{StaticResource StatLabel}" Text="ZEIT" />
+                        </VerticalStackLayout>
+                    </Border>
+                    <Border Grid.Column="2" Style="{StaticResource CardBorder}">
+                        <VerticalStackLayout Spacing="2">
+                            <Label Style="{StaticResource StatValue}" Text="{Binding AvgPaceText}" />
+                            <Label Style="{StaticResource StatLabel}" Text="PACE" />
+                        </VerticalStackLayout>
+                    </Border>
+                </Grid>
+            </VerticalStackLayout>
+
+            <!-- Year to date -->
+            <VerticalStackLayout Spacing="8">
+                <Label Style="{StaticResource SectionHeader}" Text="DIESES JAHR" />
+                <Grid ColumnDefinitions="*,*" ColumnSpacing="10">
+                    <Border Grid.Column="0" Style="{StaticResource CardBorder}">
+                        <VerticalStackLayout Spacing="2">
+                            <Label Style="{StaticResource StatValue}" Text="{Binding YearDistanceText, StringFormat='{0} km'}" />
+                            <Label Style="{StaticResource StatLabel}" Text="KILOMETER" />
+                        </VerticalStackLayout>
+                    </Border>
+                    <Border Grid.Column="1" Style="{StaticResource CardBorder}">
+                        <VerticalStackLayout Spacing="2">
+                            <Label Style="{StaticResource StatValue}" Text="{Binding YearTripsText}" />
+                            <Label Style="{StaticResource StatLabel}" Text="TRIPS" />
+                        </VerticalStackLayout>
+                    </Border>
+                </Grid>
+            </VerticalStackLayout>
+
+            <!-- Level -->
+            <VerticalStackLayout Spacing="8">
+                <Label Style="{StaticResource SectionHeader}" Text="LEVEL" />
+                <Border Padding="20" Style="{StaticResource CardBorder}">
+                    <VerticalStackLayout Spacing="10">
+                        <Grid ColumnDefinitions="*,Auto">
+                            <Label Grid.Column="0" Style="{StaticResource TitleLabel}" Text="{Binding LevelLabel}" />
+                            <Label
+                                Grid.Column="1"
+                                Style="{StaticResource SubtitleLabel}"
+                                Text="{Binding XpLabel}"
+                                VerticalTextAlignment="Center" />
+                        </Grid>
+                        <ProgressBar
+                            HeightRequest="8"
+                            Progress="{Binding LevelProgressFraction}"
+                            ProgressColor="{StaticResource Accent}" />
+                    </VerticalStackLayout>
+                </Border>
+            </VerticalStackLayout>
+
+            <!-- Weekly chart -->
+            <VerticalStackLayout Spacing="8">
+                <Label Style="{StaticResource SectionHeader}" Text="KILOMETER PRO WOCHE" />
+                <Border Padding="16,16,16,10" Style="{StaticResource CardBorder}">
+                    <charts:BarChartView HeightRequest="170" ItemsSource="{Binding WeeklyChart}" />
+                </Border>
+            </VerticalStackLayout>
+
+            <!-- Records -->
+            <VerticalStackLayout Spacing="8">
+                <Label Style="{StaticResource SectionHeader}" Text="REKORDE" />
+                <Border Style="{StaticResource CardBorder}">
+                    <VerticalStackLayout Spacing="12">
+                        <Grid ColumnDefinitions="*,Auto">
+                            <HorizontalStackLayout Grid.Column="0" Spacing="10">
+                                <Label FontSize="18" Text="🥾" VerticalOptions="Center" />
+                                <Label FontSize="15" Text="Längster Trip" VerticalOptions="Center" />
+                            </HorizontalStackLayout>
+                            <Label
+                                Grid.Column="1"
+                                FontFamily="OpenSansSemibold"
+                                FontSize="15"
+                                Text="{Binding LongestTripText}"
+                                TextColor="{StaticResource Accent}"
+                                VerticalOptions="Center" />
+                        </Grid>
+                        <Grid ColumnDefinitions="*,Auto">
+                            <HorizontalStackLayout Grid.Column="0" Spacing="10">
+                                <Label FontSize="18" Text="⚡" VerticalOptions="Center" />
+                                <Label FontSize="15" Text="Schnellster Ø-Speed" VerticalOptions="Center" />
+                            </HorizontalStackLayout>
+                            <Label
+                                Grid.Column="1"
+                                FontFamily="OpenSansSemibold"
+                                FontSize="15"
+                                Text="{Binding FastestSpeedText}"
+                                TextColor="{StaticResource Accent}"
+                                VerticalOptions="Center" />
+                        </Grid>
+                        <Grid ColumnDefinitions="*,Auto">
+                            <HorizontalStackLayout Grid.Column="0" Spacing="10">
+                                <Label FontSize="18" Text="🏃" VerticalOptions="Center" />
+                                <Label FontSize="15" Text="Schnellste Pace" VerticalOptions="Center" />
+                            </HorizontalStackLayout>
+                            <Label
+                                Grid.Column="1"
+                                FontFamily="OpenSansSemibold"
+                                FontSize="15"
+                                Text="{Binding FastestPaceText}"
+                                TextColor="{StaticResource Accent}"
+                                VerticalOptions="Center" />
+                        </Grid>
+                        <Grid ColumnDefinitions="*,Auto">
+                            <HorizontalStackLayout Grid.Column="0" Spacing="10">
+                                <Label FontSize="18" Text="⏱️" VerticalOptions="Center" />
+                                <Label FontSize="15" Text="Längste Bewegungszeit" VerticalOptions="Center" />
+                            </HorizontalStackLayout>
+                            <Label
+                                Grid.Column="1"
+                                FontFamily="OpenSansSemibold"
+                                FontSize="15"
+                                Text="{Binding LongestMovingTimeText}"
+                                TextColor="{StaticResource Accent}"
+                                VerticalOptions="Center" />
+                        </Grid>
+                        <Grid ColumnDefinitions="*,Auto">
+                            <HorizontalStackLayout Grid.Column="0" Spacing="10">
+                                <Label FontSize="18" Text="⛰️" VerticalOptions="Center" />
+                                <Label FontSize="15" Text="Maximale Höhe" VerticalOptions="Center" />
+                            </HorizontalStackLayout>
+                            <Label
+                                Grid.Column="1"
+                                FontFamily="OpenSansSemibold"
+                                FontSize="15"
+                                Text="{Binding MaxAltitudeText}"
+                                TextColor="{StaticResource Accent}"
+                                VerticalOptions="Center" />
+                        </Grid>
+                        <Grid ColumnDefinitions="*,Auto">
+                            <HorizontalStackLayout Grid.Column="0" Spacing="10">
+                                <Label FontSize="18" Text="🧗" VerticalOptions="Center" />
+                                <Label FontSize="15" Text="Meiste Höhenmeter (Trip)" VerticalOptions="Center" />
+                            </HorizontalStackLayout>
+                            <Label
+                                Grid.Column="1"
+                                FontFamily="OpenSansSemibold"
+                                FontSize="15"
+                                Text="{Binding MostElevationText}"
+                                TextColor="{StaticResource Accent}"
+                                VerticalOptions="Center" />
+                        </Grid>
+                    </VerticalStackLayout>
+                </Border>
+            </VerticalStackLayout>
+
+            <!-- Games -->
+            <VerticalStackLayout Spacing="8">
+                <Label Style="{StaticResource SectionHeader}" Text="SPIELE" />
+                <Border Style="{StaticResource CardBorder}">
+                    <VerticalStackLayout Spacing="12">
+                        <Grid ColumnDefinitions="*,Auto">
+                            <HorizontalStackLayout Grid.Column="0" Spacing="10">
+                                <Label FontSize="18" Text="🪙" VerticalOptions="Center" />
+                                <Label FontSize="15" Text="Münzen verdient (gesamt)" VerticalOptions="Center" />
+                            </HorizontalStackLayout>
+                            <Label
+                                Grid.Column="1"
+                                FontFamily="OpenSansSemibold"
+                                FontSize="15"
+                                Text="{Binding CoinsEarnedText}"
+                                TextColor="{StaticResource Accent}"
+                                VerticalOptions="Center" />
+                        </Grid>
+                        <Grid ColumnDefinitions="*,Auto">
+                            <HorizontalStackLayout Grid.Column="0" Spacing="10">
+                                <Label FontSize="18" Text="🏰" VerticalOptions="Center" />
+                                <Label FontSize="15" Text="Beste Tower-Defense-Welle" VerticalOptions="Center" />
+                            </HorizontalStackLayout>
+                            <Label
+                                Grid.Column="1"
+                                FontFamily="OpenSansSemibold"
+                                FontSize="15"
+                                Text="{Binding DefenseBestWaveText}"
+                                TextColor="{StaticResource Accent}"
+                                VerticalOptions="Center" />
+                        </Grid>
+                        <Grid ColumnDefinitions="*,Auto">
+                            <HorizontalStackLayout Grid.Column="0" Spacing="10">
+                                <Label FontSize="18" Text="🎯" VerticalOptions="Center" />
+                                <Label FontSize="15" Text="Bester Tower-Defense-Score" VerticalOptions="Center" />
+                            </HorizontalStackLayout>
+                            <Label
+                                Grid.Column="1"
+                                FontFamily="OpenSansSemibold"
+                                FontSize="15"
+                                Text="{Binding DefenseBestScoreText}"
+                                TextColor="{StaticResource Accent}"
+                                VerticalOptions="Center" />
+                        </Grid>
+                    </VerticalStackLayout>
+                </Border>
+            </VerticalStackLayout>
+
+        </VerticalStackLayout>
+    </ScrollView>
+</ContentPage>

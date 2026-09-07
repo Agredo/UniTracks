@@ -143,6 +143,7 @@ public static class MauiProgram
         services.AddSingleton<ILocationService, LocationService>();
         services.AddSingleton<IGpsDataStorageService, GpsDataStorageService>();
         services.AddSingleton<IGamificationService, GamificationService>();
+        services.AddSingleton<IStatisticsService, StatisticsService>();
         services.AddSingleton<TripDistanceRecalculator>();
 
         // BugBear feedback (version is read automatically from the app's display version).
@@ -209,6 +210,7 @@ public static class MauiProgram
         services.AddTransient<AboutPage>();
         services.AddTransient<FeedbackPageViewModel>();
         services.AddTransient<FeedbackPage>();
+        services.AddTransient<StatisticsPage, StatisticsPageViewModel>();
     }
 
     private static void RegisterPopups(IServiceCollection services)

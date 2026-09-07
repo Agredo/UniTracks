@@ -7,6 +7,7 @@
     Title="Profil"
     x:DataType="viewModels:UserPagevViewModel">
 
+    <ScrollView>
     <VerticalStackLayout Padding="20" Spacing="20">
 
         <!-- Profile hero -->
@@ -18,28 +19,95 @@
             <Border.StrokeShape>
                 <RoundRectangle CornerRadius="24" />
             </Border.StrokeShape>
-            <HorizontalStackLayout Spacing="16">
-                <Border
-                    Background="{StaticResource AccentSoft}"
-                    HeightRequest="72"
-                    Stroke="{StaticResource AccentDim}"
-                    StrokeThickness="1"
-                    WidthRequest="72">
-                    <Border.StrokeShape>
-                        <RoundRectangle CornerRadius="36" />
-                    </Border.StrokeShape>
-                    <Image
-                        Aspect="AspectFit"
-                        HeightRequest="36"
-                        Source="user.png"
-                        WidthRequest="36" />
-                </Border>
-                <VerticalStackLayout Spacing="2" VerticalOptions="Center">
-                    <Label Style="{StaticResource TitleLabel}" Text="Dein Profil" />
-                    <Label Style="{StaticResource SubtitleLabel}" Text="Bereit für den nächsten Trip" />
-                </VerticalStackLayout>
-            </HorizontalStackLayout>
+            <VerticalStackLayout Spacing="16">
+                <HorizontalStackLayout Spacing="16">
+                    <Border
+                        Background="{StaticResource AccentSoft}"
+                        HeightRequest="72"
+                        Stroke="{StaticResource AccentDim}"
+                        StrokeThickness="1"
+                        WidthRequest="72">
+                        <Border.StrokeShape>
+                            <RoundRectangle CornerRadius="36" />
+                        </Border.StrokeShape>
+                        <Image
+                            Aspect="AspectFit"
+                            HeightRequest="36"
+                            Source="user.png"
+                            WidthRequest="36" />
+                    </Border>
+                    <VerticalStackLayout Spacing="2" VerticalOptions="Center">
+                        <Label Style="{StaticResource TitleLabel}" Text="Dein Profil" />
+                        <Label Style="{StaticResource SubtitleLabel}" Text="Bereit für den nächsten Trip" />
+                    </VerticalStackLayout>
+                </HorizontalStackLayout>
+
+                <!-- Quick progress chips -->
+                <Grid ColumnDefinitions="*,*,*" ColumnSpacing="8">
+                    <Border Grid.Column="0" Style="{StaticResource AccentChipBorder}">
+                        <VerticalStackLayout Spacing="2">
+                            <Label Style="{StaticResource StatLabel}" Text="LEVEL" />
+                            <Label
+                                FontFamily="OpenSansSemibold"
+                                FontSize="16"
+                                Text="{Binding LevelText}"
+                                TextColor="{StaticResource Accent}" />
+                        </VerticalStackLayout>
+                    </Border>
+                    <Border Grid.Column="1" Style="{StaticResource ChipBorder}">
+                        <VerticalStackLayout Spacing="2">
+                            <Label Style="{StaticResource StatLabel}" Text="STREAK" />
+                            <HorizontalStackLayout Spacing="4">
+                                <Label FontSize="14" Text="🔥" VerticalOptions="Center" />
+                                <Label
+                                    FontFamily="OpenSansSemibold"
+                                    FontSize="16"
+                                    Text="{Binding StreakText}"
+                                    VerticalOptions="Center" />
+                            </HorizontalStackLayout>
+                        </VerticalStackLayout>
+                    </Border>
+                    <Border Grid.Column="2" Style="{StaticResource ChipBorder}">
+                        <VerticalStackLayout Spacing="2">
+                            <Label Style="{StaticResource StatLabel}" Text="GESAMT" />
+                            <HorizontalStackLayout Spacing="3">
+                                <Label
+                                    FontFamily="OpenSansSemibold"
+                                    FontSize="16"
+                                    Text="{Binding TotalDistanceText}" />
+                                <Label
+                                    FontSize="11"
+                                    Text="km"
+                                    TextColor="{StaticResource TextMuted}"
+                                    VerticalOptions="End" />
+                            </HorizontalStackLayout>
+                        </VerticalStackLayout>
+                    </Border>
+                </Grid>
+            </VerticalStackLayout>
         </Border>
+
+        <!-- Progress section -->
+        <VerticalStackLayout Spacing="8">
+            <Label Style="{StaticResource SectionHeader}" Text="FORTSCHRITT" />
+            <Border Style="{StaticResource CardBorder}">
+                <Grid ColumnDefinitions="*,Auto">
+                    <VerticalStackLayout Grid.Column="0" Spacing="2" VerticalOptions="Center">
+                        <Label FontFamily="OpenSansSemibold" FontSize="15" Text="Statistiken" />
+                        <Label
+                            FontSize="12"
+                            Text="Wochenübersicht, Rekorde und Spiele"
+                            TextColor="{StaticResource TextSecondary}" />
+                    </VerticalStackLayout>
+                    <Button
+                        Command="{Binding OpenStatisticsCommand}"
+                        Grid.Column="1"
+                        Style="{StaticResource SecondaryButton}"
+                        Text="Öffnen"
+                        VerticalOptions="Center" />
+                </Grid>
+            </Border>
+        </VerticalStackLayout>
 
         <!-- Data section -->
         <VerticalStackLayout Spacing="8">
@@ -107,4 +175,5 @@
             </Border>
         </VerticalStackLayout>
     </VerticalStackLayout>
+    </ScrollView>
 </ContentPage>
