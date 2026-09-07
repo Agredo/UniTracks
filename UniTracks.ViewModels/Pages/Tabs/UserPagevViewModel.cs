@@ -4,6 +4,7 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using UniTracks.Data.Repository;
 using UniTracks.Models.Trip;
+using UniTracks.Services.Stats;
 using LocationModel = UniTracks.Models.Location.Location;
 
 namespace UniTracks.ViewModels.Pages.Tabs;
@@ -15,12 +16,41 @@ public partial class UserPagevViewModel : ObservableObject
     public INavigationService Navigation { get; }
     public string DatabasePath { get; }
 
-    public UserPagevViewModel(IFileSystem fileSystem, IRepository repository, INavigationService navigation)
+    [ObservableProperty]
+    private string levelText = "-";
+
+    [ObservableProperty]
+    private string streakText = "-";
+
+    [ObservableProperty]
+    private string totalDistanceText = "-";
+
+    public UserPagevViewModel(
+        IFileSystem fileSystem,
+        IRepository repository,
+        INavigationService navigation,
+        IGamificationService gamificationService)
     {
         FileSystem = fileSystem;
         Repository = repository;
         Navigation = navigation;
         DatabasePath = repository.DatabasePath;
+
+        _ = LoadHeroStatsAsync(gamificationService);
+    }
+
+    private async Task LoadHeroStatsAsync(IGamificationService gamificationService)
+    {
+        var stats = await gamificationService.ComputeAsync();
+        LevelText = stats.Level.ToString();
+        StreakText = stats.CurrentStreakDays.ToString();
+        TotalDistanceText = stats.TotalDistanceKm.ToString("0.0");
+    }
+
+    [RelayCommand]
+    private async Task OpenStatistics()
+    {
+        await Navigation.ShellNavigationTo("StatisticsPage", new Dictionary<string, object>());
     }
 
     [RelayCommand]

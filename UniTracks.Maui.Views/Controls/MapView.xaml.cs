@@ -44,8 +44,14 @@ public partial class MapView : ContentView
         }
 
         // Post-processing: draw the smoothed track (GPS jitter filtered/averaged). Raw points
-        // stay untouched in the database.
+        // stay untouched in the database. The smoother may drop every point (e.g. all fixes
+        // with bad accuracy) — then there is simply nothing to draw.
         var smoothed = UniTracks.Services.Location.TrackSmoother.Smooth(locations);
+
+        if (smoothed.Count == 0)
+        {
+            return;
+        }
 
         var projected = smoothed
             .Select(location => SphericalMercator.FromLonLat(location.Longitude, location.Latitude))
