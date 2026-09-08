@@ -26,9 +26,11 @@ public class CoinService : ICoinService
         var trips = (await repository.GetAllAsync<Trip>(t => t.TripType!))
             .Where(TripQualification.IsQualifying)
             .ToList();
-        var stats = await gamificationService.ComputeAsync();
+        var stats = await gamificationService.ComputeAsync(trips);
 
-        return new ActivityStats
+        // Projecting the loaded trips into the coin feed is CPU-bound. Run it off the UI
+        // thread so the Games tab and game starts don't block while computing the balance.
+        return await Task.Run(() => new ActivityStats
         {
             Trips = trips.Select(t => new TripActivity
             {
@@ -39,6 +41,6 @@ public class CoinService : ICoinService
             Xp = stats.Xp,
             UnlockedAchievements = stats.Achievements.Count(a => a.IsUnlocked),
             UnlockedAchievementIds = stats.Achievements.Where(a => a.IsUnlocked).Select(a => a.Id).ToList(),
-        };
+        });
     }
 }

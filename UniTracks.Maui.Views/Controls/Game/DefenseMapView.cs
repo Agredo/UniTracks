@@ -73,7 +73,11 @@ public class DefenseMapView : SKCanvasView
         gameTimer = Dispatcher.CreateTimer();
         gameTimer.Interval = TimeSpan.FromMilliseconds(33);
         gameTimer.Tick += OnGameTick;
-        gameTimer.Start();
+        // Only simulate/redraw while the map is actually in the visual tree. Pausing on
+        // Unloaded stops the ~30 fps loop when the player leaves the defense game, so it does
+        // not keep consuming CPU/GPU in the background.
+        Loaded += (_, _) => { tickWatch.Restart(); gameTimer.Start(); };
+        Unloaded += (_, _) => gameTimer.Stop();
         tickWatch.Start();
     }
 

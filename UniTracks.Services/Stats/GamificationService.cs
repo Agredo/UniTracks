@@ -25,6 +25,15 @@ public class GamificationService : IGamificationService
             .Where(TripQualification.IsQualifying)
             .ToList();
 
+        return await ComputeAsync(trips);
+    }
+
+    public Task<GamificationStats> ComputeAsync(IEnumerable<Trip> trips) =>
+        Task.Run(() => Compute(trips.ToList()));
+
+    /// <summary>Pure in-memory computation over already-loaded trips — safe to run off the UI thread.</summary>
+    private static GamificationStats Compute(List<Trip> trips)
+    {
         double totalDistanceKm = trips.Sum(t => t.Distance ?? 0) / 1000.0;
         int totalTrips = trips.Count;
 

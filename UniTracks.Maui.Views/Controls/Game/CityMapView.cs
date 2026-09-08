@@ -56,11 +56,14 @@ public class CityMapView : SKCanvasView
             birds.Add(new AmbientBird { X = (float)(random.NextDouble() * 600), Offset = random.NextDouble() * 10 });
         }
 
-        // ~30 fps ambient animation loop (clouds, water shimmer, drop-in bounce).
+        // ~30 fps ambient animation loop (clouds, water shimmer, drop-in bounce). The timer is
+        // only started once the view is actually in the visual tree and paused when it leaves,
+        // so navigating away from a game does not keep redrawing at 30 fps in the background.
         animationTimer = Dispatcher.CreateTimer();
         animationTimer.Interval = TimeSpan.FromMilliseconds(33);
         animationTimer.Tick += (_, _) => InvalidateSurface();
-        animationTimer.Start();
+        Loaded += (_, _) => animationTimer.Start();
+        Unloaded += (_, _) => animationTimer.Stop();
     }
 
     public static readonly BindableProperty CityProperty = BindableProperty.Create(

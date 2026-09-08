@@ -31,6 +31,19 @@ public class StatisticsService : IStatisticsService
             .Where(TripQualification.IsQualifying)
             .ToList();
 
+        var stats = await activityStats.GetAsync();
+        var record = await towerDefenseStore.LoadRecordAsync();
+
+        // The aggregation below is CPU-bound (per-trip moving time/elevation and many LINQ
+        // passes). Run it on a worker thread so the UI thread stays responsive while the
+        // statistics page appears — otherwise the page switch blocks mid-render.
+        return await Task.Run(() => BuildSnapshot(trips, stats, record, weekCount));
+    }
+
+    /// <summary>Pure in-memory aggregation over already-loaded trips — safe to run off the UI thread.</summary>
+    private static StatisticsSnapshot BuildSnapshot(
+        List<Trip> trips, ActivityStats stats, DefenseRecord? record, int weekCount)
+    {
         // Per-trip derived metrics, keyed by trip id.
         var metrics = trips.ToDictionary(
             t => t.ID,
@@ -73,10 +86,7 @@ public class StatisticsService : IStatisticsService
             weeks.Add(new WeeklyDistance { WeekStart = weekStart, DistanceKm = km });
         }
 
-        var stats = await activityStats.GetAsync();
         int coinsEarned = CoinEconomy.ComputeEarned(stats.Trips, stats.Xp, stats.UnlockedAchievements);
-
-        var record = await towerDefenseStore.LoadRecordAsync();
 
         // Pace (s/km) per trip — only meaningful for trips with real distance and time.
         var tripPaces = trips
