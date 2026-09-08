@@ -1,0 +1,107 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage
+    x:Class="UniTracks.Maui.Views.Pages.HelpPage"
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    xmlns:viewModels="clr-namespace:UniTracks.ViewModels.Pages;assembly=UniTracks.ViewModels"
+    Title="Hilfe"
+    x:DataType="viewModels:HelpPageViewModel">
+
+    <ScrollView>
+        <VerticalStackLayout Padding="20" Spacing="20">
+
+            <!-- Hero -->
+            <Border
+                Background="{StaticResource HeroGradientBrush}"
+                Padding="24,20"
+                Stroke="{StaticResource CardStroke}"
+                StrokeThickness="1">
+                <Border.StrokeShape>
+                    <RoundRectangle CornerRadius="24" />
+                </Border.StrokeShape>
+                <HorizontalStackLayout Spacing="16">
+                    <Border
+                        Background="{StaticResource AccentSoft}"
+                        HeightRequest="72"
+                        Stroke="{StaticResource AccentDim}"
+                        StrokeThickness="1"
+                        WidthRequest="72">
+                        <Border.StrokeShape>
+                            <RoundRectangle CornerRadius="36" />
+                        </Border.StrokeShape>
+                        <Label
+                            FontSize="34"
+                            HorizontalOptions="Center"
+                            Text="📖"
+                            VerticalOptions="Center" />
+                    </Border>
+                    <VerticalStackLayout Spacing="2" VerticalOptions="Center">
+                        <Label Style="{StaticResource TitleLabel}" Text="{Binding AppName}" />
+                        <Label Style="{StaticResource SubtitleLabel}" Text="{Binding AppVersion, StringFormat='Version {0}'}" />
+                        <Label Style="{StaticResource SubtitleLabel}" Text="Hilfe zur Nutzung der ganzen App" />
+                    </VerticalStackLayout>
+                </HorizontalStackLayout>
+            </Border>
+
+            <!-- Sections -->
+            <VerticalStackLayout BindableLayout.ItemsSource="{Binding Sections}" Spacing="16">
+                <BindableLayout.ItemTemplate>
+                    <DataTemplate x:DataType="viewModels:HelpSection">
+                        <VerticalStackLayout Spacing="8">
+                            <Grid ColumnDefinitions="Auto,*" ColumnSpacing="6">
+                                <Label
+                                    Grid.Column="0"
+                                    FontSize="18"
+                                    Text="{Binding Icon}"
+                                    VerticalOptions="Center" />
+                                <Label
+                                    Grid.Column="1"
+                                    Style="{StaticResource SectionHeader}"
+                                    Text="{Binding Title}"
+                                    VerticalOptions="Center" />
+                            </Grid>
+
+                            <VerticalStackLayout BindableLayout.ItemsSource="{Binding Items}" Spacing="10">
+                                <BindableLayout.ItemTemplate>
+                                    <DataTemplate x:DataType="viewModels:HelpItem">
+                                        <Border Style="{StaticResource CardBorder}">
+                                            <Grid ColumnDefinitions="Auto,*" ColumnSpacing="12">
+                                                <Border
+                                                    Background="{StaticResource AccentSoft}"
+                                                    HeightRequest="40"
+                                                    Stroke="{StaticResource AccentDim}"
+                                                    StrokeThickness="1"
+                                                    WidthRequest="40">
+                                                    <Border.StrokeShape>
+                                                        <RoundRectangle CornerRadius="20" />
+                                                    </Border.StrokeShape>
+                                                    <Label
+                                                        FontSize="18"
+                                                        HorizontalOptions="Center"
+                                                        Text="{Binding Icon}"
+                                                        VerticalOptions="Center" />
+                                                </Border>
+                                                <VerticalStackLayout Grid.Column="1" Spacing="4">
+                                                    <Label
+                                                        FontFamily="OpenSansSemibold"
+                                                        FontSize="15"
+                                                        Text="{Binding Title}" />
+                                                    <Label
+                                                        FontSize="13"
+                                                        Text="{Binding Body}"
+                                                        TextColor="{StaticResource TextSecondary}" />
+                                                </VerticalStackLayout>
+                                            </Grid>
+                                        </Border>
+                                    </DataTemplate>
+                                </BindableLayout.ItemTemplate>
+                            </VerticalStackLayout>
+                        </VerticalStackLayout>
+                    </DataTemplate>
+                </BindableLayout.ItemTemplate>
+            </VerticalStackLayout>
+
+            <Grid HeightRequest="20" />
+        </VerticalStackLayout>
+    </ScrollView>
+</ContentPage>

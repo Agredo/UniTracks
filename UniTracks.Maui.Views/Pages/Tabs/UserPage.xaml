@@ -153,6 +153,28 @@
             </Border>
         </VerticalStackLayout>
 
+        <!-- Help section -->
+        <VerticalStackLayout Spacing="8">
+            <Label Style="{StaticResource SectionHeader}" Text="HILFE" />
+            <Border Style="{StaticResource CardBorder}">
+                <Grid ColumnDefinitions="*,Auto">
+                    <VerticalStackLayout Grid.Column="0" Spacing="2" VerticalOptions="Center">
+                        <Label FontFamily="OpenSansSemibold" FontSize="15" Text="Hilfe &amp; Anleitung" />
+                        <Label
+                            FontSize="12"
+                            Text="Münzen, Spiele und Bedienung erklärt"
+                            TextColor="{StaticResource TextSecondary}" />
+                    </VerticalStackLayout>
+                    <Button
+                        Command="{Binding OpenHelpCommand}"
+                        Grid.Column="1"
+                        Style="{StaticResource SecondaryButton}"
+                        Text="Öffnen"
+                        VerticalOptions="Center" />
+                </Grid>
+            </Border>
+        </VerticalStackLayout>
+
         <!-- Feedback section -->
         <VerticalStackLayout Spacing="8">
             <Label Style="{StaticResource SectionHeader}" Text="FEEDBACK" />

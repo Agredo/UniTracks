@@ -31,6 +31,7 @@ namespace UniTracks.Maui
             Routing.RegisterRoute(nameof(AboutPage), typeof(AboutPage));
             Routing.RegisterRoute(nameof(FeedbackPage), typeof(FeedbackPage));
             Routing.RegisterRoute(nameof(StatisticsPage), typeof(StatisticsPage));
+            Routing.RegisterRoute(nameof(HelpPage), typeof(HelpPage));
         }
 
         /// <summary>

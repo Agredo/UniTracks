@@ -66,6 +66,12 @@ public partial class UserPagevViewModel : ObservableObject
     }
 
     [RelayCommand]
+    private async Task OpenHelp()
+    {
+        await Navigation.ShellNavigationTo("HelpPage", new Dictionary<string, object>());
+    }
+
+    [RelayCommand]
     private async Task ShareDatabase()
     {
         List<Trip> trips = (await Repository.GetAllAsync<Trip>(trip => trip.Locations)).ToList();

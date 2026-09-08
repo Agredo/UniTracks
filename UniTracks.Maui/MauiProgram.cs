@@ -212,6 +212,8 @@ public static class MauiProgram
         services.AddTransient<FeedbackPageViewModel>();
         services.AddTransient<FeedbackPage>();
         services.AddTransient<StatisticsPage, StatisticsPageViewModel>();
+        services.AddTransient<HelpPageViewModel>(_ => new HelpPageViewModel(GetDisplayVersion()));
+        services.AddTransient<HelpPage>();
     }
 
     private static void RegisterPopups(IServiceCollection services)
