@@ -109,7 +109,8 @@ public static class TrackSmoother
         if (ordered.Count > 0
             && kept.Count > 0
             && !ReferenceEquals(kept[kept.Count - 1], ordered[ordered.Count - 1])
-            && IsUsable(ordered[ordered.Count - 1]))
+            && IsUsable(ordered[ordered.Count - 1])
+            && !IsImplausibleJump(kept[kept.Count - 1], ordered[ordered.Count - 1]))
         {
             kept.Add(ordered[ordered.Count - 1]);
         }
@@ -119,6 +120,18 @@ public static class TrackSmoother
 
     private static bool IsUsable(LocationModel point)
         => point.Accuracy <= 0 || point.Accuracy <= MaxAccuracyMeters;
+
+    /// <summary>
+    /// True when the step from <paramref name="anchor"/> to <paramref name="point"/> would require
+    /// a physically impossible speed. The re-append of the last recorded point must not resurrect a
+    /// point that was rejected for exactly this reason — that re-introduced the teleport and added a
+    /// spurious segment to the rendered route.
+    /// </summary>
+    private static bool IsImplausibleJump(LocationModel anchor, LocationModel point)
+    {
+        double seconds = (point.Timestamp - anchor.Timestamp).TotalSeconds;
+        return seconds > 0 && HaversineMeters(anchor, point) / seconds > MaxSpeedMetersPerSecond;
+    }
 
     /// <summary>
     /// Light moving average over the coordinates (lat/lon/altitude). Timestamps, speed and

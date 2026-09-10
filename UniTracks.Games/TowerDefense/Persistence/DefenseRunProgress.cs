@@ -3,10 +3,12 @@ using System.ComponentModel.DataAnnotations;
 namespace UniTracks.Games.TowerDefense.Persistence;
 
 /// <summary>
-/// Persisted snapshot of the player's in-progress defense run. On reload the tower
-/// layout, current wave and the energy budget (including any coin-funded top-ups) are
-/// restored, so a resumed run continues exactly where it was left. A single row keeps
-/// the run as one unit and works the same on EF Core (SQLite) and LiteDB (iOS).
+/// Persisted snapshot of the player's in-progress defense run. On reload the tower layout, current
+/// wave and the energy budget (including any coin-funded top-ups) are restored. Only wave boundaries
+/// are persisted: enemies, projectiles and pending spawns are runtime-only, so a snapshot taken while
+/// a wave was running is restored at the start of that wave (and the score of the aborted attempt is
+/// not kept, because those kills are earned again when the wave is replayed). A single row keeps the
+/// run as one unit and works the same on EF Core (SQLite) and LiteDB (iOS).
 /// </summary>
 public record DefenseRunProgress
 {
@@ -22,8 +24,13 @@ public record DefenseRunProgress
     /// <summary>Current in-run energy budget, persisted so purchased energy survives a resume.</summary>
     public int Energy { get; set; }
 
+    /// <summary>
+    /// Remaining lives. Zero means the run is over: such a snapshot is not offered for resuming,
+    /// because restoring it would refund the starting energy while keeping the failed layout.
+    /// </summary>
     public int Lives { get; set; }
 
+    /// <summary>Score at the wave boundary this snapshot describes.</summary>
     public int Score { get; set; }
 
     /// <summary>Highest wave fully cleared with zero leaks in this run (0 = none yet).</summary>

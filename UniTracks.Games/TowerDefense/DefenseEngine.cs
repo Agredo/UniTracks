@@ -124,6 +124,7 @@ public static class DefenseEngine
         state.WaveSpawned = 0;
         state.WaveLeaked = 0;
         state.SpawnCooldownMs = 0;
+        state.WaveStartScore = state.Score;
         state.Phase = DefensePhase.WaveRunning;
         return DefenseResult.Ok(0);
     }

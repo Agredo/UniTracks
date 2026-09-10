@@ -152,6 +152,14 @@ public class TowerDefenseService : ITowerDefenseService
             return null;
         }
 
+        // A run whose lives reached zero is over. It must not be resumable: restoring it refunded the
+        // full starting energy (and full lives) while keeping the towers of the failed attempt, which
+        // could be farmed into unlimited free towers at the very same wave.
+        if (progress.Lives <= 0)
+        {
+            return null;
+        }
+
         var stats = await gameCatalogService.GetActivityStatsAsync();
         var unlocks = await store.LoadUnlocksAsync();
         var map = MapCatalog.Find(progress.MapId);
@@ -160,15 +168,18 @@ public class TowerDefenseService : ITowerDefenseService
         {
             UnlockedTowerIds = unlocks.Select(u => u.TowerId).ToList(),
             Map = map,
-            // Restore the energy the run was left with (including coin-funded top-ups).
-            // Falls back to the starting credit so pre-existing saved runs stay playable.
-            Energy = progress.Energy > 0 ? progress.Energy : EnergyEconomy.ComputeStartingEnergy(stats),
+            // The stored values are authoritative for a live run. Treating a stored 0 as "no save"
+            // (the previous "progress.Energy > 0 ? ... : starting energy" fallback) refunded the whole
+            // starting credit to a player who had simply spent all of their energy.
+            Energy = progress.Energy,
             ClearBonus = EnergyEconomy.ComputeClearBonus(stats),
-            Lives = progress.Lives > 0 ? progress.Lives : map.StartLives,
+            Lives = progress.Lives,
             Score = progress.Score,
             BestClearWave = progress.BestClearWave,
             BestClearScore = progress.BestClearScore,
             NextWave = Math.Max(1, progress.Wave),
+            // Enemies, projectiles and pending spawns are runtime-only, so a snapshot is always
+            // restored at the start of the wave it was taken in.
             Phase = DefensePhase.Building,
         };
 
@@ -182,6 +193,12 @@ public class TowerDefenseService : ITowerDefenseService
 
     public async Task SaveRunAsync(DefenseState state)
     {
+        // LoadRunAsync can only restore a wave boundary (Building phase, no enemies, no projectiles),
+        // so the snapshot has to describe one. While a wave is running, persist the score the wave
+        // started with: the wave is replayed from its beginning on resume, so the kills of the
+        // aborted attempt must not be banked — they would otherwise be earned a second time.
+        bool waveRunning = state.Phase == DefensePhase.WaveRunning;
+
         var progress = new DefenseRunProgress
         {
             ID = Guid.NewGuid(),
@@ -189,7 +206,7 @@ public class TowerDefenseService : ITowerDefenseService
             MapId = state.Map.Id,
             Energy = state.Energy,
             Lives = state.Lives,
-            Score = state.Score,
+            Score = waveRunning ? state.WaveStartScore : state.Score,
             BestClearWave = state.BestClearWave,
             BestClearScore = state.BestClearScore,
             TowersJson = SerializeTowers(state.Towers),

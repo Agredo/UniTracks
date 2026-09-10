@@ -29,6 +29,13 @@ public class DefenseState
 
     public int Score { get; set; }
 
+    /// <summary>
+    /// Score the run had when the current wave was started. A wave that is interrupted (page
+    /// reload, app restart) is replayed from its beginning, so the score earned during the aborted
+    /// attempt must not survive the snapshot — replaying the wave would count those kills twice.
+    /// </summary>
+    public int WaveStartScore { get; set; }
+
     /// <summary>Number of the wave that will start next (1-based).</summary>
     public int NextWave { get; set; } = 1;
 

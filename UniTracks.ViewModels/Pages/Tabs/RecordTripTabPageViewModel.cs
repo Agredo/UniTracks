@@ -167,34 +167,42 @@ public partial class RecordTripTabPageViewModel : ObservableObject
 
             Dispatcher.StopTimer();
             stopWatch.Stop();
+            return;
         }
-        else
+
+        // Ask for the permission before the UI claims that a recording is running. The status was
+        // switched first and the result only used to decide whether to start listening, so a denied
+        // permission left the page showing "Aufnahme läuft" with a running timer while nothing was
+        // recorded.
+        PermissionStatus locationPermissionStatus = await PermissionHelper.CheckAndRequestPermission(Permissions, Permission.LocationAlways);
+
+        // Ab Android 11 kann "Immer zulassen" nur noch in den Systemeinstellungen erteilt
+        // werden und ist hier nicht noetig: Der location-Foreground-Service wird im Vordergrund
+        // gestartet und darf damit auch im Hintergrund weiter aufzeichnen (While-in-Use reicht).
+        if (locationPermissionStatus is not PermissionStatus.Granted && OperatingSystem.IsAndroid())
         {
-            IsRecording = true;
-            StatusText = "Aufnahme läuft";
-            RecordIconColor = RedColor;
-            RecordIconSourceString = $"{ApplicationConstants.RawIconBasePath}{ApplicationIconConstants.StopIcon}";
-
-            stopWatch.Restart();
-            Dispatcher.StartTimer();
-
-            GpsDataStorageService.CurrentTripTypeId = SelectedTripType?.ID;
-
-            PermissionStatus locationPermissionStatus = await PermissionHelper.CheckAndRequestPermission(Permissions, Permission.LocationAlways);
-
-            // Ab Android 11 kann "Immer zulassen" nur noch in den Systemeinstellungen erteilt
-            // werden und ist hier nicht noetig: Der location-Foreground-Service wird im Vordergrund
-            // gestartet und darf damit auch im Hintergrund weiter aufzeichnen (While-in-Use reicht).
-            if (locationPermissionStatus is not PermissionStatus.Granted && OperatingSystem.IsAndroid())
-            {
-                locationPermissionStatus = await PermissionHelper.CheckAndRequestPermission(Permissions, Permission.LocationWhenInUse);
-            }
-
-            if (locationPermissionStatus is PermissionStatus.Granted)
-            {
-                await LocationService.StartListening();
-            }
+            locationPermissionStatus = await PermissionHelper.CheckAndRequestPermission(Permissions, Permission.LocationWhenInUse);
         }
+
+        if (locationPermissionStatus is not PermissionStatus.Granted)
+        {
+            StatusText = "Standortfreigabe fehlt";
+            return;
+        }
+
+        GpsDataStorageService.CurrentTripTypeId = SelectedTripType?.ID;
+
+        IsRecording = true;
+        StatusText = "Aufnahme läuft";
+        RecordIconColor = RedColor;
+        RecordIconSourceString = $"{ApplicationConstants.RawIconBasePath}{ApplicationIconConstants.StopIcon}";
+
+        // Start() continues a paused recording. Restart() reset the elapsed time to 00:00 on every
+        // resume, so pausing and continuing threw the already recorded duration away.
+        stopWatch.Start();
+        Dispatcher.StartTimer();
+
+        await LocationService.StartListening();
     }
 
     [RelayCommand]
@@ -204,6 +212,11 @@ public partial class RecordTripTabPageViewModel : ObservableObject
         GpsDataStorageService.FinalizeTrip();
         Dispatcher.StopTimer();
         stopWatch.Stop();
+
+        // A full stop ends the recording, so the next one has to begin at 00:00 again; Stop()
+        // alone keeps the elapsed time and would let a new recording continue the previous clock.
+        stopWatch.Reset();
+        StopWatchTime = "00:00:000";
 
         IsRecording = false;
         StatusText = "Bereit";

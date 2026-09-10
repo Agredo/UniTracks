@@ -17,6 +17,13 @@ public interface IRepository
     Task<TEntity> Add<TEntity>(TEntity entity) where TEntity : class;
     Task<TEntity> Update<TEntity>(TEntity entity) where TEntity : class;
     Task Delete<TEntity>(TEntity entity) where TEntity : class;
+
+    /// <summary>
+    /// Deletes a batch of entities in one operation. Needed for child rows that the store does not
+    /// cascade (e.g. a trip's locations), so deleting a parent does not leave orphans behind.
+    /// </summary>
+    Task DeleteRange<TEntity>(IEnumerable<TEntity> entities) where TEntity : class;
+
     Task<TEntity?> GetByIdAsync<TEntity>(Guid id) where TEntity : class;
     Task<IEnumerable<TEntity>> GetAllAsync<TEntity>(params Expression<Func<TEntity, object>>[] includes) where TEntity : class;
     IEnumerable<TEntity> Get<TEntity>(Expression<Func<TEntity, bool>>? filter = null, params Expression<Func<TEntity, object>>[] includes) where TEntity : class;
