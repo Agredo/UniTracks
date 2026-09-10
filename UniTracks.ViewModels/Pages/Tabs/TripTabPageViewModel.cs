@@ -109,6 +109,15 @@ public partial class TripTabPageViewModel : ObservableObject
 
     public async Task DeleteTripAsync(Trip trip)
     {
+        // A trip owns its GPS points, but the store has no cascade delete for them (the foreign key
+        // is only set to NULL), so remove the points explicitly — otherwise every deleted trip left
+        // its locations behind and the database grew without bound.
+        var locations = Repository.Get<LocationModel>(location => location.TripID == trip.ID).ToList();
+        if (locations.Count > 0)
+        {
+            await Repository.DeleteRange(locations);
+        }
+
         await Repository.Delete(trip);
         await GetTrips();
     }

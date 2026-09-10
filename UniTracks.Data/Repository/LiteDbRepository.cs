@@ -37,10 +37,25 @@ public class LiteDbRepository : IRepository
 
     public Task Delete<TEntity>(TEntity entity) where TEntity : class
     {
+        DeleteCore(entity);
+        return Task.CompletedTask;
+    }
+
+    public Task DeleteRange<TEntity>(IEnumerable<TEntity> entities) where TEntity : class
+    {
+        foreach (var entity in entities)
+        {
+            DeleteCore(entity);
+        }
+
+        return Task.CompletedTask;
+    }
+
+    private void DeleteCore<TEntity>(TEntity entity) where TEntity : class
+    {
         var id = typeof(TEntity).GetProperty("ID")?.GetValue(entity)
             ?? throw new InvalidOperationException($"Entity {typeof(TEntity).Name} has no ID property.");
         _liteDatabase.Database.GetCollection<TEntity>().Delete(new BsonValue(id));
-        return Task.CompletedTask;
     }
 
     public Task<TEntity?> GetByIdAsync<TEntity>(Guid id) where TEntity : class

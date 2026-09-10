@@ -226,8 +226,10 @@ public partial class TowerDefensePageViewModel : ObservableObject
             runSaved = true;
             ApplyProfile(await towerDefenseService.SaveRunResultAsync(State.BestClearWave, State.BestClearScore));
 
-            // Keep the failed layout + wave so the player can retry next time with fresh energy.
-            await towerDefenseService.SaveRunAsync(State);
+            // Deliberately no SaveRunAsync here. A lost run is not resumable, and writing it would
+            // overwrite the last wave-boundary snapshot with a dead one — which would cost the player
+            // the fair resume at the wave they were on. Retrying a lost run with a fresh energy credit
+            // while keeping the failed layout was an unlimited free-energy (and free-tower) farm.
         }
         else if (wasRunning && State.Phase == DefensePhase.Building)
         {

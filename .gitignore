@@ -17,5 +17,8 @@
 *.keystore
 *.pfx
 
+# API-Schlüssel (BugBear-Feedback) nur lokal (nicht ins Repo)
+*.key
+
 # Build-Ausgaben der Publish-Skripte
 /dist/

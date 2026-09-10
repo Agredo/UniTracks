@@ -137,7 +137,9 @@ public class GpsDataStorageService : IGpsDataStorageService
             storeGate.Release();
         }
 
-        Console.WriteLine($"CurrentTrip: {currentTrip.ID} {currentTrip.StartTime} Latitude: {currentTrip.Locations.Last().Latitude}, Longitude: {currentTrip.Locations.Last().Longitude}");
+        // Deliberately no logging of currentTrip here: this code runs outside storeGate, and a
+        // concurrent FinalizeTrip() sets currentTrip to null, so touching it (or its Locations)
+        // after the release crashed the background location callback with a NullReferenceException.
     }
 
     private void AccountFor(LocationModel location)
