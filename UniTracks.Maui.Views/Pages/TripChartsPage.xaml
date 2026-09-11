@@ -20,7 +20,13 @@
             <!-- All stats -->
             <VerticalStackLayout Spacing="8">
                 <Label Style="{StaticResource SectionHeader}" Text="STATISTIKEN" />
-                <Grid ColumnDefinitions="*,*,*,*" ColumnSpacing="8" RowSpacing="8">
+                <!-- RowDefinitions is required: MAUI clamps Grid.Row to the last defined row,
+                     so without it the second row of chips would be drawn on top of the first. -->
+                <Grid
+                    ColumnDefinitions="*,*,*,*"
+                    ColumnSpacing="8"
+                    RowDefinitions="Auto,Auto"
+                    RowSpacing="8">
                     <Border Grid.Column="0" Grid.Row="0" Style="{StaticResource AccentChipBorder}">
                         <VerticalStackLayout Spacing="2">
                             <Label Style="{StaticResource StatLabel}" Text="DISTANZ" />
