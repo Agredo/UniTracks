@@ -1,0 +1,23 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>$(ProjectTargetFramework)</TargetFramework>
+    <OutputType>Exe</OutputType>
+    <IsPackable>false</IsPackable>
+    <IsTestProject>true</IsTestProject>
+    <!-- xunit.v3 runs on Microsoft.Testing.Platform; the "test" section in global.json opts
+         "dotnet test" into its MTP mode, which is the only supported mode on the .NET 10+ SDK. -->
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="xunit.v3" Version="4.0.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\UniTracks.Games\UniTracks.Games.csproj" />
+    <ProjectReference Include="..\UniTracks.Models\UniTracks.Models.csproj" />
+    <ProjectReference Include="..\UniTracks.Data\UniTracks.Data.csproj" />
+    <ProjectReference Include="..\UniTracks.Services\UniTracks.Services.csproj" />
+  </ItemGroup>
+
+</Project>
