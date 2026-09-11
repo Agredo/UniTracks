@@ -18,6 +18,7 @@
     <ProjectReference Include="..\UniTracks.Models\UniTracks.Models.csproj" />
     <ProjectReference Include="..\UniTracks.Data\UniTracks.Data.csproj" />
     <ProjectReference Include="..\UniTracks.Services\UniTracks.Services.csproj" />
+    <ProjectReference Include="..\UniTracks.ViewModels\UniTracks.ViewModels.csproj" />
   </ItemGroup>
 
 </Project>
