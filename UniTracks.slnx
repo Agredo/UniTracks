@@ -13,6 +13,9 @@
       <Deploy Solution="Debug|*" />
     </Project>
   </Folder>
+  <Folder Name="/Tests/">
+    <Project Path="UniTracks.Tests/UniTracks.Tests.csproj" />
+  </Folder>
   <Project Path="UniTracks.Models/UniTracks.Models.csproj" />
   <Project Path="UniTracks.Games/UniTracks.Games.csproj" />
   <Project Path="UniTracks.Data/UniTracks.Data.csproj" />
