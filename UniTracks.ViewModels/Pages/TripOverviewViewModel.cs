@@ -54,8 +54,17 @@ public partial class TripOverviewViewModel : ObservableObject
     [ObservableProperty]
     private string paceText = "-";
 
+    /// <summary>Both overlay cards are shown/hidden together by tapping the map.</summary>
     [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(ShowProfile))]
+    private bool isOverlayVisible = true;
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(ShowProfile))]
     private bool hasProfile;
+
+    /// <summary>The profile card only exists when the trip has enough GPS points to draw it.</summary>
+    public bool ShowProfile => HasProfile && IsOverlayVisible;
 
     [ObservableProperty]
     private IList<double> speedProfile = new List<double>();
@@ -172,6 +181,12 @@ public partial class TripOverviewViewModel : ObservableObject
             HasProfile = true;
         }
     }
+
+    /// <summary>
+    /// Tap on the map: hide both overlay cards so the route is visible, tap again to bring them back.
+    /// </summary>
+    [RelayCommand]
+    private void ToggleOverlay() => IsOverlayVisible = !IsOverlayVisible;
 
     [RelayCommand]
     private async Task OpenDetails()

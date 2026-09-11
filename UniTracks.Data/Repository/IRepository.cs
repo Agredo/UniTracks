@@ -14,6 +14,15 @@ public interface IRepository
 {
     string DatabasePath { get; }
 
+    /// <summary>
+    /// Monotonically increasing counter, incremented on every write (add/update/delete). Read-side
+    /// caches compare against it to tell whether their data is still current — without it they would
+    /// have to re-read the whole store, which is expensive (a trip document carries all of its GPS
+    /// points, and on iOS the BsonMapper pass over those documents is the single most costly
+    /// operation in the app).
+    /// </summary>
+    long DataVersion { get; }
+
     Task<TEntity> Add<TEntity>(TEntity entity) where TEntity : class;
     Task<TEntity> Update<TEntity>(TEntity entity) where TEntity : class;
     Task Delete<TEntity>(TEntity entity) where TEntity : class;

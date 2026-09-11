@@ -1,4 +1,5 @@
 using System.Collections;
+using System.Collections.Specialized;
 using UniTracks.Models.Stats;
 
 namespace UniTracks.Maui.Views.Controls.Charts;
@@ -6,33 +7,74 @@ namespace UniTracks.Maui.Views.Controls.Charts;
 /// <summary>
 /// Reusable bar chart (e.g. weekly kilometres). Pure GraphicsView + IDrawable,
 /// themed via bindable colors so it fits the app palette without new dependencies.
-/// Bind <see cref="ItemsSource"/> to a collection of <see cref="ChartEntry"/>.
+/// Bind <see cref="ItemsSource"/> to a collection of <see cref="ChartEntry"/>. Both a replaced
+/// collection and one that is filled after binding (e.g. an <c>ObservableCollection</c> that is
+/// populated once the statistics load finishes) trigger a redraw.
 /// </summary>
 public class BarChartView : GraphicsView
 {
     public static readonly BindableProperty ItemsSourceProperty = BindableProperty.Create(
         nameof(ItemsSource), typeof(IEnumerable), typeof(BarChartView), null,
-        propertyChanged: (b, _, _) => ((BarChartView)b).Invalidate());
+        propertyChanged: (b, _, newValue) => ((BarChartView)b).OnItemsSourceChanged(newValue));
 
     public static readonly BindableProperty BarColorProperty = BindableProperty.Create(
         nameof(BarColor), typeof(Color), typeof(BarChartView), Color.FromArgb("#2E7D54"),
-        propertyChanged: (b, _, _) => ((BarChartView)b).Invalidate());
+        propertyChanged: (b, _, _) => ((BarChartView)b).InvalidateChart());
 
     public static readonly BindableProperty HighlightColorProperty = BindableProperty.Create(
         nameof(HighlightColor), typeof(Color), typeof(BarChartView), Color.FromArgb("#4DE790"),
-        propertyChanged: (b, _, _) => ((BarChartView)b).Invalidate());
+        propertyChanged: (b, _, _) => ((BarChartView)b).InvalidateChart());
 
     public static readonly BindableProperty LabelColorProperty = BindableProperty.Create(
         nameof(LabelColor), typeof(Color), typeof(BarChartView), Color.FromArgb("#6B7A6D"),
-        propertyChanged: (b, _, _) => ((BarChartView)b).Invalidate());
+        propertyChanged: (b, _, _) => ((BarChartView)b).InvalidateChart());
 
     public static readonly BindableProperty ValueColorProperty = BindableProperty.Create(
         nameof(ValueColor), typeof(Color), typeof(BarChartView), Color.FromArgb("#A9B8AC"),
-        propertyChanged: (b, _, _) => ((BarChartView)b).Invalidate());
+        propertyChanged: (b, _, _) => ((BarChartView)b).InvalidateChart());
+
+    private INotifyCollectionChanged? observedCollection;
 
     public BarChartView()
     {
         Drawable = new BarChartDrawable(this);
+    }
+
+    /// <summary>
+    /// Swaps the collection subscription and redraws. Without the subscription a chart whose source
+    /// collection is only filled after the binding was applied would never be repainted, because the
+    /// bindable property itself keeps pointing at the same collection instance.
+    /// </summary>
+    private void OnItemsSourceChanged(object? newValue)
+    {
+        if (observedCollection is not null)
+        {
+            observedCollection.CollectionChanged -= OnSourceCollectionChanged;
+            observedCollection = null;
+        }
+
+        if (newValue is INotifyCollectionChanged observable)
+        {
+            observedCollection = observable;
+            observedCollection.CollectionChanged += OnSourceCollectionChanged;
+        }
+
+        InvalidateChart();
+    }
+
+    private void OnSourceCollectionChanged(object? sender, NotifyCollectionChangedEventArgs e) => InvalidateChart();
+
+    /// <summary><see cref="GraphicsView.Invalidate"/> is main-thread only.</summary>
+    private void InvalidateChart()
+    {
+        if (MainThread.IsMainThread)
+        {
+            Invalidate();
+        }
+        else
+        {
+            Dispatcher.Dispatch(Invalidate);
+        }
     }
 
     public IEnumerable? ItemsSource

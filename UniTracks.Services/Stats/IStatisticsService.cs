@@ -10,7 +10,8 @@ public record WeeklyDistance
 
 /// <summary>
 /// Aggregated progress snapshot for the statistics page: current week vs. last week,
-/// all-time records, the last weeks as chart buckets and the game-side highlights.
+/// all-time records, the last weeks as chart buckets, the level/streak state and the
+/// game-side highlights.
 /// </summary>
 public record StatisticsSnapshot
 {
@@ -65,6 +66,17 @@ public record StatisticsSnapshot
 
     /// <summary>Lifetime coins earned from activity (before any spending).</summary>
     public int CoinsEarnedTotal { get; init; }
+
+    // Gamification state, computed from the same trip scan. Carried in the snapshot so the
+    // statistics page does not need a second pass over the recorded trips.
+    public int Xp { get; init; }
+
+    public int Level { get; init; }
+
+    public double LevelProgressFraction { get; init; }
+
+    /// <summary>Consecutive active days ending today or yesterday; 0 when the streak is broken.</summary>
+    public int CurrentStreakDays { get; init; }
 
     public int? DefenseBestWave { get; init; }
 

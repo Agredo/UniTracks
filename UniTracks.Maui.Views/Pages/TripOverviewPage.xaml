@@ -11,11 +11,17 @@
     x:DataType="vm:TripOverviewViewModel">
 
     <Grid>
-        <controls:MapView Locations="{Binding Locations}" />
+        <!-- Tapping the map toggles both overlay cards, so the route can be seen unobstructed. -->
+        <controls:MapView Locations="{Binding Locations}">
+            <controls:MapView.GestureRecognizers>
+                <TapGestureRecognizer Command="{Binding ToggleOverlayCommand}" />
+            </controls:MapView.GestureRecognizers>
+        </controls:MapView>
 
         <!-- Floating stats card (tap for full analysis) -->
         <Border
             Margin="16"
+            IsVisible="{Binding IsOverlayVisible}"
             Style="{StaticResource CardBorder}"
             VerticalOptions="Start">
             <Border.GestureRecognizers>
@@ -37,8 +43,12 @@
                         VerticalTextAlignment="Center" />
                 </Grid>
 
-                <Grid ColumnDefinitions="*,*,*,*" ColumnSpacing="8">
-                    <Border Grid.Column="0" Style="{StaticResource AccentChipBorder}">
+                <Grid
+                    ColumnDefinitions="*,*,*,*"
+                    ColumnSpacing="8"
+                    RowDefinitions="Auto,Auto"
+                    RowSpacing="8">
+                    <Border Grid.Column="0" Grid.Row="0" Style="{StaticResource AccentChipBorder}">
                         <VerticalStackLayout Spacing="2">
                             <Label Style="{StaticResource StatLabel}" Text="DISTANZ" />
                             <HorizontalStackLayout Spacing="3">
@@ -55,7 +65,7 @@
                             </HorizontalStackLayout>
                         </VerticalStackLayout>
                     </Border>
-                    <Border Grid.Column="1" Style="{StaticResource ChipBorder}">
+                    <Border Grid.Column="1" Grid.Row="0" Style="{StaticResource ChipBorder}">
                         <VerticalStackLayout Spacing="2">
                             <Label Style="{StaticResource StatLabel}" Text="DAUER" />
                             <Label
@@ -64,7 +74,7 @@
                                 Text="{Binding DurationText}" />
                         </VerticalStackLayout>
                     </Border>
-                    <Border Grid.Column="2" Style="{StaticResource ChipBorder}">
+                    <Border Grid.Column="2" Grid.Row="0" Style="{StaticResource ChipBorder}">
                         <VerticalStackLayout Spacing="2">
                             <Label Style="{StaticResource StatLabel}" Text="&#xD8; KM/H" />
                             <Label
@@ -73,13 +83,52 @@
                                 Text="{Binding AverageSpeedText}" />
                         </VerticalStackLayout>
                     </Border>
-                    <Border Grid.Column="3" Style="{StaticResource ChipBorder}">
+                    <Border Grid.Column="3" Grid.Row="0" Style="{StaticResource ChipBorder}">
                         <VerticalStackLayout Spacing="2">
                             <Label Style="{StaticResource StatLabel}" Text="MAX KM/H" />
                             <Label
                                 FontFamily="OpenSansSemibold"
                                 FontSize="16"
                                 Text="{Binding MaxSpeedText}" />
+                        </VerticalStackLayout>
+                    </Border>
+
+                    <!-- Same set as the analysis page, so the overview is complete on its own. -->
+                    <Border Grid.Column="0" Grid.Row="1" Style="{StaticResource ChipBorder}">
+                        <VerticalStackLayout Spacing="2">
+                            <Label Style="{StaticResource StatLabel}" Text="BEWEGUNG" />
+                            <Label
+                                FontFamily="OpenSansSemibold"
+                                FontSize="16"
+                                Text="{Binding MovingTimeText}" />
+                        </VerticalStackLayout>
+                    </Border>
+                    <Border Grid.Column="1" Grid.Row="1" Style="{StaticResource ChipBorder}">
+                        <VerticalStackLayout Spacing="2">
+                            <Label Style="{StaticResource StatLabel}" Text="PAUSE" />
+                            <Label
+                                FontFamily="OpenSansSemibold"
+                                FontSize="16"
+                                Text="{Binding StoppedTimeText}" />
+                        </VerticalStackLayout>
+                    </Border>
+                    <Border Grid.Column="2" Grid.Row="1" Style="{StaticResource ChipBorder}">
+                        <VerticalStackLayout Spacing="2">
+                            <Label Style="{StaticResource StatLabel}" Text="HÖHE" />
+                            <Label
+                                FontFamily="OpenSansSemibold"
+                                FontSize="14"
+                                Text="{Binding AltitudeText}"
+                                VerticalOptions="Center" />
+                        </VerticalStackLayout>
+                    </Border>
+                    <Border Grid.Column="3" Grid.Row="1" Style="{StaticResource ChipBorder}">
+                        <VerticalStackLayout Spacing="2">
+                            <Label Style="{StaticResource StatLabel}" Text="PACE /KM" />
+                            <Label
+                                FontFamily="OpenSansSemibold"
+                                FontSize="16"
+                                Text="{Binding PaceText}" />
                         </VerticalStackLayout>
                     </Border>
                 </Grid>
@@ -96,8 +145,8 @@
         <Border
             Margin="16"
             Padding="14,10"
+            IsVisible="{Binding ShowProfile}"
             Style="{StaticResource CardBorder}"
-            IsVisible="{Binding HasProfile}"
             VerticalOptions="End">
             <Border.GestureRecognizers>
                 <TapGestureRecognizer Command="{Binding OpenDetailsCommand}" />

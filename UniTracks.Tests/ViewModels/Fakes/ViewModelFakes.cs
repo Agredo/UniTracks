@@ -310,8 +310,12 @@ internal sealed class FakeGpsDataStorageService : IGpsDataStorageService
 internal sealed class InMemoryRepository : IRepository
 {
     private readonly Dictionary<Type, List<object>> tables = new();
+    private long dataVersion;
 
     public string DatabasePath => "test://unitracks-in-memory";
+
+    /// <inheritdoc />
+    public long DataVersion => dataVersion;
 
     public List<(string Operation, Type EntityType, IReadOnlyList<object> Entities)> Calls { get; } = new();
 
@@ -330,6 +334,7 @@ internal sealed class InMemoryRepository : IRepository
         where TEntity : class
     {
         Calls.Add(("Add", typeof(TEntity), new object[] { entity! }));
+        dataVersion++;
         Table<TEntity>().Add(entity!);
         return Task.FromResult(entity);
     }
@@ -338,12 +343,14 @@ internal sealed class InMemoryRepository : IRepository
         where TEntity : class
     {
         Calls.Add(("Update", typeof(TEntity), new object[] { entity! }));
+        dataVersion++;
         return Task.FromResult(entity);
     }
 
     public Task Delete<TEntity>(TEntity entity)
         where TEntity : class
     {
+        dataVersion++;
         Calls.Add(("Delete", typeof(TEntity), new object[] { entity! }));
         Table<TEntity>().Remove(entity!);
         return Task.CompletedTask;
@@ -353,6 +360,7 @@ internal sealed class InMemoryRepository : IRepository
         where TEntity : class
     {
         var deleted = entities.Cast<object>().ToList();
+        dataVersion++;
         Calls.Add(("DeleteRange", typeof(TEntity), deleted));
 
         foreach (var entity in deleted)

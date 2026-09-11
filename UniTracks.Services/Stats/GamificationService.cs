@@ -21,15 +21,17 @@ public class GamificationService : IGamificationService
 
     public async Task<GamificationStats> ComputeAsync()
     {
+        // Served from the repository read cache, so this is not a second scan when the caller
+        // has already read the trips (the statistics page passes its list in directly).
         var trips = (await repository.GetAllAsync<Trip>())
             .Where(TripQualification.IsQualifying)
             .ToList();
 
-        return await ComputeAsync(trips);
+        return Compute(trips);
     }
 
     public Task<GamificationStats> ComputeAsync(IEnumerable<Trip> trips) =>
-        Task.Run(() => Compute(trips.ToList()));
+        Task.FromResult(Compute(trips.ToList()));
 
     /// <summary>Pure in-memory computation over already-loaded trips — safe to run off the UI thread.</summary>
     private static GamificationStats Compute(List<Trip> trips)
