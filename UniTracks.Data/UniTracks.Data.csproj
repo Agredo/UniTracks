@@ -7,10 +7,9 @@
   <ItemGroup>
     <PackageReference Include="LiteDB" Version="$(LiteDBVersion)" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="$(EntityFrameworkCoreVersion)" />
-    <!-- Pin SQLitePCLRaw to a single consistent build. 2.1.12 ships mismatched
-         assembly builds for iOS (core=2.1.12.3116 vs provider.internal=2.1.12.3145)
-         which causes a FileNotFoundException crash at startup. 2.1.13 unifies them. -->
-    <PackageReference Include="SQLitePCLRaw.bundle_e_sqlite3" Version="2.1.13" />
+    <!-- EF Core 11 (RC1) requires SQLitePCLRaw 3.x, so pin the bundle to the matching
+         3.0.5 build. Pinning 2.1.x would downgrade below EF Core's minimum (NU1605). -->
+    <PackageReference Include="SQLitePCLRaw.bundle_e_sqlite3" Version="3.0.5" />
     <!-- Design-time package: required by the dotnet-ef CLI (dotnet ef migrations add). -->
     <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="$(EntityFrameworkCoreVersion)">
       <PrivateAssets>all</PrivateAssets>
