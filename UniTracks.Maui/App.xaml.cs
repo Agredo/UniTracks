@@ -13,8 +13,11 @@ namespace UniTracks.Maui
             InitializeComponent();
 
             // Seed the TripType catalog if the active repository is empty (relevant on iOS, where
-            // the store is LiteDB and there is no EF Core HasData/migration seeding). The call
-            // completes synchronously for both stores, so a short block here is safe.
+            // the store is LiteDB and there is no EF Core HasData/migration seeding). The stores now
+            // answer asynchronously, so EnsureSeededAsync must not depend on this thread's
+            // synchronization context - it uses ConfigureAwait(false) throughout. Blocking here is
+            // still safe and intentional: seeding is a single small query, and doing it before the
+            // shell is created keeps the first page from rendering an empty catalog.
             databaseInitializer.EnsureSeededAsync().GetAwaiter().GetResult();
 
             // Recalculate stored trip distances with the smoothing pipeline (trips recorded before
