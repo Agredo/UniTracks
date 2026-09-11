@@ -1,4 +1,3 @@
-using System.Collections.ObjectModel;
 using System.Globalization;
 using CommunityToolkit.Mvvm.ComponentModel;
 using UniTracks.Models.Stats;
@@ -8,20 +7,19 @@ namespace UniTracks.ViewModels.Pages;
 
 /// <summary>
 /// Progress statistics at a glance: current week vs. last week, level, weekly chart,
-/// all-time records and the game highlights. Data comes from <see cref="IStatisticsService"/>
-/// (aggregation) and <see cref="IGamificationService"/> (level/streak).
+/// all-time records and the game highlights. Everything comes from a single
+/// <see cref="IStatisticsService.GetSnapshotAsync"/> call, which aggregates the recorded trips
+/// once (including level/XP/streak) so opening the page does not scan the trips repeatedly.
 /// </summary>
 public partial class StatisticsPageViewModel : ObservableObject
 {
     private static readonly CultureInfo GermanCulture = CultureInfo.GetCultureInfo("de-DE");
 
     private readonly IStatisticsService statisticsService;
-    private readonly IGamificationService gamificationService;
 
-    public StatisticsPageViewModel(IStatisticsService statisticsService, IGamificationService gamificationService)
+    public StatisticsPageViewModel(IStatisticsService statisticsService)
     {
         this.statisticsService = statisticsService;
-        this.gamificationService = gamificationService;
         _ = LoadAsync();
     }
 
@@ -97,18 +95,18 @@ public partial class StatisticsPageViewModel : ObservableObject
     [ObservableProperty]
     private string defenseBestScoreText = "-";
 
-    public ObservableCollection<ChartEntry> WeeklyChart { get; } = new();
+    [ObservableProperty]
+    private IReadOnlyList<ChartEntry> weeklyChart = Array.Empty<ChartEntry>();
 
     private async Task LoadAsync()
     {
         var snapshot = await statisticsService.GetSnapshotAsync();
-        var gamification = await gamificationService.ComputeAsync();
 
         WeekDistanceText = snapshot.WeekDistanceKm.ToString("0.0", GermanCulture);
         WeekDeltaText = BuildDeltaText(snapshot.WeekDistanceKm - snapshot.LastWeekDistanceKm);
         WeekTripsText = snapshot.WeekTrips.ToString(GermanCulture);
         WeekActiveDaysText = snapshot.WeekActiveDays.ToString(GermanCulture);
-        StreakText = gamification.CurrentStreakDays.ToString(GermanCulture);
+        StreakText = snapshot.CurrentStreakDays.ToString(GermanCulture);
         WeekMovingTimeText = FormatDuration(snapshot.WeekMovingTime);
         WeekElevationText = snapshot.WeekElevationGainM.ToString("0", GermanCulture);
 
@@ -123,9 +121,9 @@ public partial class StatisticsPageViewModel : ObservableObject
         MostElevationText = $"{snapshot.MostElevationGainM.ToString("0", GermanCulture)} m";
         LongestMovingTimeText = FormatDuration(snapshot.LongestMovingTime);
 
-        LevelLabel = gamification.LevelLabel;
-        XpLabel = gamification.XpLabel;
-        LevelProgressFraction = gamification.LevelProgressFraction;
+        LevelLabel = $"Level {snapshot.Level}";
+        XpLabel = $"{snapshot.Xp} XP";
+        LevelProgressFraction = snapshot.LevelProgressFraction;
 
         LongestTripText = $"{snapshot.LongestTripKm.ToString("0.0", GermanCulture)} km";
         FastestSpeedText = $"{snapshot.FastestAverageSpeedKmh.ToString("0.0", GermanCulture)} km/h";
@@ -135,17 +133,21 @@ public partial class StatisticsPageViewModel : ObservableObject
         DefenseBestWaveText = snapshot.DefenseBestWave?.ToString(GermanCulture) ?? "-";
         DefenseBestScoreText = snapshot.DefenseBestScore?.ToString("N0", GermanCulture) ?? "-";
 
-        WeeklyChart.Clear();
+        // A fresh list per load (instead of mutating a shared collection) so the chart control
+        // sees a property change and repaints — the data only arrives once the load completes.
+        var weeks = new List<ChartEntry>(snapshot.RecentWeeks.Count);
         for (int i = 0; i < snapshot.RecentWeeks.Count; i++)
         {
             var week = snapshot.RecentWeeks[i];
-            WeeklyChart.Add(new ChartEntry
+            weeks.Add(new ChartEntry
             {
                 Label = week.WeekStart.ToString("dd.MM", GermanCulture),
                 Value = week.DistanceKm,
                 IsHighlighted = i == snapshot.RecentWeeks.Count - 1,
             });
         }
+
+        WeeklyChart = weeks;
     }
 
     private static string BuildDeltaText(double deltaKm)

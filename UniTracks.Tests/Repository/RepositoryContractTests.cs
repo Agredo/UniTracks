@@ -229,6 +229,85 @@ public sealed class RepositoryContractTests
     }
 
     /// <summary>
+    /// Whole-table reads are served from a read-through cache (that is what keeps the statistics
+    /// page from re-scanning every trip and its thousands of GPS points on each visit). The cache
+    /// must never outlive a write: every mutation has to make the next full read hit the store again.
+    /// </summary>
+    [Fact]
+    public async Task Ef_FullReads_SeeEarlierWrites()
+    {
+        using var db = new SqliteTestDatabase();
+        await AssertFullReadsSeeWrites(db.Repository);
+    }
+
+    /// <inheritdoc cref="Ef_FullReads_SeeEarlierWrites"/>
+    [Fact]
+    public async Task LiteDb_FullReads_SeeEarlierWrites()
+    {
+        await WithLiteDb(AssertFullReadsSeeWrites);
+    }
+
+    private static async Task AssertFullReadsSeeWrites(IRepository repository)
+    {
+        static DefenseRecord Record(int wave) => new()
+        {
+            ID = Guid.NewGuid(),
+            BestWave = wave,
+            BestScore = wave * 100,
+        };
+
+        // Prime the cache with a plain read, then mutate through every write method.
+        var first = await repository.Add(Record(1));
+        Assert.Single(await repository.GetAllAsync<DefenseRecord>());
+        Assert.Single(repository.Get<DefenseRecord>());
+        Assert.Single(await repository.GetAsync<DefenseRecord>());
+
+        var second = await repository.Add(Record(2));
+        Assert.Equal(2, (await repository.GetAllAsync<DefenseRecord>()).Count());
+        Assert.Equal(2, repository.Get<DefenseRecord>().Count());
+
+        first.BestWave = 7;
+        await repository.Update(first);
+        Assert.Equal(7, repository.Get<DefenseRecord>().Single(r => r.ID == first.ID).BestWave);
+
+        await repository.Delete(second);
+        Assert.Equal(first.ID, Assert.Single(await repository.GetAllAsync<DefenseRecord>()).ID);
+    }
+
+    /// <summary>
+    /// A cache hit must hand out a fresh list instance: callers sort, filter and clear the result
+    /// (the statistics page trims the trip list before aggregating), and that must never be able to
+    /// damage the cached copy or leak into the next reader.
+    /// </summary>
+    [Fact]
+    public async Task Ef_CachedReads_ReturnIndependentLists()
+    {
+        using var db = new SqliteTestDatabase();
+        await AssertCachedReadsReturnIndependentLists(db.Repository);
+    }
+
+    /// <inheritdoc cref="Ef_CachedReads_ReturnIndependentLists"/>
+    [Fact]
+    public async Task LiteDb_CachedReads_ReturnIndependentLists()
+    {
+        await WithLiteDb(AssertCachedReadsReturnIndependentLists);
+    }
+
+    private static async Task AssertCachedReadsReturnIndependentLists(IRepository repository)
+    {
+        await repository.Add(new DefenseRecord { ID = Guid.NewGuid(), BestWave = 3, BestScore = 300 });
+
+        var first = (await repository.GetAllAsync<DefenseRecord>()).ToList();
+        var second = (await repository.GetAllAsync<DefenseRecord>()).ToList();
+
+        Assert.NotSame(first, second);
+        Assert.Equal(first[0].ID, second[0].ID);
+
+        first.Clear();
+        Assert.Single(await repository.GetAllAsync<DefenseRecord>());
+    }
+
+    /// <summary>
     /// Runs the assertions against a <see cref="LiteDbRepository"/> backed by a temp file, so the
     /// iOS code path is exercised on the test machine as well.
     /// </summary>

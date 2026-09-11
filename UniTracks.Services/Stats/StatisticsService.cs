@@ -2,6 +2,7 @@ using UniTracks.Data.Repository;
 using UniTracks.Games.Shared.Economy;
 using UniTracks.Games.Shared.Persistence;
 using UniTracks.Games.TowerDefense.Persistence;
+using UniTracks.Models.Achievement;
 using UniTracks.Models.Trip;
 
 namespace UniTracks.Services.Stats;
@@ -15,18 +16,26 @@ public class StatisticsService : IStatisticsService
 {
     private readonly IRepository repository;
     private readonly IActivityStatsSource activityStats;
+    private readonly IGamificationService gamificationService;
     private readonly ITowerDefenseStore towerDefenseStore;
 
-    public StatisticsService(IRepository repository, IActivityStatsSource activityStats, ITowerDefenseStore towerDefenseStore)
+    public StatisticsService(
+        IRepository repository,
+        IActivityStatsSource activityStats,
+        IGamificationService gamificationService,
+        ITowerDefenseStore towerDefenseStore)
     {
         this.repository = repository;
         this.activityStats = activityStats;
+        this.gamificationService = gamificationService;
         this.towerDefenseStore = towerDefenseStore;
     }
 
     public async Task<StatisticsSnapshot> GetSnapshotAsync(int weekCount = 8)
     {
-        // Locations are needed for moving time and elevation gain, so load them eagerly.
+        // Locations are needed for moving time and elevation gain, so load them eagerly. The
+        // repository answers this full-table read from its read cache, so returning to the
+        // statistics page no longer re-scans every trip and its thousands of GPS points.
         var trips = (await repository.GetAllAsync<Trip>(trip => trip.Locations))
             .Where(TripQualification.IsQualifying)
             .ToList();
@@ -34,15 +43,22 @@ public class StatisticsService : IStatisticsService
         var stats = await activityStats.GetAsync();
         var record = await towerDefenseStore.LoadRecordAsync();
 
+        // Level, XP and streak are derived from this very trip list instead of a second scan.
+        var gamification = await gamificationService.ComputeAsync(trips);
+
         // The aggregation below is CPU-bound (per-trip moving time/elevation and many LINQ
         // passes). Run it on a worker thread so the UI thread stays responsive while the
         // statistics page appears — otherwise the page switch blocks mid-render.
-        return await Task.Run(() => BuildSnapshot(trips, stats, record, weekCount));
+        return await Task.Run(() => BuildSnapshot(trips, stats, record, gamification, weekCount));
     }
 
     /// <summary>Pure in-memory aggregation over already-loaded trips — safe to run off the UI thread.</summary>
     private static StatisticsSnapshot BuildSnapshot(
-        List<Trip> trips, ActivityStats stats, DefenseRecord? record, int weekCount)
+        List<Trip> trips,
+        ActivityStats stats,
+        DefenseRecord? record,
+        GamificationStats gamification,
+        int weekCount)
     {
         // Per-trip derived metrics, keyed by trip id.
         var metrics = trips.ToDictionary(
@@ -124,6 +140,10 @@ public class StatisticsService : IStatisticsService
             CoinsEarnedTotal = coinsEarned,
             DefenseBestWave = record?.BestWave,
             DefenseBestScore = record?.BestScore,
+            Xp = gamification.Xp,
+            Level = gamification.Level,
+            LevelProgressFraction = gamification.LevelProgressFraction,
+            CurrentStreakDays = gamification.CurrentStreakDays,
         };
     }
 

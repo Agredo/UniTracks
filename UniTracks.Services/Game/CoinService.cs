@@ -23,14 +23,16 @@ public class CoinService : ICoinService
 
     public async Task<ActivityStats> GetAsync()
     {
+        // The repository serves this full-table read from its read cache, so the coin balance no
+        // longer triggers its own trip scan next to the statistics page's read.
         var trips = (await repository.GetAllAsync<Trip>(t => t.TripType!))
             .Where(TripQualification.IsQualifying)
             .ToList();
         var stats = await gamificationService.ComputeAsync(trips);
 
-        // Projecting the loaded trips into the coin feed is CPU-bound. Run it off the UI
-        // thread so the Games tab and game starts don't block while computing the balance.
-        return await Task.Run(() => new ActivityStats
+        // Projecting the loaded trips into the coin feed is cheap in-memory work over a handful
+        // of trips; the expensive part (loading the trips) has already happened above.
+        return new ActivityStats
         {
             Trips = trips.Select(t => new TripActivity
             {
@@ -41,6 +43,6 @@ public class CoinService : ICoinService
             Xp = stats.Xp,
             UnlockedAchievements = stats.Achievements.Count(a => a.IsUnlocked),
             UnlockedAchievementIds = stats.Achievements.Where(a => a.IsUnlocked).Select(a => a.Id).ToList(),
-        });
+        };
     }
 }
