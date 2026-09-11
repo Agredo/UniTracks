@@ -93,12 +93,12 @@ public sealed class TripTabPageViewModelTests
     }
 
     /// <summary>
-    /// The map is filled from <c>Trips.Last()</c>. Because the list is sorted newest-first, <c>Last()</c>
-    /// is the <em>oldest</em> trip — so the map shows the oldest tour, not the most recent one.
-    /// Surprising, but that is the current behaviour and the test pins it down.
+    /// The view model used to copy the GPS points of one trip into an <c>ObservableCollection</c> that
+    /// no view ever bound to. That copy is gone: the map is filled by <c>TripOverviewPage</c>, which has
+    /// its own view model. This pins down that a refresh does not carry points around any more.
     /// </summary>
     [Fact]
-    public void Constructor_ShowsTheLocationsOfTheOldestTrip()
+    public void Constructor_DoesNotKeepASecondCopyOfTheTrackPoints()
     {
         var now = DateTimeOffset.UtcNow;
         var oldest = NewTrip("Aeltester", now.AddDays(-2), locationCount: 2);
@@ -106,9 +106,10 @@ public sealed class TripTabPageViewModelTests
 
         var fixture = new Fixture(repository => SeedTrips(repository, oldest, newest));
 
-        Assert.Equal(
-            oldest.Locations.Select(location => location.ID),
-            fixture.ViewModel.Locations.Select(location => location.ID));
+        // The trips still carry their points (the store embeds them), but the view model no longer
+        // keeps a second collection of one trip's points on top.
+        Assert.Equal(2, fixture.ViewModel.Trips.Count);
+        Assert.Null(typeof(TripTabPageViewModel).GetProperty("Locations"));
     }
 
     /// <summary>
@@ -160,22 +161,21 @@ public sealed class TripTabPageViewModelTests
     }
 
     /// <summary>
-    /// Known gap, recorded as-is: <c>GetTrips()</c> only clears <c>Locations</c> inside the
-    /// <c>if (Trips.Count &gt; 0)</c> branch, so after removing the <em>last</em> trip the map keeps
-    /// showing the points of the trip that no longer exists. Production is unchanged.
+    /// Regressed in an earlier version: <c>GetTrips()</c> used to clear the point copy only inside the
+    /// <c>if (Trips.Count &gt; 0)</c> branch, so the map kept showing the points of a trip that no longer
+    /// existed. The copy itself is gone now, which makes the stale state impossible.
     /// </summary>
     [Fact]
-    public async Task DeleteTripAsync_ForTheLastTrip_LeavesTheOldLocationsOnTheMap()
+    public async Task DeleteTripAsync_ForTheLastTrip_EmptiesTheList()
     {
         var trip = NewTrip("Einziger", DateTimeOffset.UtcNow, locationCount: 2);
         var fixture = new Fixture(repository => SeedTrips(repository, trip));
 
-        Assert.Equal(2, fixture.ViewModel.Locations.Count);
+        Assert.Single(fixture.ViewModel.Trips);
 
         await fixture.ViewModel.DeleteTripAsync(trip);
 
         Assert.Empty(fixture.ViewModel.Trips);
-        Assert.Equal(2, fixture.ViewModel.Locations.Count);
         Assert.Empty(fixture.Repository.Rows<LocationModel>());
     }
 

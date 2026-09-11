@@ -375,6 +375,12 @@ internal sealed class InMemoryRepository : IRepository
         where TEntity : class =>
         Task.FromResult<IEnumerable<TEntity>>(Table<TEntity>().Cast<TEntity>().ToList());
 
+    public Task<IEnumerable<TEntity>> GetAsync<TEntity>(
+        Expression<Func<TEntity, bool>>? filter = null,
+        params Expression<Func<TEntity, object>>[] includes)
+        where TEntity : class =>
+        Task.FromResult(Get(filter, includes));
+
     public IEnumerable<TEntity> Get<TEntity>(
         Expression<Func<TEntity, bool>>? filter = null,
         params Expression<Func<TEntity, object>>[] includes)

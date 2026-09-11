@@ -26,5 +26,13 @@ public interface IRepository
 
     Task<TEntity?> GetByIdAsync<TEntity>(Guid id) where TEntity : class;
     Task<IEnumerable<TEntity>> GetAllAsync<TEntity>(params Expression<Func<TEntity, object>>[] includes) where TEntity : class;
+
+    /// <summary>
+    /// Filtered read. Unlike <see cref="Get{TEntity}"/>, which runs the query on the calling thread,
+    /// this one does the work off the caller's thread — the stores are synchronous, so the synchronous
+    /// overload blocks the UI thread for the whole scan.
+    /// </summary>
+    Task<IEnumerable<TEntity>> GetAsync<TEntity>(Expression<Func<TEntity, bool>>? filter = null, params Expression<Func<TEntity, object>>[] includes) where TEntity : class;
+
     IEnumerable<TEntity> Get<TEntity>(Expression<Func<TEntity, bool>>? filter = null, params Expression<Func<TEntity, object>>[] includes) where TEntity : class;
 }

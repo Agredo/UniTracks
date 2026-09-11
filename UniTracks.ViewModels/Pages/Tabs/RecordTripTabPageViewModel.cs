@@ -128,7 +128,9 @@ public partial class RecordTripTabPageViewModel : ObservableObject
         var types = (await Repository.GetAllAsync<TripType>()).ToList();
 
         // Order by usage: most recently used first, then highest usage count, then seed order.
-        var usage = Repository.Get<Trip>(t => t.TripTypeId != null)
+        // Read asynchronously: a filtered read still scans the whole trip collection (with the GPS
+        // points embedded in it), which used to block the UI thread every time this tab was opened.
+        var usage = (await Repository.GetAsync<Trip>(t => t.TripTypeId != null))
             .GroupBy(t => t.TripTypeId!.Value)
             .ToDictionary(
                 g => g.Key,

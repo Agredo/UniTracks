@@ -22,9 +22,6 @@ public partial class TripTabPageViewModel : ObservableObject
     public string DatabasePath { get; }
 
     [ObservableProperty]
-    private ObservableCollection<LocationModel> locations = new ObservableCollection<LocationModel>();
-
-    [ObservableProperty]
     private ObservableCollection<Trip> trips = new ObservableCollection<Trip>();
 
     [ObservableProperty]
@@ -67,24 +64,14 @@ public partial class TripTabPageViewModel : ObservableObject
 
     private async Task GetTrips()
     {
-        Trips.Clear();
         var orderedTrips = (await Repository.GetAllAsync<Trip>(trip => trip.Locations))
             .OrderByDescending(trip => trip.StartTime)
             .ToList();
 
-        foreach (var trip in orderedTrips)
-        {
-            Trips.Add(trip);
-        }
-
-        if (Trips.Count > 0)
-        {
-            Locations.Clear();
-            Trip lastTrip = Trips.Last();
-
-            Console.WriteLine($"Last Trip: {lastTrip.ID} {lastTrip.StartTime}");
-            lastTrip.Locations?.ForEach(location => Locations.Add(location));
-        }
+        // Assigning the collection in one go raises a single change notification instead of one
+        // per trip, which keeps the list from re-measuring itself for every single item.
+        RefreshIndicatorVisible = false;
+        Trips = new ObservableCollection<Trip>(orderedTrips);
     }
 
     [RelayCommand]
@@ -112,7 +99,7 @@ public partial class TripTabPageViewModel : ObservableObject
         // A trip owns its GPS points, but the store has no cascade delete for them (the foreign key
         // is only set to NULL), so remove the points explicitly — otherwise every deleted trip left
         // its locations behind and the database grew without bound.
-        var locations = Repository.Get<LocationModel>(location => location.TripID == trip.ID).ToList();
+        var locations = (await Repository.GetAsync<LocationModel>(location => location.TripID == trip.ID)).ToList();
         if (locations.Count > 0)
         {
             await Repository.DeleteRange(locations);

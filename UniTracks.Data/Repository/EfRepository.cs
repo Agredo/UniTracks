@@ -135,6 +135,25 @@ public class EfRepository : IRepository
         }
     }
 
+    public async Task<IEnumerable<TEntity>> GetAsync<TEntity>(Expression<Func<TEntity, bool>>? filter = null, params Expression<Func<TEntity, object>>[] includes) where TEntity : class
+    {
+        await gate.WaitAsync().ConfigureAwait(false);
+        try
+        {
+            IQueryable<TEntity> query = _context.Set<TEntity>();
+            if (filter is not null)
+            {
+                query = query.Where(filter);
+            }
+
+            return await query.IncludeMultiple(includes).ToListAsync().ConfigureAwait(false);
+        }
+        finally
+        {
+            gate.Release();
+        }
+    }
+
     public IEnumerable<TEntity> Get<TEntity>(Expression<Func<TEntity, bool>>? filter = null, params Expression<Func<TEntity, object>>[] includes) where TEntity : class
     {
         gate.Wait();
