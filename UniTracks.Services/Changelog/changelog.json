@@ -1,0 +1,65 @@
+{
+  "releases": [
+    {
+      "version": "0.4",
+      "date": "2026-09-13",
+      "title": "Laufrichtung, Stabilität & gemeinsames Münzkonto",
+      "changes": [
+        {
+          "kind": "feature",
+          "text": "Die Laufrichtung wird auf der Strecke angezeigt: Pfeile wandern animiert vom Start bis zum Ziel."
+        },
+        {
+          "kind": "feature",
+          "text": "Das Streckenende ist mit einer schwarz-weiß karierten Zielflagge markiert."
+        },
+        {
+          "kind": "feature",
+          "text": "Nach einem Update zeigt die App, welche Features neu sind und was sich geändert hat."
+        },
+        {
+          "kind": "fix",
+          "text": "Die App stürzt nicht mehr ab, wenn ein Profil angelegt oder eine Aufzeichnung gestartet wird."
+        },
+        {
+          "kind": "fix",
+          "text": "Die Karte zeigt auf Android wieder Straßen statt \"Access blocked\"-Kacheln von OpenStreetMap."
+        },
+        {
+          "kind": "improvement",
+          "text": "Cozy City und Trail Defense teilen sich ein gemeinsames Münzkonto: Ausgaben wirken sich auf beide Spiele aus."
+        }
+      ]
+    },
+    {
+      "version": "0.3.1",
+      "date": "2026-09-08",
+      "title": "Trip-Analyse",
+      "changes": [
+        {
+          "kind": "feature",
+          "text": "Trip-Analyse-Seite mit detaillierten Diagrammen inklusive Achsen."
+        },
+        {
+          "kind": "improvement",
+          "text": "Trip-Übersicht entschlackt, alle Statistik-Kacheln sind jetzt sichtbar."
+        }
+      ]
+    },
+    {
+      "version": "0.3",
+      "date": "2026-09-07",
+      "title": "Statistiken & Spiele",
+      "changes": [
+        {
+          "kind": "feature",
+          "text": "Statistik-Seite mit Strava-Metriken und Trip-Profil-Diagrammen."
+        },
+        {
+          "kind": "feature",
+          "text": "Trail Defense: Energie kaufbar, Türme teurer, Energie als Budget pro Runde."
+        }
+      ]
+    }
+  ]
+}

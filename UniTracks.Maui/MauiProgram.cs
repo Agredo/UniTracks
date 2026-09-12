@@ -9,6 +9,7 @@ using UniTracks.Data.LiteDB;
 using UniTracks.Data.Repository;
 using UniTracks.Data.Seeding;
 using UniTracks.Data.SQLite;
+using UniTracks.Maui.Services.Changelog;
 using UniTracks.Maui.Services.Location;
 using UniTracks.Maui.Views.Controls.Popups;
 using UniTracks.Maui.Views.Pages;
@@ -17,11 +18,13 @@ using UniTracks.Games.CityBuilder.Persistence;
 using UniTracks.Games.Shared.Persistence;
 using UniTracks.Games.TowerDefense.Persistence;
 using UniTracks.Models.Constants;
+using UniTracks.Services.Changelog;
 using UniTracks.Services.Data;
 using UniTracks.Services.Feedback;
 using UniTracks.Services.Game;
 using UniTracks.Services.Location;
 using UniTracks.Services.Stats;
+using UniTracks.ViewModels.Changelog;
 using UniTracks.ViewModels.Controls.Popups;
 using UniTracks.ViewModels.Pages;
 using UniTracks.ViewModels.Pages.Tabs;
@@ -113,15 +116,25 @@ public static class MauiProgram
 
     // Reads the app's display version (e.g. "0.2") automatically. On unpackaged Windows the
     // AppInfo display version falls back to the 4-part assembly version ("0.2.0.0"), so trailing
-    // zero components are trimmed to match the <ApplicationDisplayVersion> in the csproj.
+    // zero components are trimmed to match the <ApplicationDisplayVersion> in the csproj. This is
+    // also called while the app is being built, so it must never throw.
     private static string GetDisplayVersion()
     {
-        var parts = AppInfo.Current.VersionString.Split('.');
-        var length = parts.Length;
-        while (length > 2 && parts[length - 1] == "0")
-            length--;
-        return string.Join('.', parts.Take(length));
+        try
+        {
+            var parts = AppInfo.Current.VersionString.Split('.');
+            var length = parts.Length;
+            while (length > 2 && parts[length - 1] == "0")
+                length--;
+            return string.Join('.', parts.Take(length));
+        }
+        catch (Exception)
+        {
+            return UnknownDisplayVersion;
+        }
     }
+
+    private const string UnknownDisplayVersion = "0.0";
 
     private static void RegisterAgredoServices(IServiceCollection services)
     {
@@ -169,6 +182,16 @@ public static class MauiProgram
         services.AddSingleton<IGameCatalogService, GameCatalogService>();
         services.AddSingleton<UniTracks.Services.ApplicationModel.IPermissions, UniTracks.Maui.Services.ApplicationModel.Permissions>();
         services.AddSingleton<UniTracks.Services.Dispatching.IDispatcher, UniTracks.Maui.Services.Dispatching.Dispatcher>();
+
+        // Release notes: the JSON catalog is read once, the last shown version is persisted, and the
+        // presenter decides whether the "what's new" popup has to appear.
+        services.AddSingleton<IChangelogService, ChangelogService>();
+        services.AddSingleton<IChangelogState, PreferencesChangelogState>();
+        services.AddSingleton<IChangelogPresenter>(sp => new ChangelogPresenter(
+            sp.GetRequiredService<IChangelogService>(),
+            sp.GetRequiredService<IChangelogState>(),
+            sp.GetRequiredService<AgredoApplication.MVVM.Services.Abstractions.Navigation.IPopupNavigationService>(),
+            GetDisplayVersion()));
     }
 
     private static void RegisterDataAccess(IServiceCollection services)
@@ -226,5 +249,11 @@ public static class MauiProgram
         services.AddTransientPopup<TripTypeSearchPopup, TripTypeSearchPopupViewModel>();
         services.AddTransient<TripTypeSearchPopupViewModel>();
         services.AddKeyedTransient<Popup, TripTypeSearchPopup>(typeof(TripTypeSearchPopupViewModel));
+
+        services.AddTransientPopup<WhatsNewPopup, WhatsNewPopupViewModel>();
+        services.AddTransient<WhatsNewPopupViewModel>(sp => new WhatsNewPopupViewModel(
+            sp.GetRequiredService<IChangelogService>(),
+            GetDisplayVersion()));
+        services.AddKeyedTransient<Popup, WhatsNewPopup>(typeof(WhatsNewPopupViewModel));
     }
 }

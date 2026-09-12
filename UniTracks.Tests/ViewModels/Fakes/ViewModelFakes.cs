@@ -69,6 +69,9 @@ internal sealed class FakePopupNavigationService : IPopupNavigationService
 
     public List<string> ShownPopups { get; } = new();
 
+    /// <summary>When set, the next <c>ShowPopupAsync</c> throws it, modelling a popup that could not be presented.</summary>
+    public Exception? ShowFailure { get; set; }
+
     public void ShowPopup(string popupName) => ShownPopups.Add(popupName);
 
     public void ShowPopup(string popupName, Dictionary<string, object> parameters) => ShownPopups.Add(popupName);
@@ -96,6 +99,11 @@ internal sealed class FakePopupNavigationService : IPopupNavigationService
     public Task ShowPopupAsync<TViewModel>(CancellationToken cancellationToken = default)
         where TViewModel : class
     {
+        if (ShowFailure is not null)
+        {
+            throw ShowFailure;
+        }
+
         ShownPopups.Add(typeof(TViewModel).Name);
         return Task.CompletedTask;
     }

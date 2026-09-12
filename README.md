@@ -10,6 +10,8 @@ Cross-Plattform Sport-Tracking-App mit **.NET 11** und **.NET MAUI** — Fokus a
 - 📍 **GPS-Tracking** — Trips aufzeichnen mit Live-Standortdaten (Geschwindigkeit, Höhe, Genauigkeit)
 - 🏷️ **85+ Trip-Typen** — von Run über Gassi gehen 🐕 bis Kayak, aus einem JSON-Seed-Katalog
 - 🗺️ **Geschwindigkeits-Gradient-Route** — die Strecke färbt sich je nach Tempo: Lavender (langsam) → Mint (mittel) → Rot (schnell)
+- 🧭 **Laufrichtung & Zielflagge** — animierte Richtungspfeile wandern die Strecke entlang, das Ende markiert eine schwarz-weiß karierte Zielflagge
+- 🆕 **Versionshinweise** — nach einem Update zeigt ein Popup, was neu ist und was sich geändert hat (gepflegt in [`changelog.json`](UniTracks.Services/Changelog/changelog.json))
 - 🏆 **Gamification** — Erfolge-Tab mit Level, XP, Streaks und Badges (Erster Trip, 10/25 Trips, Distanz-Meilensteine u. v. m.)
 - 🎮 **Spiel-Tab** — Erfolge werden zur Währung: Coins verdienen durch Aktivität (10 🪙/km + 5 🪙/Trip + 25 🪙/Erfolg + 500 🪙 Startguthaben)
 - 🏙️ **Cozy City Builder** — isometrische Stadt bauen, gerendert mit SkiaSharp: 11 Gebäude, Pan/Pinch-Zoom, Ghost-Preview, Drop-in-Animationen, Coin-Sparkles, Wolken, Vögel und Tag/Nacht-Zyklus
@@ -60,6 +62,31 @@ Windows
 ![Spiel-Tab](docs/screenshots/windows-game-tab.png)
 
 ![Cozy City Builder](docs/screenshots/windows-city-builder.png)
+
+## Versionshinweise
+
+Nach einem Update zeigt die App einmalig ein Popup mit den Änderungen der neuen Version und den bis zu drei
+vorherigen Releases. Die Inhalte stehen in [`UniTracks.Services/Changelog/changelog.json`](UniTracks.Services/Changelog/changelog.json),
+das als Embedded Resource in die App wandert.
+
+**Pflege:** Beim Versionssprung in `UniTracks.Maui/UniTracks.Maui.csproj` (`ApplicationDisplayVersion`) einen
+neuen Block **oben** im `releases`-Array ergänzen — Version, Datum (`yyyy-MM-dd`), Titel und die Änderungen.
+`kind` ist `feature` (Badge „NEU“), `improvement` („GEÄNDERT“) oder `fix` („BEHOBEN“); statt eines Objekts ist
+auch ein reiner String erlaubt.
+
+```json
+{
+  "version": "1.0",
+  "date": "2026-09-20",
+  "title": "Titel der Version",
+  "changes": [
+    { "kind": "feature", "text": "Die Laufrichtung wird auf der Strecke angezeigt." }
+  ]
+}
+```
+
+Ein fehlender oder fehlerhafter Eintrag bricht nichts: das Popup fällt auf die neueste Version zurück, und die
+Reihenfolge wird numerisch aus `version` bestimmt (nicht aus der Position in der Datei).
 
 ## Architektur
 

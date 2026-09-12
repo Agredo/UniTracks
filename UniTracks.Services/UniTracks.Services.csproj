@@ -13,4 +13,9 @@
     <ProjectReference Include="..\UniTracks.Games\UniTracks.Games.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <!-- Release notes shown by the "what's new" popup. Maintained by hand, one entry per version. -->
+    <EmbeddedResource Include="Changelog\changelog.json" />
+  </ItemGroup>
+
 </Project>
