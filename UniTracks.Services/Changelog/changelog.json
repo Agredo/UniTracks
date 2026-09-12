@@ -10,6 +10,14 @@
           "text": "Die Laufrichtung wird auf der Strecke angezeigt: Pfeile wandern animiert vom Start bis zum Ziel."
         },
         {
+          "kind": "improvement",
+          "text": "Die Richtungspfeile sind jetzt so schmal wie die Strecke selbst und nehmen die Farbe des Streckenabschnitts an, auf dem sie liegen."
+        },
+        {
+          "kind": "improvement",
+          "text": "Lange Strecken bekommen mehr Richtungspfeile, die dafür gleichmäßig ruhig wandern statt davonzurasen."
+        },
+        {
           "kind": "feature",
           "text": "Das Streckenende ist mit einer schwarz-weiß karierten Zielflagge markiert."
         },
