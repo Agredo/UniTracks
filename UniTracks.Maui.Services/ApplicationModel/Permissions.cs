@@ -1,6 +1,8 @@
+using System.Diagnostics;
 using UniTracks.Services.ApplicationModel;
 using UniTracks.Services.ApplicationModel.Permissions;
 
+using MauiPermissionException = Microsoft.Maui.ApplicationModel.PermissionException;
 using MauiPermissionStatus = Microsoft.Maui.ApplicationModel.PermissionStatus;
 using MauiPermissions = Microsoft.Maui.ApplicationModel.Permissions;
 using PermissionStatus = UniTracks.Services.ApplicationModel.PermissionStatus;
@@ -11,17 +13,44 @@ public class Permissions : UniTracks.Services.ApplicationModel.IPermissions
 {
     public async Task<PermissionStatus> CheckPermissionStatusAsync(Permission permission)
     {
-        return MapToPermissionStatus(await CheckMauiPermission(permission));
+        try
+        {
+            return MapToPermissionStatus(await CheckMauiPermission(permission));
+        }
+        catch (MauiPermissionException ex)
+        {
+            // A permission the platform manifest does not declare cannot be queried: MAUI throws
+            // instead of answering. Report it as denied so the caller stays in control - an
+            // undeclared permission must never tear the app down.
+            Debug.WriteLine($"Permission '{permission}' is not declared on this platform: {ex.Message}");
+            return PermissionStatus.Denied;
+        }
     }
 
     public async Task<PermissionStatus> RequestPermissionAsync(Permission permission)
     {
-        return MapToPermissionStatus(await RequestMauiPermission(permission));
+        try
+        {
+            return MapToPermissionStatus(await RequestMauiPermission(permission));
+        }
+        catch (MauiPermissionException ex)
+        {
+            Debug.WriteLine($"Permission '{permission}' is not declared on this platform: {ex.Message}");
+            return PermissionStatus.Denied;
+        }
     }
 
     public bool ShouldShowRationale(Permission permission)
     {
-        return ShowRationalMauiPermission(permission);
+        try
+        {
+            return ShowRationalMauiPermission(permission);
+        }
+        catch (MauiPermissionException ex)
+        {
+            Debug.WriteLine($"Permission '{permission}' is not declared on this platform: {ex.Message}");
+            return false;
+        }
     }
 
     private PermissionStatus MapToPermissionStatus(MauiPermissionStatus mauiPermissionStatus)

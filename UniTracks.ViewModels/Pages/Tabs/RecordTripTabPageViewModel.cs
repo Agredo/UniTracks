@@ -176,15 +176,17 @@ public partial class RecordTripTabPageViewModel : ObservableObject
         // switched first and the result only used to decide whether to start listening, so a denied
         // permission left the page showing "Aufnahme läuft" with a running timer while nothing was
         // recorded.
-        PermissionStatus locationPermissionStatus = await PermissionHelper.CheckAndRequestPermission(Permissions, Permission.LocationAlways);
+        //
+        // Android fragt direkt LocationWhenInUse an: ACCESS_BACKGROUND_LOCATION ist dort bewusst
+        // nicht im Manifest (siehe AndroidManifest.xml), weil ein im Vordergrund gestarteter
+        // location-Foreground-Service auch im Hintergrund weiter aufzeichnen darf (While-in-Use
+        // reicht). Permissions.LocationAlways wirft ohne diesen Manifest-Eintrag eine
+        // PermissionException und hat die App hier beim Start der Aufnahme abgestuerzt.
+        Permission locationPermission = OperatingSystem.IsAndroid()
+            ? Permission.LocationWhenInUse
+            : Permission.LocationAlways;
 
-        // Ab Android 11 kann "Immer zulassen" nur noch in den Systemeinstellungen erteilt
-        // werden und ist hier nicht noetig: Der location-Foreground-Service wird im Vordergrund
-        // gestartet und darf damit auch im Hintergrund weiter aufzeichnen (While-in-Use reicht).
-        if (locationPermissionStatus is not PermissionStatus.Granted && OperatingSystem.IsAndroid())
-        {
-            locationPermissionStatus = await PermissionHelper.CheckAndRequestPermission(Permissions, Permission.LocationWhenInUse);
-        }
+        PermissionStatus locationPermissionStatus = await PermissionHelper.CheckAndRequestPermission(Permissions, locationPermission);
 
         if (locationPermissionStatus is not PermissionStatus.Granted)
         {
