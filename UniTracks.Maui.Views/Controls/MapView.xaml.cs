@@ -26,7 +26,7 @@ public partial class MapView : ContentView
     // Direction animation: an arrow travels the whole route in a fixed time, so a long track flows
     // at the same calm pace as a short one instead of racing away.
     private static readonly TimeSpan DirectionAnimationInterval = TimeSpan.FromMilliseconds(80);
-    private const double DirectionTraversalSeconds = 75;
+    private const double DirectionTraversalSeconds = 55;
     private const int DirectionArrowMinCount = 4;
     private const int DirectionArrowMaxCount = 40;
     private const double DirectionArrowMetresPerArrow = 300;
@@ -36,10 +36,10 @@ public partial class MapView : ContentView
     // symbol is 32 pixels wide and its shape cannot be changed. The chevron is exactly as wide as the
     // route pen, so it stays on the track instead of covering it.
     private const double DirectionArrowWidth = 5;
-    private const double DirectionArrowHeight = 7;
-    private const double DirectionArrowStrokeWidth = 1.3;
+    private const double DirectionArrowHeight = 9;
+    private const double DirectionArrowStrokeWidth = 1.7;
     private const int DirectionArrowColorSteps = 24;
-    private const double DirectionArrowLighten = 0.3;
+    private const double DirectionArrowLighten = 0.42;
 
     private MemoryLayer? routeLayer;
     private MemoryLayer? directionLayer;
