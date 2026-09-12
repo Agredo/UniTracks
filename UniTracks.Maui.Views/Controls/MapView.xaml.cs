@@ -1,10 +1,14 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
+using System.Net.Http;
+using BruTile.Predefined;
+using BruTile.Web;
 using CommunityToolkit.Maui;
 using Mapsui;
 using Mapsui.Layers;
 using Mapsui.Projections;
-using Mapsui.Tiling;
+using Mapsui.Tiling.Layers;
+using Microsoft.Maui.ApplicationModel;
 using Coordinate = NetTopologySuite.Geometries.Coordinate;
 using GeometryFeature = Mapsui.Nts.GeometryFeature;
 using LineString = NetTopologySuite.Geometries.LineString;
@@ -19,8 +23,43 @@ public partial class MapView : ContentView
     public MapView()
     {
         InitializeComponent();
-        ControlMapView.Map.Layers.Add(OpenStreetMap.CreateTileLayer());
+        ControlMapView.Map.Layers.Add(CreateOpenStreetMapLayer());
         ControlMapView.Map.Navigator.RotationLock = true;
+    }
+
+    // The OpenStreetMap tile usage policy requires a User-Agent that identifies the app. Android's
+    // native HTTP handler (HttpURLConnection, backed by OkHttp) replaces the header with a generic
+    // client one, which the tile server rejects with an "Access blocked" tile. The layer therefore
+    // uses its own HttpClient on the managed handler, which sends the header unchanged.
+    private const string TileUserAgentFallbackVersion = "0.0.0";
+
+    private static TileLayer CreateOpenStreetMapLayer()
+    {
+        var userAgent = $"UniTracks/{GetAppVersion()} (+https://github.com/Agredo/UniTracks)";
+
+        var tileSource = new HttpTileSource(
+            new GlobalSphericalMercator(),
+            "https://tile.openstreetmap.org/{z}/{x}/{y}.png",
+            name: "OpenStreetMap",
+            attribution: new BruTile.Attribution("© OpenStreetMap contributors", "https://www.openstreetmap.org/copyright"),
+            configureHttpRequestMessage: request => request.Headers.TryAddWithoutValidation("User-Agent", userAgent));
+
+        var httpClient = new HttpClient(new SocketsHttpHandler());
+        httpClient.DefaultRequestHeaders.TryAddWithoutValidation("User-Agent", userAgent);
+
+        return new TileLayer(tileSource, httpClient: httpClient) { Name = "OpenStreetMap" };
+    }
+
+    private static string GetAppVersion()
+    {
+        try
+        {
+            return AppInfo.Current.VersionString;
+        }
+        catch
+        {
+            return TileUserAgentFallbackVersion;
+        }
     }
 
     [BindableProperty(PropertyChangedMethodName = nameof(OnLocationsPropertyChanged))]
