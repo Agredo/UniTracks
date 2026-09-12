@@ -1,7 +1,7 @@
 @echo off
 setlocal enabledelayedexpansion
 
-set VERSION=0.1
+set VERSION=0.4
 set PROJECT=UniTracks.Maui\UniTracks.Maui.csproj
 set ANDROID_TFM=net11.0-android
 set WINDOWS_TFM=net11.0-windows10.0.26100.0
