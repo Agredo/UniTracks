@@ -13,11 +13,13 @@ public class CityBuilderService : ICityBuilderService
 {
     private readonly ICityStore cityStore;
     private readonly IActivityStatsSource activityStats;
+    private readonly ICoinAccountService coinAccount;
 
-    public CityBuilderService(ICityStore cityStore, IActivityStatsSource activityStats)
+    public CityBuilderService(ICityStore cityStore, IActivityStatsSource activityStats, ICoinAccountService coinAccount)
     {
         this.cityStore = cityStore;
         this.activityStats = activityStats;
+        this.coinAccount = coinAccount;
     }
 
     public async Task<CityState> GetCityAsync()
@@ -25,7 +27,10 @@ public class CityBuilderService : ICityBuilderService
         var placed = await cityStore.LoadAsync();
         var expansions = await cityStore.LoadExpansionsAsync();
         var stats = await activityStats.GetAsync();
-        return CityEngine.Rebuild(placed, expansions, stats);
+
+        // The account is shared with the tower defense game, so its spending is gone here too.
+        var account = await coinAccount.GetAsync();
+        return CityEngine.Rebuild(placed, expansions, stats, account.TowerDefenseSpent);
     }
 
     public async Task<PlaceResult> TryPlaceAsync(string buildingId, int x, int y)

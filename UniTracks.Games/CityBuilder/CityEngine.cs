@@ -17,16 +17,21 @@ public static class CityEngine
     /// <param name="placed">Persisted buildings (from the repository).</param>
     /// <param name="expansions">Purchased grid expansions.</param>
     /// <param name="stats">Lifetime activity (trips with type info, XP, achievements).</param>
+    /// <param name="coinsSpentInOtherGames">
+    /// Coins the player spent outside the city (currently tower unlocks and coin-funded energy).
+    /// The account is shared, so the spendable balance has to subtract them as well.
+    /// </param>
     public static CityState Rebuild(
         IEnumerable<PlacedBuilding> placed,
         IEnumerable<CityExpansion> expansions,
-        ActivityStats stats)
+        ActivityStats stats,
+        int coinsSpentInOtherGames = 0)
     {
         var placedList = placed.ToList();
         var expansionList = expansions.ToList();
         int gridSize = CityExpansions.ResolveGridSize(expansionList.Select(e => e.GridSize));
         int earned = CoinEconomy.ComputeEarned(stats.Trips, stats.Xp, stats.UnlockedAchievements);
-        int spent = ComputeSpent(placedList) + ComputeExpansionSpent(expansionList);
+        int spent = ComputeTotalSpent(placedList, expansionList) + coinsSpentInOtherGames;
 
         var tiles = new List<CityTile>(gridSize * gridSize);
         for (int y = 0; y < gridSize; y++)
@@ -65,6 +70,10 @@ public static class CityEngine
     /// <summary>Coins invested in purchased expansions (priced via the progression table).</summary>
     public static int ComputeExpansionSpent(IEnumerable<CityExpansion> expansions) =>
         expansions.Sum(e => CityExpansions.Steps.FirstOrDefault(s => s.GridSize == e.GridSize)?.Cost ?? 0);
+
+    /// <summary>Everything the city has cost so far — buildings plus expansions.</summary>
+    public static int ComputeTotalSpent(IEnumerable<PlacedBuilding> placed, IEnumerable<CityExpansion> expansions) =>
+        ComputeSpent(placed) + ComputeExpansionSpent(expansions);
 
     /// <summary>Validates a placement request. Does not mutate anything.</summary>
     public static PlaceResult ValidatePlacement(CityState city, string buildingId, int x, int y)

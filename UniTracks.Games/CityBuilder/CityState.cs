@@ -10,13 +10,16 @@ public record CityState
     /// <summary>All tiles, row-major (Y * GridSize + X). Always GridSize² entries.</summary>
     public IReadOnlyList<CityTile> Tiles { get; init; } = Array.Empty<CityTile>();
 
-    /// <summary>Spendable coins (earned − spent).</summary>
+    /// <summary>Spendable coins (earned − spent in every game, shared account).</summary>
     public int Coins { get; init; }
 
-    /// <summary>Total coins ever earned through trips and achievements.</summary>
+    /// <summary>Total coins ever earned through trips, levels and achievements.</summary>
     public int CoinsEarned { get; init; }
 
-    /// <summary>Total coins spent on buildings and city expansions.</summary>
+    /// <summary>
+    /// Total coins spent across all games — this city's buildings and expansions plus what the
+    /// tower defense game consumed (tower unlocks and coin-funded energy).
+    /// </summary>
     public int CoinsSpent { get; init; }
 
     /// <summary>Gamification level — gates buildings and expansions.</summary>

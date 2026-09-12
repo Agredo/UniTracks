@@ -162,6 +162,7 @@ public static class MauiProgram
         services.AddSingleton<ICoinService, CoinService>();
         services.AddSingleton<IActivityStatsSource>(sp => sp.GetRequiredService<ICoinService>());
         services.AddSingleton<ICityStore, CityStore>();
+        services.AddSingleton<ICoinAccountService, CoinAccountService>();
         services.AddSingleton<ICityBuilderService, CityBuilderService>();
         services.AddSingleton<ITowerDefenseStore, TowerDefenseStore>();
         services.AddSingleton<ITowerDefenseService, TowerDefenseService>();

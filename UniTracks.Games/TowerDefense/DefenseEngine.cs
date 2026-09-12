@@ -39,6 +39,10 @@ public static class DefenseEngine
     public static int ComputeEnergySpent(IEnumerable<EnergyPurchase> purchases) =>
         purchases.Sum(p => p.Coins);
 
+    /// <summary>Everything the tower defense game has cost so far — unlocks plus energy top-ups.</summary>
+    public static int ComputeTotalSpent(IEnumerable<TowerUnlock> unlocks, IEnumerable<EnergyPurchase> purchases) =>
+        ComputeUnlockSpent(unlocks) + ComputeEnergySpent(purchases);
+
     /// <summary>Grants energy to the running budget — used for coin-funded top-ups.</summary>
     public static void GrantEnergy(DefenseState state, int energy) => state.Energy += energy;
 

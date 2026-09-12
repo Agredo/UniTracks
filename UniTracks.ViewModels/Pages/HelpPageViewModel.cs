@@ -61,7 +61,7 @@ public partial class HelpPageViewModel : ObservableObject
             {
                 Title = "So funktioniert das Münzsystem",
                 Icon = "💡",
-                Body = "Münzen werden nie gespeichert — der Saldo wird bei jedem Öffnen des Spiel-Bereichs automatisch aus deinen echten Trips, Errungenschaften und Level neu berechnet. Neue Aktivität erhöht ihn sofort; Ausgaben werden abgezogen. So kann das Konto nie auseinanderlaufen.",
+                Body = "Münzen werden nie gespeichert — der Saldo wird bei jedem Öffnen des Spiel-Bereichs automatisch aus deinen echten Trips, Errungenschaften und Level neu berechnet. Neue Aktivität erhöht ihn sofort; Ausgaben werden abgezogen. Cozy City und Trail Defense teilen sich ein einziges Konto: Was du im einen Spiel ausgibst, fehlt sofort im anderen. So kann das Konto nie auseinanderlaufen.",
             },
             new HelpItem
             {
