@@ -1,16 +1,24 @@
 using UniTracks.Data.Seeding;
 using UniTracks.Maui.Views;
 using UniTracks.Maui.Views.Pages;
+using UniTracks.ViewModels.Changelog;
 
 namespace UniTracks.Maui
 {
     public partial class App : Application
     {
-        public App(DatabaseInitializer databaseInitializer, UniTracks.Services.Data.TripDistanceRecalculator distanceRecalculator)
+        private readonly IChangelogPresenter changelogPresenter;
+
+        public App(
+            DatabaseInitializer databaseInitializer,
+            UniTracks.Services.Data.TripDistanceRecalculator distanceRecalculator,
+            IChangelogPresenter changelogPresenter)
         {
             HookUnhandledExceptionLogging();
 
             InitializeComponent();
+
+            this.changelogPresenter = changelogPresenter;
 
             // Seed the TripType catalog if the active repository is empty (relevant on iOS, where
             // the store is LiteDB and there is no EF Core HasData/migration seeding). The stores now
@@ -25,7 +33,12 @@ namespace UniTracks.Maui
             // blocked; already-recalculated trips are skipped, so later runs are cheap.
             _ = distanceRecalculator.RecalculateAsync();
 
-            MainPage = new AppShell();
+            var shell = new AppShell();
+
+            // Subscribed before the shell becomes the main page: Loaded can fire as soon as the
+            // platform view is attached, and the release notes must not miss that first event.
+            shell.Loaded += OnShellLoaded;
+            MainPage = shell;
 
             Routing.RegisterRoute(nameof(TripOverviewPage), typeof(TripOverviewPage));
             Routing.RegisterRoute(nameof(TripChartsPage), typeof(TripChartsPage));
@@ -35,6 +48,34 @@ namespace UniTracks.Maui
             Routing.RegisterRoute(nameof(FeedbackPage), typeof(FeedbackPage));
             Routing.RegisterRoute(nameof(StatisticsPage), typeof(StatisticsPage));
             Routing.RegisterRoute(nameof(HelpPage), typeof(HelpPage));
+        }
+
+        /// <summary>
+        /// Shows the release notes once the shell is on screen; a popup needs a loaded page to attach
+        /// to, which is why this is not done in the constructor.
+        /// </summary>
+        private void OnShellLoaded(object? sender, EventArgs e)
+        {
+            if (sender is VisualElement element)
+            {
+                element.Loaded -= OnShellLoaded;
+            }
+
+            _ = ShowChangelogAsync();
+        }
+
+        private async Task ShowChangelogAsync()
+        {
+            try
+            {
+                await changelogPresenter.ShowIfUnseenAsync();
+            }
+            catch (Exception exception)
+            {
+                // Never let the release notes take the app down; the version stays unrecorded, so
+                // the next start simply tries again.
+                CrashLog.Write($"Changelog popup failed: {exception}");
+            }
         }
 
         /// <summary>

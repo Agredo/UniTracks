@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
+using System.Text;
 using BruTile.Predefined;
 using BruTile.Web;
 using CommunityToolkit.Maui;
@@ -9,6 +10,7 @@ using Mapsui.Layers;
 using Mapsui.Projections;
 using Mapsui.Tiling.Layers;
 using Microsoft.Maui.ApplicationModel;
+using Microsoft.Maui.Dispatching;
 using Coordinate = NetTopologySuite.Geometries.Coordinate;
 using GeometryFeature = Mapsui.Nts.GeometryFeature;
 using LineString = NetTopologySuite.Geometries.LineString;
@@ -18,14 +20,45 @@ namespace UniTracks.Maui.Views.Controls;
 
 public partial class MapView : ContentView
 {
+    // Direction animation: the gap between two arrows is the route length divided into this many
+    // steps, so one arrow travels one gap in roughly 1.3 seconds.
+    private static readonly TimeSpan DirectionAnimationInterval = TimeSpan.FromMilliseconds(80);
+    private const int DirectionAnimationStepsPerSpacing = 16;
+    private const int DirectionArrowMinCount = 4;
+    private const int DirectionArrowMaxCount = 12;
+    private const double DirectionArrowSpacingTarget = 700;
+    private const double DirectionArrowSymbolScale = 0.55;
+    private const double DirectionFadeFraction = 0.12;
+
     private MemoryLayer? routeLayer;
+    private MemoryLayer? directionLayer;
+    private IDispatcherTimer? directionTimer;
+    private (double x, double y)[] directionPath = [];
+    private double[] directionCumulativeDistances = [];
+    private double directionArrowSpacing;
+    private double directionPhase;
 
     public MapView()
     {
         InitializeComponent();
         ControlMapView.Map.Layers.Add(CreateOpenStreetMapLayer());
         ControlMapView.Map.Navigator.RotationLock = true;
+
+        // The animation only runs while the view is on screen, so it costs nothing once the trip
+        // page has been left.
+        Loaded += OnMapViewLoaded;
+        Unloaded += OnMapViewUnloaded;
     }
+
+    private void OnMapViewLoaded(object? sender, EventArgs e)
+    {
+        if (directionPath.Length > 1)
+        {
+            StartDirectionAnimation();
+        }
+    }
+
+    private void OnMapViewUnloaded(object? sender, EventArgs e) => StopDirectionAnimation();
 
     // The OpenStreetMap tile usage policy requires a User-Agent that identifies the app. Android's
     // native HTTP handler (HttpURLConnection, backed by OkHttp) replaces the header with a generic
@@ -139,6 +172,10 @@ public partial class MapView : ContentView
 
         ControlMapView.Map.Layers.Add(routeLayer);
 
+        // Direction of travel: arrows that march from start to finish along the smoothed track,
+        // plus a checkered finish flag on the last point.
+        CreateDirectionLayer(projected);
+
         CenterOnRoute(projected);
     }
 
@@ -210,11 +247,243 @@ public partial class MapView : ContentView
 
     private void RemoveRouteLayers()
     {
+        StopDirectionAnimation();
+
+        if (directionLayer is not null)
+        {
+            ControlMapView.Map.Layers.Remove(directionLayer);
+            directionLayer = null;
+        }
+
         if (routeLayer is not null)
         {
             ControlMapView.Map.Layers.Remove(routeLayer);
             routeLayer = null;
         }
+
+        directionPath = [];
+        directionCumulativeDistances = [];
+        directionArrowSpacing = 0;
+        directionPhase = 0;
+    }
+
+    // ---- Direction of travel ---------------------------------------------------------------
+
+    // The checkered finish flag is embedded as an inline SVG, so neither an asset file nor a
+    // network request is needed. Mapsui resolves "svg-content://" through its own image cache.
+    private static readonly string FinishFlagSource = "svg-content://" + BuildFinishFlagSvg();
+    private static readonly Mapsui.Styles.Image FinishFlagImage = new() { Source = FinishFlagSource };
+
+    private static string BuildFinishFlagSvg()
+    {
+        const int columns = 6;
+        const int rows = 5;
+        const double cell = 3;
+        const double flagX = 20.8;
+        const double flagY = 3;
+        const double flagWidth = columns * cell;
+        const double flagHeight = rows * cell;
+
+        var svg = new StringBuilder();
+        svg.Append("<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"40\" height=\"40\" viewBox=\"0 0 40 40\">");
+        svg.Append("<rect x=\"19\" y=\"3\" width=\"2\" height=\"36\" rx=\"1\" fill=\"#1B1B1B\"/>");
+        svg.Append($"<rect x=\"{flagX}\" y=\"{flagY}\" width=\"{flagWidth}\" height=\"{flagHeight}\" fill=\"#FFFFFF\"/>");
+
+        for (var row = 0; row < rows; row++)
+        {
+            for (var column = 0; column < columns; column++)
+            {
+                if ((row + column) % 2 == 0)
+                {
+                    continue;
+                }
+
+                svg.Append($"<rect x=\"{flagX + (column * cell)}\" y=\"{flagY + (row * cell)}\" width=\"{cell}\" height=\"{cell}\" fill=\"#111111\"/>");
+            }
+        }
+
+        svg.Append($"<rect x=\"{flagX}\" y=\"{flagY}\" width=\"{flagWidth}\" height=\"{flagHeight}\" fill=\"none\" stroke=\"#111111\" stroke-width=\"1\"/>");
+        svg.Append("</svg>");
+        return svg.ToString();
+    }
+
+    private void CreateDirectionLayer((double x, double y)[] projected)
+    {
+        StopDirectionAnimation();
+
+        directionPath = projected;
+        directionPhase = 0;
+        directionCumulativeDistances = new double[projected.Length];
+
+        for (var index = 1; index < projected.Length; index++)
+        {
+            var dx = projected[index].x - projected[index - 1].x;
+            var dy = projected[index].y - projected[index - 1].y;
+            directionCumulativeDistances[index] =
+                directionCumulativeDistances[index - 1] + Math.Sqrt((dx * dx) + (dy * dy));
+        }
+
+        var totalLength = directionCumulativeDistances[^1];
+
+        var features = new List<IFeature> { CreateFinishFlagFeature(projected[^1]) };
+
+        if (projected.Length > 1 && totalLength > 0)
+        {
+            var arrowCount = Math.Clamp(
+                (int)Math.Round(totalLength / DirectionArrowSpacingTarget),
+                DirectionArrowMinCount,
+                DirectionArrowMaxCount);
+
+            directionArrowSpacing = totalLength / arrowCount;
+            features.AddRange(CreateDirectionArrowFeatures(totalLength));
+        }
+
+        directionLayer = new MemoryLayer("RouteDirection") { Style = null, Features = features };
+        ControlMapView.Map.Layers.Add(directionLayer);
+
+        StartDirectionAnimation();
+    }
+
+    private static IFeature CreateFinishFlagFeature((double x, double y) point)
+    {
+        var feature = new PointFeature(point.x, point.y);
+        feature.Styles.Add(new Mapsui.Styles.ImageStyle
+        {
+            Image = FinishFlagImage,
+            RotateWithMap = false,
+            SymbolScale = 1.1,
+            // A relative offset of (0, 0.5) moves the image up by half its height, so the foot of
+            // the flag pole ends up exactly on the last track point.
+            RelativeOffset = new Mapsui.Styles.RelativeOffset(0, 0.5),
+        });
+        return feature;
+    }
+
+    private List<IFeature> CreateDirectionArrowFeatures(double totalLength)
+    {
+        var features = new List<IFeature>();
+        var fadeLength = Math.Min(directionArrowSpacing, totalLength * DirectionFadeFraction);
+
+        for (var distance = directionPhase; distance <= totalLength; distance += directionArrowSpacing)
+        {
+            if (!TryLocateOnPath(distance, out var x, out var y, out var bearing))
+            {
+                continue;
+            }
+
+            // Arrows fade in at the start and out at the finish so that the marching motion has no
+            // hard pop when an arrow enters or leaves the route.
+            var opacity = fadeLength > 0
+                ? (float)Math.Min(1, Math.Min(distance, totalLength - distance) / fadeLength)
+                : 1f;
+
+            var feature = new PointFeature(x, y);
+            feature.Styles.Add(new Mapsui.Styles.SymbolStyle
+            {
+                SymbolType = Mapsui.Styles.SymbolType.Triangle,
+                SymbolRotation = bearing,
+                RotateWithMap = false,
+                SymbolScale = DirectionArrowSymbolScale,
+                Fill = new Mapsui.Styles.Brush(new Mapsui.Styles.Color(0xF2, 0xF7, 0xF3)),
+                Outline = new Mapsui.Styles.Pen(new Mapsui.Styles.Color(0x0C, 0x12, 0x0E), 1.4f),
+                Opacity = opacity,
+            });
+            features.Add(feature);
+        }
+
+        return features;
+    }
+
+    /// <summary>
+    /// Interpolates the point that lies <paramref name="distance"/> along the projected track and
+    /// the rotation (clockwise degrees) that points a symbol in the direction of travel there.
+    /// </summary>
+    private bool TryLocateOnPath(double distance, out double x, out double y, out double bearingDegrees)
+    {
+        x = 0;
+        y = 0;
+        bearingDegrees = 0;
+
+        if (directionPath.Length < 2)
+        {
+            return false;
+        }
+
+        var index = 1;
+        while (index < directionCumulativeDistances.Length - 1 && directionCumulativeDistances[index] < distance)
+        {
+            index++;
+        }
+
+        var from = directionPath[index - 1];
+        var to = directionPath[index];
+        var segmentLength = directionCumulativeDistances[index] - directionCumulativeDistances[index - 1];
+        var t = segmentLength > 0
+            ? Math.Clamp((distance - directionCumulativeDistances[index - 1]) / segmentLength, 0, 1)
+            : 0;
+
+        x = from.x + ((to.x - from.x) * t);
+        y = from.y + ((to.y - from.y) * t);
+
+        // Screen Y grows downwards while Mercator Y grows northwards, and a symbol that points up
+        // by default is rotated clockwise, so the angle is atan2(dx, dy) rather than atan2(dy, dx).
+        bearingDegrees = Math.Atan2(to.x - from.x, to.y - from.y) * 180 / Math.PI;
+        return true;
+    }
+
+    private void StartDirectionAnimation()
+    {
+        StopDirectionAnimation();
+
+        if (directionLayer is null || directionPath.Length < 2 || directionArrowSpacing <= 0)
+        {
+            return;
+        }
+
+        if (Application.Current?.Dispatcher is not { } dispatcher)
+        {
+            return;
+        }
+
+        var timer = dispatcher.CreateTimer();
+        timer.Interval = DirectionAnimationInterval;
+        timer.Tick += OnDirectionAnimationTick;
+        directionTimer = timer;
+        timer.Start();
+    }
+
+    private void StopDirectionAnimation()
+    {
+        if (directionTimer is null)
+        {
+            return;
+        }
+
+        directionTimer.Tick -= OnDirectionAnimationTick;
+        directionTimer.Stop();
+        directionTimer = null;
+    }
+
+    private void OnDirectionAnimationTick(object? sender, EventArgs e)
+    {
+        if (directionLayer is null || directionPath.Length < 2 || directionArrowSpacing <= 0)
+        {
+            StopDirectionAnimation();
+            return;
+        }
+
+        directionPhase += directionArrowSpacing / DirectionAnimationStepsPerSpacing;
+        if (directionPhase >= directionArrowSpacing)
+        {
+            directionPhase -= directionArrowSpacing;
+        }
+
+        var totalLength = directionCumulativeDistances[^1];
+        var features = new List<IFeature> { CreateFinishFlagFeature(directionPath[^1]) };
+        features.AddRange(CreateDirectionArrowFeatures(totalLength));
+        directionLayer.Features = features;
+
+        ControlMapView.RefreshGraphics();
     }
 
     private void CenterOnRoute((double x, double y)[] projected)
