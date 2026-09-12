@@ -2,13 +2,16 @@
 using System.Linq;
 using System.Net.Http;
 using System.Text;
+using System.Windows.Input;
 using BruTile.Predefined;
 using BruTile.Web;
 using CommunityToolkit.Maui;
 using Mapsui;
 using Mapsui.Layers;
+using Mapsui.Manipulations;
 using Mapsui.Projections;
 using Mapsui.Tiling.Layers;
+using Mapsui.UI;
 using Microsoft.Maui.ApplicationModel;
 using Microsoft.Maui.Dispatching;
 using Coordinate = NetTopologySuite.Geometries.Coordinate;
@@ -43,6 +46,7 @@ public partial class MapView : ContentView
         InitializeComponent();
         ControlMapView.Map.Layers.Add(CreateOpenStreetMapLayer());
         ControlMapView.Map.Navigator.RotationLock = true;
+        ControlMapView.MapTapped += OnMapTapped;
 
         // The animation only runs while the view is on screen, so it costs nothing once the trip
         // page has been left.
@@ -103,6 +107,32 @@ public partial class MapView : ContentView
         if (bindable is MapView mapView && newValue is IReadOnlyList<Location> locations)
         {
             mapView.DrawRoute(locations);
+        }
+    }
+
+    public static readonly BindableProperty TapCommandProperty = BindableProperty.Create(
+        nameof(TapCommand), typeof(ICommand), typeof(MapView));
+
+    public ICommand? TapCommand
+    {
+        get => (ICommand?)GetValue(TapCommandProperty);
+        set => SetValue(TapCommandProperty, value);
+    }
+
+    // The Mapsui MapControl hosts a SkiaSharp view that marks every touch as handled, so a
+    // TapGestureRecognizer on this ContentView never fires on Android. Mapsui's own tap detection
+    // is used instead; it ignores movements beyond MaxTapGestureMovement, which keeps panning and
+    // zooming unaffected.
+    private void OnMapTapped(object? sender, MapEventArgs e)
+    {
+        if (e.GestureType != GestureType.SingleTap)
+        {
+            return;
+        }
+
+        if (TapCommand?.CanExecute(null) == true)
+        {
+            TapCommand.Execute(null);
         }
     }
 

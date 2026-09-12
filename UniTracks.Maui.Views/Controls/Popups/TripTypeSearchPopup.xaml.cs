@@ -11,6 +11,7 @@ public partial class TripTypeSearchPopup : Popup
 	public TripTypeSearchPopup(TripTypeSearchPopupViewModel viewModel)
 	{
 		InitializeComponent();
+		PopupCard.WidthRequest = PopupSizing.ContentWidth;
 
 		BindingContext = viewModel;
 		_viewModel = viewModel;

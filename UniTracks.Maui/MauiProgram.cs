@@ -52,6 +52,16 @@ public static class MauiProgram
                         Stroke = new SolidColorBrush(Colors.Transparent),
                     },
                 });
+
+                // The toolkit paints every popup white and insets its content by 15, which showed up
+                // as a bright frame around the rounded card. The card now forms the whole popup and
+                // the margin keeps it clear of the screen edges.
+                options.SetPopupDefaults(new DefaultPopupSettings
+                {
+                    BackgroundColor = Colors.Transparent,
+                    Padding = new Thickness(0),
+                    Margin = new Thickness(PopupSizing.SideMargin),
+                });
             })
             .UseSkiaSharp()
             .ConfigureLifecycleEvents(events =>
