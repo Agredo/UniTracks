@@ -7,7 +7,6 @@
     xmlns:vm="clr-namespace:UniTracks.ViewModels.Controls.Popups;assembly=UniTracks.ViewModels"
     xmlns:models="clr-namespace:UniTracks.Models.Trip;assembly=UniTracks.Models"
     x:DataType="vm:TripTypeSearchPopupViewModel"
-    BackgroundColor="Transparent"
     CanBeDismissedByTappingOutsideOfPopup="True">
 
     <toolkit:Popup.Resources>
@@ -25,11 +24,9 @@
     </toolkit:Popup.Resources>
 
     <Border
+        x:Name="PopupCard"
         Padding="24"
-        Style="{StaticResource CardBorder}"
-        Stroke="Transparent"
-        StrokeThickness="0"
-        WidthRequest="420">
+        Style="{StaticResource CardBorder}">
         <VerticalStackLayout Spacing="12">
 
             <Label Style="{StaticResource TitleLabel}" Text="Trip-Typ suchen" />

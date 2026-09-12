@@ -11,12 +11,10 @@
     x:DataType="vm:TripOverviewViewModel">
 
     <Grid>
-        <!-- Tapping the map toggles both overlay cards, so the route can be seen unobstructed. -->
-        <controls:MapView Locations="{Binding Locations}">
-            <controls:MapView.GestureRecognizers>
-                <TapGestureRecognizer Command="{Binding ToggleOverlayCommand}" />
-            </controls:MapView.GestureRecognizers>
-        </controls:MapView>
+        <!-- Tapping the map toggles both overlay cards, so the route can be seen unobstructed.
+             The tap comes from MapView itself: the Mapsui MapControl inside it consumes touch
+             events, which prevents a TapGestureRecognizer from ever firing on Android. -->
+        <controls:MapView Locations="{Binding Locations}" TapCommand="{Binding ToggleOverlayCommand}" />
 
         <!-- Floating stats card (tap for full analysis) -->
         <Border

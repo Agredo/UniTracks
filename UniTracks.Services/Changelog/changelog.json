@@ -26,6 +26,14 @@
           "text": "Die Karte zeigt auf Android wieder Straßen statt \"Access blocked\"-Kacheln von OpenStreetMap."
         },
         {
+          "kind": "fix",
+          "text": "Tippen auf die Karte blendet die Statistik-Overlays auch auf Android aus, sodass die Strecke frei sichtbar ist."
+        },
+        {
+          "kind": "fix",
+          "text": "Popups haben keinen weißen Rand mehr und halten Abstand zum Bildschirmrand."
+        },
+        {
           "kind": "improvement",
           "text": "Cozy City und Trail Defense teilen sich ein gemeinsames Münzkonto: Ausgaben wirken sich auf beide Spiele aus."
         }

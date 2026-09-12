@@ -10,6 +10,7 @@ public partial class WhatsNewPopup : Popup
     public WhatsNewPopup(WhatsNewPopupViewModel viewModel)
     {
         InitializeComponent();
+        PopupCard.WidthRequest = PopupSizing.ContentWidth;
         BindingContext = viewModel;
         this.viewModel = viewModel;
         this.viewModel.Completed += OnCompleted;

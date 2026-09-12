@@ -10,6 +10,7 @@ public partial class UserCreationPopup : Popup
 	public UserCreationPopup(UserCreationPopupViewModel viewModel)
 	{
 		InitializeComponent();
+		PopupCard.WidthRequest = PopupSizing.ContentWidth;
 
 		BindingContext = viewModel;
 		_viewModel = viewModel;
