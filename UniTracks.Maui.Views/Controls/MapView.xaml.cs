@@ -23,23 +23,35 @@ namespace UniTracks.Maui.Views.Controls;
 
 public partial class MapView : ContentView
 {
-    // Direction animation: the gap between two arrows is the route length divided into this many
-    // steps, so one arrow travels one gap in roughly 1.3 seconds.
+    // Direction animation: an arrow travels the whole route in a fixed time, so a long track flows
+    // at the same calm pace as a short one instead of racing away.
     private static readonly TimeSpan DirectionAnimationInterval = TimeSpan.FromMilliseconds(80);
-    private const int DirectionAnimationStepsPerSpacing = 16;
+    private const double DirectionTraversalSeconds = 75;
     private const int DirectionArrowMinCount = 4;
-    private const int DirectionArrowMaxCount = 12;
-    private const double DirectionArrowSpacingTarget = 700;
-    private const double DirectionArrowSymbolScale = 0.55;
+    private const int DirectionArrowMaxCount = 40;
+    private const double DirectionArrowMetresPerArrow = 300;
     private const double DirectionFadeFraction = 0.12;
+
+    // The arrow marker is an inline SVG rather than Mapsui's built-in triangle symbol, because that
+    // symbol is 32 pixels wide and its shape cannot be changed. The chevron is exactly as wide as the
+    // route pen, so it stays on the track instead of covering it.
+    private const double DirectionArrowWidth = 5;
+    private const double DirectionArrowHeight = 7;
+    private const double DirectionArrowStrokeWidth = 1.3;
+    private const int DirectionArrowColorSteps = 24;
+    private const double DirectionArrowLighten = 0.3;
 
     private MemoryLayer? routeLayer;
     private MemoryLayer? directionLayer;
     private IDispatcherTimer? directionTimer;
     private (double x, double y)[] directionPath = [];
     private double[] directionCumulativeDistances = [];
+    private double[] directionSpeeds = [];
+    private double directionMinSpeed;
+    private double directionMaxSpeed;
     private double directionArrowSpacing;
     private double directionPhase;
+    private double directionAdvancePerTick;
 
     public MapView()
     {
@@ -161,9 +173,12 @@ public partial class MapView : ContentView
 
         routeLayer = new MemoryLayer("Route");
 
+        // Segment speeds serve two purposes: they colour the track and they colour the direction
+        // arrows with the section of track they sit on.
+        var speeds = projected.Length > 1 ? ComputeSegmentSpeeds(smoothed) : [];
+
         if (projected.Length > 1)
         {
-            var speeds = ComputeSegmentSpeeds(smoothed);
             var minSpeed = speeds.Min();
             var maxSpeed = speeds.Max();
 
@@ -204,7 +219,7 @@ public partial class MapView : ContentView
 
         // Direction of travel: arrows that march from start to finish along the smoothed track,
         // plus a checkered finish flag on the last point.
-        CreateDirectionLayer(projected);
+        CreateDirectionLayer(projected, speeds, TotalMetres(smoothed));
 
         CenterOnRoute(projected);
     }
@@ -245,6 +260,24 @@ public partial class MapView : ContentView
             + Math.Cos(lat1 * Math.PI / 180) * Math.Cos(lat2 * Math.PI / 180)
             * Math.Sin(dLon / 2) * Math.Sin(dLon / 2);
         return earthRadiusMeters * 2 * Math.Atan2(Math.Sqrt(a), Math.Sqrt(1 - a));
+    }
+
+    // Real track length in metres. The projected length cannot be used to space the arrows out,
+    // because it shrinks with latitude and does not match what the trip actually measured.
+    private static double TotalMetres(IReadOnlyList<Location> locations)
+    {
+        var metres = 0.0;
+
+        for (var index = 1; index < locations.Count; index++)
+        {
+            metres += HaversineMeters(
+                locations[index - 1].Latitude,
+                locations[index - 1].Longitude,
+                locations[index].Latitude,
+                locations[index].Longitude);
+        }
+
+        return metres;
     }
 
     // Lavender -> Mint -> Red, mapped onto the trip's speed range.
@@ -293,8 +326,12 @@ public partial class MapView : ContentView
 
         directionPath = [];
         directionCumulativeDistances = [];
+        directionSpeeds = [];
+        directionMinSpeed = 0;
+        directionMaxSpeed = 0;
         directionArrowSpacing = 0;
         directionPhase = 0;
+        directionAdvancePerTick = 0;
     }
 
     // ---- Direction of travel ---------------------------------------------------------------
@@ -317,7 +354,8 @@ public partial class MapView : ContentView
         var svg = new StringBuilder();
         svg.Append("<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"40\" height=\"40\" viewBox=\"0 0 40 40\">");
         svg.Append("<rect x=\"19\" y=\"3\" width=\"2\" height=\"36\" rx=\"1\" fill=\"#1B1B1B\"/>");
-        svg.Append($"<rect x=\"{flagX}\" y=\"{flagY}\" width=\"{flagWidth}\" height=\"{flagHeight}\" fill=\"#FFFFFF\"/>");
+        // Numbers inside an SVG must use a dot as the decimal separator, whatever the device locale.
+        svg.Append(FormattableString.Invariant($"<rect x=\"{flagX}\" y=\"{flagY}\" width=\"{flagWidth}\" height=\"{flagHeight}\" fill=\"#FFFFFF\"/>"));
 
         for (var row = 0; row < rows; row++)
         {
@@ -328,21 +366,64 @@ public partial class MapView : ContentView
                     continue;
                 }
 
-                svg.Append($"<rect x=\"{flagX + (column * cell)}\" y=\"{flagY + (row * cell)}\" width=\"{cell}\" height=\"{cell}\" fill=\"#111111\"/>");
+                svg.Append(FormattableString.Invariant($"<rect x=\"{flagX + (column * cell)}\" y=\"{flagY + (row * cell)}\" width=\"{cell}\" height=\"{cell}\" fill=\"#111111\"/>"));
             }
         }
 
-        svg.Append($"<rect x=\"{flagX}\" y=\"{flagY}\" width=\"{flagWidth}\" height=\"{flagHeight}\" fill=\"none\" stroke=\"#111111\" stroke-width=\"1\"/>");
+        svg.Append(FormattableString.Invariant($"<rect x=\"{flagX}\" y=\"{flagY}\" width=\"{flagWidth}\" height=\"{flagHeight}\" fill=\"none\" stroke=\"#111111\" stroke-width=\"1\"/>"));
         svg.Append("</svg>");
         return svg.ToString();
     }
 
-    private void CreateDirectionLayer((double x, double y)[] projected)
+    // One arrow image per step of the speed gradient, built once at start-up. Baking the colour into
+    // the image is what allows an arrow to take the colour of the track it sits on; the alternative,
+    // a SymbolStyle, can be tinted per feature but cannot be shaped into a chevron.
+    private static readonly Mapsui.Styles.Image[] DirectionArrowImages = BuildDirectionArrowImages();
+
+    private static Mapsui.Styles.Image[] BuildDirectionArrowImages()
+    {
+        var images = new Mapsui.Styles.Image[DirectionArrowColorSteps];
+
+        for (var index = 0; index < images.Length; index++)
+        {
+            var position = (double)index / (DirectionArrowColorSteps - 1);
+            images[index] = new Mapsui.Styles.Image
+            {
+                Source = "svg-content://" + BuildDirectionArrowSvg(SpeedToColor(position, 0, 1))
+            };
+        }
+
+        return images;
+    }
+
+    private static string BuildDirectionArrowSvg(Mapsui.Styles.Color color)
+    {
+        // The chevron takes the hue of the track it sits on, lightened so that it stays readable on
+        // top of the route pen instead of disappearing into it.
+        var light = new Mapsui.Styles.Color(
+            (int)Math.Round(color.R + ((255 - color.R) * DirectionArrowLighten)),
+            (int)Math.Round(color.G + ((255 - color.G) * DirectionArrowLighten)),
+            (int)Math.Round(color.B + ((255 - color.B) * DirectionArrowLighten)));
+
+        var inset = DirectionArrowStrokeWidth / 2;
+        var tip = DirectionArrowWidth / 2;
+
+        var svg = new StringBuilder();
+        svg.Append(FormattableString.Invariant($"<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"{DirectionArrowWidth}\" height=\"{DirectionArrowHeight}\" viewBox=\"0 0 {DirectionArrowWidth} {DirectionArrowHeight}\">"));
+        svg.Append(FormattableString.Invariant($"<path d=\"M{inset} {DirectionArrowHeight - inset} L{tip} {inset} L{DirectionArrowWidth - inset} {DirectionArrowHeight - inset}\" fill=\"none\" stroke=\"#{light.R:X2}{light.G:X2}{light.B:X2}\" stroke-width=\"{DirectionArrowStrokeWidth}\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/>"));
+        svg.Append("</svg>");
+        return svg.ToString();
+    }
+
+    private void CreateDirectionLayer((double x, double y)[] projected, double[] speeds, double totalMetres)
     {
         StopDirectionAnimation();
 
         directionPath = projected;
         directionPhase = 0;
+        directionSpeeds = speeds;
+        directionMinSpeed = speeds.Length > 0 ? speeds.Min() : 0;
+        directionMaxSpeed = speeds.Length > 0 ? speeds.Max() : 0;
         directionCumulativeDistances = new double[projected.Length];
 
         for (var index = 1; index < projected.Length; index++)
@@ -359,12 +440,20 @@ public partial class MapView : ContentView
 
         if (projected.Length > 1 && totalLength > 0)
         {
+            // One arrow every few hundred metres, so a longer track carries more of them while a
+            // short one is not littered with markers.
             var arrowCount = Math.Clamp(
-                (int)Math.Round(totalLength / DirectionArrowSpacingTarget),
+                (int)Math.Round(totalMetres / DirectionArrowMetresPerArrow),
                 DirectionArrowMinCount,
                 DirectionArrowMaxCount);
 
             directionArrowSpacing = totalLength / arrowCount;
+
+            // The advance is a share of the route, not a share of the gap between two arrows, so the
+            // arrows keep the same pace no matter how long the track or how many arrows it carries.
+            directionAdvancePerTick =
+                totalLength * (DirectionAnimationInterval.TotalSeconds / DirectionTraversalSeconds);
+
             features.AddRange(CreateDirectionArrowFeatures(totalLength));
         }
 
@@ -396,7 +485,7 @@ public partial class MapView : ContentView
 
         for (var distance = directionPhase; distance <= totalLength; distance += directionArrowSpacing)
         {
-            if (!TryLocateOnPath(distance, out var x, out var y, out var bearing))
+            if (!TryLocateOnPath(distance, out var x, out var y, out var bearing, out var segmentIndex))
             {
                 continue;
             }
@@ -408,14 +497,11 @@ public partial class MapView : ContentView
                 : 1f;
 
             var feature = new PointFeature(x, y);
-            feature.Styles.Add(new Mapsui.Styles.SymbolStyle
+            feature.Styles.Add(new Mapsui.Styles.ImageStyle
             {
-                SymbolType = Mapsui.Styles.SymbolType.Triangle,
+                Image = GetDirectionArrowImage(segmentIndex),
                 SymbolRotation = bearing,
                 RotateWithMap = false,
-                SymbolScale = DirectionArrowSymbolScale,
-                Fill = new Mapsui.Styles.Brush(new Mapsui.Styles.Color(0xF2, 0xF7, 0xF3)),
-                Outline = new Mapsui.Styles.Pen(new Mapsui.Styles.Color(0x0C, 0x12, 0x0E), 1.4f),
                 Opacity = opacity,
             });
             features.Add(feature);
@@ -425,14 +511,31 @@ public partial class MapView : ContentView
     }
 
     /// <summary>
+    /// Picks the arrow image whose colour matches the speed of the track section the arrow sits on.
+    /// </summary>
+    private Mapsui.Styles.Image GetDirectionArrowImage(int segmentIndex)
+    {
+        var speed = segmentIndex >= 0 && segmentIndex < directionSpeeds.Length
+            ? directionSpeeds[segmentIndex]
+            : 0;
+
+        var range = directionMaxSpeed - directionMinSpeed;
+        var position = range > 0.001 ? (speed - directionMinSpeed) / range : 0.5;
+
+        var index = (int)Math.Round(Math.Clamp(position, 0, 1) * (DirectionArrowColorSteps - 1));
+        return DirectionArrowImages[index];
+    }
+
+    /// <summary>
     /// Interpolates the point that lies <paramref name="distance"/> along the projected track and
     /// the rotation (clockwise degrees) that points a symbol in the direction of travel there.
     /// </summary>
-    private bool TryLocateOnPath(double distance, out double x, out double y, out double bearingDegrees)
+    private bool TryLocateOnPath(double distance, out double x, out double y, out double bearingDegrees, out int segmentIndex)
     {
         x = 0;
         y = 0;
         bearingDegrees = 0;
+        segmentIndex = 0;
 
         if (directionPath.Length < 2)
         {
@@ -454,6 +557,7 @@ public partial class MapView : ContentView
 
         x = from.x + ((to.x - from.x) * t);
         y = from.y + ((to.y - from.y) * t);
+        segmentIndex = index - 1;
 
         // Screen Y grows downwards while Mercator Y grows northwards, and a symbol that points up
         // by default is rotated clockwise, so the angle is atan2(dx, dy) rather than atan2(dy, dx).
@@ -502,11 +606,9 @@ public partial class MapView : ContentView
             return;
         }
 
-        directionPhase += directionArrowSpacing / DirectionAnimationStepsPerSpacing;
-        if (directionPhase >= directionArrowSpacing)
-        {
-            directionPhase -= directionArrowSpacing;
-        }
+        // Wrapping by exactly one gap keeps the arrow set identical before and after the wrap, so the
+        // motion stays continuous.
+        directionPhase = (directionPhase + directionAdvancePerTick) % directionArrowSpacing;
 
         var totalLength = directionCumulativeDistances[^1];
         var features = new List<IFeature> { CreateFinishFlagFeature(directionPath[^1]) };
