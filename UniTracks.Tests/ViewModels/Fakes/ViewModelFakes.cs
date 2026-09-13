@@ -178,6 +178,9 @@ internal sealed class FakePermissions : IPermissions
 {
     public PermissionStatus Status { get; set; } = PermissionStatus.Granted;
 
+    /// <summary>Returned by <see cref="RequestPermissionAsync"/> instead of <see cref="Status"/> when set.</summary>
+    public PermissionStatus? StatusAfterRequest { get; set; }
+
     public bool ShouldShowRationaleResult { get; set; }
 
     public List<Permission> CheckedPermissions { get; } = new();
@@ -193,10 +196,22 @@ internal sealed class FakePermissions : IPermissions
     public Task<PermissionStatus> RequestPermissionAsync(Permission permission)
     {
         RequestedPermissions.Add(permission);
-        return Task.FromResult(Status);
+        return Task.FromResult(StatusAfterRequest ?? Status);
     }
 
     public bool ShouldShowRationale(Permission permission) => ShouldShowRationaleResult;
+}
+
+/// <summary>Records whether the app's system settings page was opened.</summary>
+internal sealed class FakeAppSettings : IAppSettings
+{
+    public bool WasShown { get; private set; }
+
+    public Task<bool> ShowAsync()
+    {
+        WasShown = true;
+        return Task.FromResult(true);
+    }
 }
 
 /// <summary>Runs everything inline: the ViewModels only use the main thread to update bound text.</summary>

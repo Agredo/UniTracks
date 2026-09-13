@@ -196,6 +196,7 @@ public static class MauiProgram
         services.AddSingleton<ITowerDefenseService, TowerDefenseService>();
         services.AddSingleton<IGameCatalogService, GameCatalogService>();
         services.AddSingleton<UniTracks.Services.ApplicationModel.IPermissions, UniTracks.Maui.Services.ApplicationModel.Permissions>();
+        services.AddSingleton<UniTracks.Services.ApplicationModel.IAppSettings, UniTracks.Maui.Services.ApplicationModel.AppSettings>();
         services.AddSingleton<UniTracks.Services.Dispatching.IDispatcher, UniTracks.Maui.Services.Dispatching.Dispatcher>();
 
         // Release notes: the JSON catalog is read once, the last shown version is persisted, and the

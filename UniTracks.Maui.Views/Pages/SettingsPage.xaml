@@ -74,6 +74,33 @@
                 </Border>
             </VerticalStackLayout>
 
+            <!-- Background location: Android 11+ and iOS only grant "always" from the system page. -->
+            <VerticalStackLayout IsVisible="{Binding IsBackgroundLocationVisible}" Spacing="8">
+                <Label Style="{StaticResource SectionHeader}" Text="HINTERGRUND-STANDORT" />
+                <Border Style="{StaticResource CardBorder}">
+                    <VerticalStackLayout Spacing="12">
+                        <VerticalStackLayout Spacing="2">
+                            <Label
+                                FontFamily="OpenSansSemibold"
+                                FontSize="15"
+                                Text="Immer erlauben" />
+                            <Label
+                                FontSize="12"
+                                Text="{Binding BackgroundLocationStateText}"
+                                TextColor="{StaticResource TextSecondary}" />
+                        </VerticalStackLayout>
+                        <Label
+                            FontSize="12"
+                            Text="{Binding BackgroundLocationHint}"
+                            TextColor="{StaticResource TextMuted}" />
+                        <Button
+                            Command="{Binding OpenBackgroundLocationSettingsCommand}"
+                            HorizontalOptions="Start"
+                            Text="Standortfreigabe ändern" />
+                    </VerticalStackLayout>
+                </Border>
+            </VerticalStackLayout>
+
             <Grid HeightRequest="20" />
         </VerticalStackLayout>
     </ScrollView>

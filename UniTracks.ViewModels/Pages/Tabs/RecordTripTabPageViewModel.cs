@@ -289,14 +289,15 @@ public partial class RecordTripTabPageViewModel : ObservableObject
         // permission left the page showing "Aufnahme läuft" with a running timer while nothing was
         // recorded.
         //
-        // Android fragt direkt LocationWhenInUse an: ACCESS_BACKGROUND_LOCATION ist dort bewusst
-        // nicht im Manifest (siehe AndroidManifest.xml), weil ein im Vordergrund gestarteter
-        // location-Foreground-Service auch im Hintergrund weiter aufzeichnen darf (While-in-Use
-        // reicht). Permissions.LocationAlways wirft ohne diesen Manifest-Eintrag eine
-        // PermissionException und hat die App hier beim Start der Aufnahme abgestuerzt.
-        Permission locationPermission = OperatingSystem.IsAndroid()
-            ? Permission.LocationWhenInUse
-            : Permission.LocationAlways;
+        // Android wird zweistufig gefragt: erst "Beim Verwenden" (das ist die Freigabe, die der
+        // Dialog anbietet und die der im Vordergrund gestartete location-Foreground-Service fuer die
+        // Hintergrundaufzeichnung braucht), dann "Immer". ACCESS_BACKGROUND_LOCATION steht inzwischen
+        // im Manifest, sonst wuerde Permissions.LocationAlways eine PermissionException werfen (das
+        // hat die App hier beim Start der Aufnahme abgestuerzt). Ab Android 11 bietet der Dialog
+        // "Immer erlauben" nicht mehr an: Die Anfrage kommt ohne Dialog als "abgelehnt" zurueck, die
+        // Aufnahme laeuft trotzdem, und die Einstellungen-Seite fuehrt auf die Systemseite.
+        bool isAndroid = OperatingSystem.IsAndroid();
+        Permission locationPermission = PermissionHelper.PrimaryLocationPermission(isAndroid);
 
         PermissionStatus locationPermissionStatus = await PermissionHelper.CheckAndRequestPermission(Permissions, locationPermission);
 
@@ -306,10 +307,23 @@ public partial class RecordTripTabPageViewModel : ObservableObject
             return;
         }
 
+        bool backgroundLocationMissing = false;
+
+        if (PermissionHelper.RequiresBackgroundLocationStep(isAndroid, locationPermissionStatus))
+        {
+            PermissionStatus backgroundStatus = await PermissionHelper.CheckAndRequestPermission(Permissions, Permission.LocationAlways);
+            backgroundLocationMissing = backgroundStatus is not PermissionStatus.Granted;
+
+            LocationDiagnostics.Write(
+                $"Android Hintergrund-Freigabe (ACCESS_BACKGROUND_LOCATION): {backgroundStatus}.");
+        }
+
         GpsDataStorageService.CurrentTripTypeId = SelectedTripType?.ID;
 
         IsRecording = true;
-        StatusText = "Aufnahme läuft";
+        StatusText = backgroundLocationMissing
+            ? "Aufnahme läuft – Immer-Freigabe offen"
+            : "Aufnahme läuft";
         RecordIconColor = RedColor;
         RecordIconSourceString = $"{ApplicationConstants.RawIconBasePath}{ApplicationIconConstants.StopIcon}";
 
