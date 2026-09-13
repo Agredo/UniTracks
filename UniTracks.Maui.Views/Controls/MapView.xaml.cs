@@ -14,6 +14,7 @@ using Mapsui.Tiling.Layers;
 using Mapsui.UI;
 using Microsoft.Maui.ApplicationModel;
 using Microsoft.Maui.Dispatching;
+using UniTracks.Services.Settings;
 using Coordinate = NetTopologySuite.Geometries.Coordinate;
 using GeometryFeature = Mapsui.Nts.GeometryFeature;
 using LineString = NetTopologySuite.Geometries.LineString;
@@ -56,7 +57,8 @@ public partial class MapView : ContentView
     public MapView()
     {
         InitializeComponent();
-        ControlMapView.Map.Layers.Add(CreateOpenStreetMapLayer());
+        tileLayer = CreateTileLayer(mapStyle);
+        ControlMapView.Map.Layers.Add(tileLayer);
         ControlMapView.Map.Navigator.RotationLock = true;
         ControlMapView.MapTapped += OnMapTapped;
 
@@ -76,27 +78,33 @@ public partial class MapView : ContentView
 
     private void OnMapViewUnloaded(object? sender, EventArgs e) => StopDirectionAnimation();
 
-    // The OpenStreetMap tile usage policy requires a User-Agent that identifies the app. Android's
-    // native HTTP handler (HttpURLConnection, backed by OkHttp) replaces the header with a generic
-    // client one, which the tile server rejects with an "Access blocked" tile. The layer therefore
-    // uses its own HttpClient on the managed handler, which sends the header unchanged.
+    // The tile usage policies of the open map providers require a User-Agent that identifies the
+    // app. Android's native HTTP handler (HttpURLConnection, backed by OkHttp) replaces the header
+    // with a generic client one, which the tile server rejects with an "Access blocked" tile. The
+    // layer therefore uses its own HttpClient on the managed handler, which sends the header
+    // unchanged.
     private const string TileUserAgentFallbackVersion = "0.0.0";
 
-    private static TileLayer CreateOpenStreetMapLayer()
+    private TileLayer? tileLayer;
+    private MapStyleKind mapStyle = MapStyleCatalog.Default;
+
+    private static TileLayer CreateTileLayer(MapStyleKind style)
     {
         var userAgent = $"UniTracks/{GetAppVersion()} (+https://github.com/Agredo/UniTracks)";
+        var definition = MapStyleCatalog.TileSource(style);
 
         var tileSource = new HttpTileSource(
             new GlobalSphericalMercator(),
-            "https://tile.openstreetmap.org/{z}/{x}/{y}.png",
-            name: "OpenStreetMap",
-            attribution: new BruTile.Attribution("© OpenStreetMap contributors", "https://www.openstreetmap.org/copyright"),
+            definition.UrlTemplate,
+            definition.ServerNodes.Count > 0 ? definition.ServerNodes : null,
+            name: definition.Name,
+            attribution: new BruTile.Attribution(definition.Attribution, definition.AttributionUrl),
             configureHttpRequestMessage: request => request.Headers.TryAddWithoutValidation("User-Agent", userAgent));
 
         var httpClient = new HttpClient(new SocketsHttpHandler());
         httpClient.DefaultRequestHeaders.TryAddWithoutValidation("User-Agent", userAgent);
 
-        return new TileLayer(tileSource, httpClient: httpClient) { Name = "OpenStreetMap" };
+        return new TileLayer(tileSource, httpClient: httpClient) { Name = definition.Name };
     }
 
     private static string GetAppVersion()
@@ -114,12 +122,91 @@ public partial class MapView : ContentView
     [BindableProperty(PropertyChangedMethodName = nameof(OnLocationsPropertyChanged))]
     public partial IReadOnlyList<Location>? Locations { get; set; }
 
+    /// <summary>Last drawn point set, kept so a settings change can redraw without new data.</summary>
+    private IReadOnlyList<Location>? drawnLocations;
+
     private static void OnLocationsPropertyChanged(BindableObject bindable, object oldValue, object newValue)
     {
         if (bindable is MapView mapView && newValue is IReadOnlyList<Location> locations)
         {
             mapView.DrawRoute(locations);
         }
+    }
+
+    // Classic BindableProperty.Create (instead of the source generator used above) because the
+    // default has to be true: the smoothing was the app's behaviour before this switch existed.
+    public static readonly BindableProperty SmoothingEnabledProperty = BindableProperty.Create(
+        nameof(SmoothingEnabled), typeof(bool), typeof(MapView), true,
+        propertyChanged: OnSmoothingEnabledPropertyChanged);
+
+    /// <summary>
+    /// Whether the route is drawn from the smoothed track (default) or from the raw recorded points.
+    /// </summary>
+    public bool SmoothingEnabled
+    {
+        get => (bool)GetValue(SmoothingEnabledProperty);
+        set => SetValue(SmoothingEnabledProperty, value);
+    }
+
+    private static void OnSmoothingEnabledPropertyChanged(BindableObject bindable, object oldValue, object newValue)
+    {
+        if (bindable is MapView mapView && mapView.drawnLocations is { Count: > 0 } locations)
+        {
+            mapView.DrawRoute(locations);
+        }
+    }
+
+    public static readonly BindableProperty MapStyleProperty = BindableProperty.Create(
+        nameof(MapStyle), typeof(MapStyleKind), typeof(MapView), MapStyleCatalog.Default,
+        propertyChanged: OnMapStylePropertyChanged);
+
+    /// <summary>Tile layer the map uses; switching it swaps the layer in place, keeping the order.</summary>
+    public MapStyleKind MapStyle
+    {
+        get => (MapStyleKind)GetValue(MapStyleProperty);
+        set => SetValue(MapStyleProperty, value);
+    }
+
+    private static void OnMapStylePropertyChanged(BindableObject bindable, object oldValue, object newValue)
+    {
+        if (bindable is MapView mapView && newValue is MapStyleKind style)
+        {
+            mapView.ApplyMapStyle(style);
+        }
+    }
+
+    /// <summary>
+    /// Replaces the tile layer so a new style is visible right away. The new layer takes the exact
+    /// position of the old one, which keeps the tile layer below the route and direction layers.
+    /// </summary>
+    private void ApplyMapStyle(MapStyleKind style)
+    {
+        if (style == mapStyle && tileLayer is not null)
+        {
+            return;
+        }
+
+        mapStyle = style;
+
+        var layers = ControlMapView.Map.Layers;
+        var newTileLayer = CreateTileLayer(style);
+
+        if (tileLayer is null)
+        {
+            layers.Add(newTileLayer);
+        }
+        else
+        {
+            var index = layers.GetLayers().ToList().IndexOf(tileLayer);
+            layers.Remove(tileLayer);
+            layers.Insert(index < 0 ? 0 : index, newTileLayer);
+
+            // Drops the old layer's tile cache together with the object itself.
+            tileLayer.ClearCache();
+        }
+
+        tileLayer = newTileLayer;
+        ControlMapView.Map.RefreshGraphics();
     }
 
     public static readonly BindableProperty TapCommandProperty = BindableProperty.Create(
@@ -151,16 +238,18 @@ public partial class MapView : ContentView
     private void DrawRoute(IReadOnlyList<Location> locations)
     {
         RemoveRouteLayers();
+        drawnLocations = locations;
 
         if (locations.Count == 0)
         {
             return;
         }
 
-        // Post-processing: draw the smoothed track (GPS jitter filtered/averaged). Raw points
-        // stay untouched in the database. The smoother may drop every point (e.g. all fixes
+        // Post-processing: draw the smoothed track (GPS jitter filtered/averaged) or — when the user
+        // switched the smoothing off in the settings — the raw recorded points. Raw points stay
+        // untouched in the database either way. The smoother may drop every point (e.g. all fixes
         // with bad accuracy) — then there is simply nothing to draw.
-        var smoothed = UniTracks.Services.Location.TrackSmoother.Smooth(locations);
+        var smoothed = UniTracks.Services.Location.TrackSmoother.Smooth(locations, SmoothingEnabled);
 
         if (smoothed.Count == 0)
         {

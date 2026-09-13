@@ -18,6 +18,7 @@ public class BackgroundLocationController : IBackgroundLocationController
         Context context = Android.App.Application.Context;
         Intent intent = new(context, typeof(BackgroundLocationService));
         ContextCompat.StartForegroundService(context, intent);
+        LocationDiagnostics.Write("Android StartForegroundService(BackgroundLocationService) aufgerufen.");
     }
 
     public void Stop()
@@ -25,5 +26,6 @@ public class BackgroundLocationController : IBackgroundLocationController
         Context context = Android.App.Application.Context;
         Intent intent = new(context, typeof(BackgroundLocationService));
         context.StopService(intent);
+        LocationDiagnostics.Write("Android StopService(BackgroundLocationService) aufgerufen.");
     }
 }

@@ -35,8 +35,6 @@ public partial class StartPageViewModel : ObservableObject
         GpsDataStorageService = gpsDataStorageService;
         Repository = repository;
         DatabasePath = repository.DatabasePath;
-
-        _ = StopListening();
     }
 
     [RelayCommand]
@@ -61,31 +59,7 @@ public partial class StartPageViewModel : ObservableObject
         {
             Locations.Clear();
             Trip lastTrip = trips.Last();
-
-            Console.WriteLine($"Last Trip: {lastTrip.ID} {lastTrip.StartTime}");
             lastTrip.Locations?.ForEach(location => Locations.Add(location));
         }
-    }
-
-    [RelayCommand]
-    private async Task ShareDatabase()
-    {
-        List<Trip> trips = (await Repository.GetAllAsync<Trip>(trip => trip.Locations)).ToList();
-        int locationCount = trips.Sum(t => t.Locations?.Count ?? 0);
-        Console.WriteLine($"Total Trips: {trips.Count}");
-        Console.WriteLine($"Total Locations: {locationCount}");
-
-        trips.ForEach(t => t.Locations?.ForEach(
-            x => Console.WriteLine($"{x.Timestamp} - {x.ID} - {x.Longitude} - {x.Latitude}")));
-
-        await LoadLocationsFromLastTripAsync();
-
-        await FileSystem.ShareFilesAsync("Share Database", new[] { DatabasePath });
-    }
-
-    [RelayCommand]
-    private async Task ImportDatabase()
-    {
-        await Task.CompletedTask;
     }
 }

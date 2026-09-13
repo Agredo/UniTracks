@@ -1,6 +1,7 @@
 using UniTracks.Data.Seeding;
 using UniTracks.Maui.Views;
 using UniTracks.Maui.Views.Pages;
+using UniTracks.Services.Data;
 using UniTracks.ViewModels.Changelog;
 
 namespace UniTracks.Maui
@@ -8,17 +9,23 @@ namespace UniTracks.Maui
     public partial class App : Application
     {
         private readonly IChangelogPresenter changelogPresenter;
+        private readonly StartupDatabaseReport startupDatabaseReport;
+        private readonly AgredoApplication.MVVM.Services.Abstractions.UI.IDialogService dialogService;
 
         public App(
             DatabaseInitializer databaseInitializer,
             UniTracks.Services.Data.TripDistanceRecalculator distanceRecalculator,
-            IChangelogPresenter changelogPresenter)
+            IChangelogPresenter changelogPresenter,
+            StartupDatabaseReport startupDatabaseReport,
+            AgredoApplication.MVVM.Services.Abstractions.UI.IDialogService dialogService)
         {
             HookUnhandledExceptionLogging();
 
             InitializeComponent();
 
             this.changelogPresenter = changelogPresenter;
+            this.startupDatabaseReport = startupDatabaseReport;
+            this.dialogService = dialogService;
 
             // Seed the TripType catalog if the active repository is empty (relevant on iOS, where
             // the store is LiteDB and there is no EF Core HasData/migration seeding). The stores now
@@ -48,6 +55,8 @@ namespace UniTracks.Maui
             Routing.RegisterRoute(nameof(FeedbackPage), typeof(FeedbackPage));
             Routing.RegisterRoute(nameof(StatisticsPage), typeof(StatisticsPage));
             Routing.RegisterRoute(nameof(HelpPage), typeof(HelpPage));
+            Routing.RegisterRoute(nameof(SettingsPage), typeof(SettingsPage));
+            Routing.RegisterRoute(nameof(ProfilePage), typeof(ProfilePage));
         }
 
         /// <summary>
@@ -61,7 +70,40 @@ namespace UniTracks.Maui
                 element.Loaded -= OnShellLoaded;
             }
 
-            _ = ShowChangelogAsync();
+            _ = ShowStartupNoticesAsync();
+        }
+
+        private async Task ShowStartupNoticesAsync()
+        {
+            await ShowDatabaseOperationResultAsync();
+            await ShowChangelogAsync();
+        }
+
+        /// <summary>
+        /// Reports the import or reset that was staged in the settings and applied while the app was
+        /// starting. Silent when nothing was pending - which is the normal case.
+        /// </summary>
+        private async Task ShowDatabaseOperationResultAsync()
+        {
+            var result = startupDatabaseReport.Result;
+            if (result.Message is not { Length: > 0 } message)
+            {
+                return;
+            }
+
+            try
+            {
+                var title = result.Applied ? "Datenbank aktualisiert" : "Datenbank";
+                var text = result.Applied
+                    ? $"{message}\n\nDie App arbeitet jetzt mit diesen Daten."
+                    : message;
+
+                await dialogService.AlertAsync(title, text, "OK");
+            }
+            catch (Exception exception)
+            {
+                CrashLog.Write($"Startup database notice failed: {exception}");
+            }
         }
 
         private async Task ShowChangelogAsync()

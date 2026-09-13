@@ -1,0 +1,219 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage
+    x:Class="UniTracks.Maui.Views.Pages.SettingsPage"
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    xmlns:viewModels="clr-namespace:UniTracks.ViewModels.Pages;assembly=UniTracks.ViewModels"
+    Title="Einstellungen"
+    x:DataType="viewModels:SettingsPageViewModel">
+
+    <ScrollView>
+        <VerticalStackLayout Padding="20" Spacing="20">
+
+            <!-- Hero -->
+            <Border
+                Background="{StaticResource HeroGradientBrush}"
+                Padding="24,20"
+                Stroke="{StaticResource CardStroke}"
+                StrokeThickness="1">
+                <Border.StrokeShape>
+                    <RoundRectangle CornerRadius="24" />
+                </Border.StrokeShape>
+                <HorizontalStackLayout Spacing="16">
+                    <Border
+                        Background="{StaticResource AccentSoft}"
+                        HeightRequest="72"
+                        Stroke="{StaticResource AccentDim}"
+                        StrokeThickness="1"
+                        WidthRequest="72">
+                        <Border.StrokeShape>
+                            <RoundRectangle CornerRadius="36" />
+                        </Border.StrokeShape>
+                        <Label
+                            FontSize="34"
+                            HorizontalOptions="Center"
+                            Text="⚙️"
+                            VerticalOptions="Center" />
+                    </Border>
+                    <VerticalStackLayout Spacing="2" VerticalOptions="Center">
+                        <Label Style="{StaticResource TitleLabel}" Text="Einstellungen" />
+                        <Label Style="{StaticResource SubtitleLabel}" Text="Karte, Daten &amp; App" />
+                    </VerticalStackLayout>
+                </HorizontalStackLayout>
+            </Border>
+
+            <!-- Map section: style and smoothing -->
+            <VerticalStackLayout Spacing="8">
+                <Label Style="{StaticResource SectionHeader}" Text="KARTE" />
+                <Border Style="{StaticResource CardBorder}">
+                    <VerticalStackLayout Spacing="10">
+                        <Label
+                            FontFamily="OpenSansSemibold"
+                            FontSize="15"
+                            Text="Kartenstil" />
+                        <Border Style="{StaticResource ChipBorder}">
+                            <Picker
+                                ItemsSource="{Binding MapStyleOptions}"
+                                SelectedItem="{Binding SelectedMapStyle}"
+                                Title="Kartenstil wählen" />
+                        </Border>
+                        <Label
+                            FontSize="12"
+                            Text="{Binding MapStyleDescription}"
+                            TextColor="{StaticResource TextSecondary}" />
+                        <Label
+                            FontSize="11"
+                            Text="{Binding MapStyleAttributionHint}"
+                            TextColor="{StaticResource TextMuted}" />
+                    </VerticalStackLayout>
+                </Border>
+                <Border Style="{StaticResource CardBorder}">
+                    <VerticalStackLayout Spacing="12">
+                        <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
+                            <VerticalStackLayout
+                                Grid.Column="0"
+                                Spacing="2"
+                                VerticalOptions="Center">
+                                <Label
+                                    FontFamily="OpenSansSemibold"
+                                    FontSize="15"
+                                    Text="GPS-Glättung" />
+                                <Label
+                                    FontSize="12"
+                                    Text="{Binding SmoothingStateText}"
+                                    TextColor="{StaticResource TextSecondary}" />
+                            </VerticalStackLayout>
+                            <Switch
+                                Grid.Column="1"
+                                IsToggled="{Binding TrackSmoothingEnabled}"
+                                VerticalOptions="Center" />
+                        </Grid>
+                        <Label
+                            FontSize="12"
+                            Text="{Binding SmoothingHint}"
+                            TextColor="{StaticResource TextMuted}" />
+                    </VerticalStackLayout>
+                </Border>
+            </VerticalStackLayout>
+
+            <!-- Background location: Android 11+ and iOS only grant "always" from the system page. -->
+            <VerticalStackLayout IsVisible="{Binding IsBackgroundLocationVisible}" Spacing="8">
+                <Label Style="{StaticResource SectionHeader}" Text="HINTERGRUND-STANDORT" />
+                <Border Style="{StaticResource CardBorder}">
+                    <VerticalStackLayout Spacing="12">
+                        <VerticalStackLayout Spacing="2">
+                            <Label
+                                FontFamily="OpenSansSemibold"
+                                FontSize="15"
+                                Text="Immer erlauben" />
+                            <Label
+                                FontSize="12"
+                                Text="{Binding BackgroundLocationStateText}"
+                                TextColor="{StaticResource TextSecondary}" />
+                        </VerticalStackLayout>
+                        <Label
+                            FontSize="12"
+                            Text="{Binding BackgroundLocationHint}"
+                            TextColor="{StaticResource TextMuted}" />
+                        <Button
+                            Command="{Binding OpenBackgroundLocationSettingsCommand}"
+                            HorizontalOptions="Start"
+                            Text="Standortfreigabe ändern" />
+                    </VerticalStackLayout>
+                </Border>
+            </VerticalStackLayout>
+
+            <!-- Database: share, import, reset. Import and reset take effect on the next start. -->
+            <VerticalStackLayout Spacing="8">
+                <Label Style="{StaticResource SectionHeader}" Text="DATEN" />
+                <Border Style="{StaticResource CardBorder}">
+                    <VerticalStackLayout Spacing="10">
+                        <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
+                            <VerticalStackLayout Grid.Column="0" Spacing="2">
+                                <Label
+                                    FontFamily="OpenSansSemibold"
+                                    FontSize="15"
+                                    Text="Datenbank" />
+                                <Label
+                                    FontSize="12"
+                                    Text="{Binding DatabaseInfoText}"
+                                    TextColor="{StaticResource TextSecondary}" />
+                            </VerticalStackLayout>
+                            <ActivityIndicator
+                                Grid.Column="1"
+                                Color="{StaticResource Accent}"
+                                IsRunning="{Binding IsBusy}"
+                                IsVisible="{Binding IsBusy}"
+                                VerticalOptions="Center" />
+                        </Grid>
+                        <Label
+                            FontSize="11"
+                            LineBreakMode="MiddleTruncation"
+                            Text="{Binding DatabasePathText}"
+                            TextColor="{StaticResource TextMuted}" />
+                        <Label
+                            FontSize="12"
+                            IsVisible="{Binding HasPendingDatabaseOperation}"
+                            Text="{Binding PendingDatabaseOperationText}"
+                            TextColor="{StaticResource Accent}" />
+                        <Label
+                            FontSize="11"
+                            IsVisible="{Binding HasLastImport}"
+                            Text="{Binding LastImportText}"
+                            TextColor="{StaticResource TextMuted}" />
+                        <Button
+                            Command="{Binding ShareDatabaseCommand}"
+                            IsEnabled="{Binding IsNotBusy}"
+                            Style="{StaticResource SecondaryButton}"
+                            Text="Datenbank teilen" />
+                        <Button
+                            Command="{Binding ImportDatabaseCommand}"
+                            IsEnabled="{Binding IsNotBusy}"
+                            Style="{StaticResource SecondaryButton}"
+                            Text="Datenbank importieren" />
+                        <Label
+                            FontSize="11"
+                            Text="{Binding ImportHint}"
+                            TextColor="{StaticResource TextMuted}" />
+                        <Button
+                            Command="{Binding ResetDatabaseCommand}"
+                            IsEnabled="{Binding IsNotBusy}"
+                            Style="{StaticResource DangerButton}"
+                            Text="Alle Daten löschen" />
+                    </VerticalStackLayout>
+                </Border>
+            </VerticalStackLayout>
+
+            <!-- Profile and the pages around the app -->
+            <VerticalStackLayout Spacing="8">
+                <Label Style="{StaticResource SectionHeader}" Text="APP" />
+                <Border Style="{StaticResource CardBorder}">
+                    <VerticalStackLayout Spacing="10">
+                        <Button
+                            Command="{Binding OpenProfileCommand}"
+                            Style="{StaticResource SecondaryButton}"
+                            Text="Profil bearbeiten" />
+                        <Label
+                            FontSize="11"
+                            Text="Name, E-Mail, Größe und Gewicht – dieselbe Seite wie im Profil-Tab."
+                            TextColor="{StaticResource TextMuted}" />
+                        <Button
+                            Command="{Binding OpenHelpCommand}"
+                            Style="{StaticResource SecondaryButton}"
+                            Text="Hilfe" />
+                        <Button
+                            Command="{Binding OpenAboutCommand}"
+                            Style="{StaticResource SecondaryButton}"
+                            Text="Über UniTracks" />
+                        <Button
+                            Command="{Binding OpenFeedbackCommand}"
+                            Style="{StaticResource SecondaryButton}"
+                            Text="Feedback senden" />
+                    </VerticalStackLayout>
+                </Border>
+            </VerticalStackLayout>
+
+            <Grid HeightRequest="20" />
+        </VerticalStackLayout>
+    </ScrollView>
+</ContentPage>

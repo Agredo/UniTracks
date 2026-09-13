@@ -11,6 +11,8 @@ using UniTracks.Data.Seeding;
 using UniTracks.Data.SQLite;
 using UniTracks.Maui.Services.Changelog;
 using UniTracks.Maui.Services.Location;
+using UniTracks.Maui.Services.Settings;
+using UniTracks.Maui.Views;
 using UniTracks.Maui.Views.Controls.Popups;
 using UniTracks.Maui.Views.Pages;
 using UniTracks.Maui.Views.Pages.Tabs;
@@ -23,6 +25,7 @@ using UniTracks.Services.Data;
 using UniTracks.Services.Feedback;
 using UniTracks.Services.Game;
 using UniTracks.Services.Location;
+using UniTracks.Services.Settings;
 using UniTracks.Services.Stats;
 using UniTracks.ViewModels.Changelog;
 using UniTracks.ViewModels.Controls.Popups;
@@ -121,7 +124,24 @@ public static class MauiProgram
         builder.Logging.AddDebug();
 #endif
 
-        return builder.Build();
+        var app = builder.Build();
+
+        // A staged import or reset from the settings has to run before anything opens the database:
+        // both the repository and the initializer hold the file handle for the whole session.
+        // Resolving only IDatabaseMaintenance here keeps that true - its factory needs the file
+        // system and nothing else.
+        try
+        {
+            var maintenance = app.Services.GetRequiredService<IDatabaseMaintenance>();
+            var report = app.Services.GetRequiredService<StartupDatabaseReport>();
+            report.Record(maintenance.ApplyPending());
+        }
+        catch (Exception exception)
+        {
+            CrashLog.Write($"Startup database operation failed: {exception}");
+        }
+
+        return app;
     }
 
     // Reads the app's display version (e.g. "0.2") automatically. On unpackaged Windows the
@@ -169,6 +189,12 @@ public static class MauiProgram
         services.AddSingleton<IStatisticsService, StatisticsService>();
         services.AddSingleton<TripDistanceRecalculator>();
 
+        // User preference: whether the map draws the smoothed track or the raw GPS points.
+        services.AddSingleton<ITrackSmoothingSettings, PreferencesTrackSmoothingSettings>();
+
+        // User preference: which tile layer the maps use.
+        services.AddSingleton<IMapStyleSettings, PreferencesMapStyleSettings>();
+
         // BugBear feedback (version is read automatically from the app's display version).
         services.AddSingleton<IFeedbackService>(_ => new FeedbackService(GetDisplayVersion()));
 
@@ -191,6 +217,7 @@ public static class MauiProgram
         services.AddSingleton<ITowerDefenseService, TowerDefenseService>();
         services.AddSingleton<IGameCatalogService, GameCatalogService>();
         services.AddSingleton<UniTracks.Services.ApplicationModel.IPermissions, UniTracks.Maui.Services.ApplicationModel.Permissions>();
+        services.AddSingleton<UniTracks.Services.ApplicationModel.IAppSettings, UniTracks.Maui.Services.ApplicationModel.AppSettings>();
         services.AddSingleton<UniTracks.Services.Dispatching.IDispatcher, UniTracks.Maui.Services.Dispatching.Dispatcher>();
 
         // Release notes: the JSON catalog is read once, the last shown version is persisted, and the
@@ -217,6 +244,9 @@ public static class MauiProgram
             return new LiteDatabase(databasePath);
         });
         services.AddSingleton<IRepository, LiteDbRepository>();
+        services.AddSingleton<IDatabaseMaintenance>(sp => new DatabaseMaintenance(
+            sp.GetRequiredService<AgredoApplication.MVVM.Services.Abstractions.IO.IFileSystem>(),
+            useLiteDatabase: true));
 #else
         // Android, Mac Catalyst and Windows run on JIT, where EF Core can build its model at
         // runtime and execute Database.Migrate(), so SQLite + EF Core remains the store.
@@ -227,7 +257,11 @@ public static class MauiProgram
             return new SqliteDBContext(databasePath);
         });
         services.AddSingleton<IRepository, EfRepository>();
+        services.AddSingleton<IDatabaseMaintenance>(sp => new DatabaseMaintenance(
+            sp.GetRequiredService<AgredoApplication.MVVM.Services.Abstractions.IO.IFileSystem>(),
+            useLiteDatabase: false));
 #endif
+        services.AddSingleton<StartupDatabaseReport>();
     }
 
     private static void RegisterPages(IServiceCollection services)
@@ -248,6 +282,8 @@ public static class MauiProgram
         services.AddTransient<StatisticsPage, StatisticsPageViewModel>();
         services.AddTransient<HelpPageViewModel>(_ => new HelpPageViewModel(GetDisplayVersion()));
         services.AddTransient<HelpPage>();
+        services.AddTransient<SettingsPage, SettingsPageViewModel>();
+        services.AddTransient<ProfilePage, ProfilePageViewModel>();
     }
 
     private static void RegisterPopups(IServiceCollection services)

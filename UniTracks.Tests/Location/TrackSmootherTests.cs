@@ -204,6 +204,89 @@ public sealed class TrackSmootherTests
         Assert.InRange(TrackSmoother.SmoothedDistanceMeters(track), 0, 2);
     }
 
+    [Fact]
+    public void Smooth_WithSmoothingDisabled_KeepsEveryRecordedPointInTimestampOrder()
+    {
+        // Standing jitter around a single spot: the filter would collapse this to one anchor.
+        var track = new[]
+        {
+            Point(2, 0.6, 0.4),
+            Point(0, 0, 0),
+            Point(1, 0.9, 0),
+            Point(3, 0.5, 0.7),
+            Point(4, 0.2, 0.1),
+        };
+
+        var raw = TrackSmoother.Smooth(track, smoothingEnabled: false);
+
+        Assert.Equal(track.Length, raw.Count);
+        Assert.Equal(Start, raw[0].Timestamp);
+
+        // Same instances, coordinates untouched — the switch must not alter recorded data.
+        Assert.All(track, point => Assert.Contains(point, raw));
+
+        Assert.True(TrackSmoother.Smooth(track).Count < raw.Count);
+    }
+
+    /// <summary>
+    /// Reproduces the observation that made the switch necessary: at a tight turnaround the noise
+    /// filter drops the outermost fix (it is closer than <see cref="TrackSmoother.MinDistanceMeters"/>
+    /// to the last kept anchor) and the moving average pulls the corner in further, so the tip of the
+    /// loop loses metres. Drawing the raw points must keep the true apex.
+    /// </summary>
+    [Fact]
+    public void Smooth_WithSmoothingDisabled_KeepsTheApexOfATightTurnaround()
+    {
+        // 4 m steps up to 96 m, a short 3 m step to the turnaround at 99 m, then 4 m steps back on a
+        // track 0.5 m to the side — the apex is 3 m from the last kept anchor, i.e. inside the
+        // standing-jitter window, and gets dropped.
+        var track = new List<LocationModel>();
+        int second = 0;
+        for (double north = 0; north <= 96; north += 4)
+        {
+            track.Add(Point(second++, north, 0));
+        }
+        track.Add(Point(second++, 99, 0));
+        for (double north = 96; north >= 0; north -= 4)
+        {
+            track.Add(Point(second++, north, 0.5));
+        }
+
+        var raw = TrackSmoother.Smooth(track, smoothingEnabled: false);
+        var smoothed = TrackSmoother.Smooth(track);
+
+        Assert.Equal(track.Count, raw.Count);
+        Assert.Equal(99.0, raw.Max(NorthMeters), 6);
+
+        Assert.True(smoothed.Max(NorthMeters) < 97);
+    }
+
+    /// <summary>
+    /// Guards the standing complaint behind the switch: a real 1 Hz trip has 900+ fixes and none of
+    /// them may disappear from the map when smoothing is off. The raw path hands back every point as
+    /// its own vertex, so the drawn line runs through all of them.
+    /// </summary>
+    [Fact]
+    public void Smooth_WithSmoothingDisabled_KeepsEveryPointOfNineHundredPlusFixes()
+    {
+        // 15 minutes of 1 Hz fixes: a 100 m out-and-back leg with the usual GPS scatter around it.
+        var track = new List<LocationModel>(920);
+        for (int second = 0; second < 920; second++)
+        {
+            var north = second <= 460 ? second * 0.22 : (920 - second) * 0.22;
+            track.Add(Point(second, north, Math.Sin(second / 7.0) * 3, accuracy: 14.246, speed: 0.45));
+        }
+
+        var raw = TrackSmoother.Smooth(track, smoothingEnabled: false);
+
+        Assert.Equal(track.Count, raw.Count);
+        Assert.All(track, point => Assert.Contains(point, raw));
+        Assert.Equal(track.OrderBy(p => p.Timestamp).Select(p => p.ID), raw.Select(p => p.ID));
+
+        // Sanity check that this fixture really is a case the filter would thin out.
+        Assert.True(TrackSmoother.Smooth(track).Count < track.Count);
+    }
+
     /// <summary>An evenly spaced straight line: <paramref name="steps"/> points, 10 m apart, 1 s apart.</summary>
     private static List<LocationModel> StraightTrack(int steps)
     {

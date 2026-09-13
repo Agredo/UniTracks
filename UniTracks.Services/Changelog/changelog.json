@@ -44,6 +44,10 @@
         {
           "kind": "improvement",
           "text": "Cozy City und Trail Defense teilen sich ein gemeinsames Münzkonto: Ausgaben wirken sich auf beide Spiele aus."
+        },
+        {
+          "kind": "feature",
+          "text": "Neue Einstellungen-Seite über das Profil: Die GPS-Glättung der Karte lässt sich ausschalten, um die rohe aufgezeichnete Strecke zu sehen."
         }
       ]
     },

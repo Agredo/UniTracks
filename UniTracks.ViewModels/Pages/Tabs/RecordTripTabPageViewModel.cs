@@ -70,7 +70,6 @@ public partial class RecordTripTabPageViewModel : ObservableObject
         Dispatcher.CreateTimer(TimeSpan.FromMilliseconds(100));
         Dispatcher.AddEventHandler(stopWatchEventHandler);
 
-        StopListening();
         _ = LoadTripTypesAsync();
     }
 
@@ -96,6 +95,118 @@ public partial class RecordTripTabPageViewModel : ObservableObject
 
     /// <summary>The activity chip selector is only editable while not recording.</summary>
     public bool IsTripTypeSelectionVisible => !IsRecording;
+
+    /// <summary>How often the watchdog checks whether the platform still delivers locations.</summary>
+    private const int WatchdogIntervalSeconds = 5;
+
+    /// <summary>
+    /// A moving recording delivers about one fix per second, so a longer silence means the platform
+    /// stopped. iOS can end background updates without any error; the UI must not keep claiming that
+    /// a recording is running while nothing is captured.
+    /// </summary>
+    private static readonly TimeSpan FixSilenceTolerance = TimeSpan.FromSeconds(45);
+
+    private CancellationTokenSource? healthWatchdog;
+    private bool healthWarningActive;
+
+    private void StartHealthWatchdog()
+    {
+        StopHealthWatchdog();
+
+        healthWarningActive = false;
+
+        var cancellation = new CancellationTokenSource();
+        healthWatchdog = cancellation;
+
+        _ = RunHealthWatchdogAsync(cancellation.Token);
+    }
+
+    private void StopHealthWatchdog()
+    {
+        CancellationTokenSource? cancellation = Interlocked.Exchange(ref healthWatchdog, null);
+
+        if (cancellation is null)
+        {
+            return;
+        }
+
+        try
+        {
+            cancellation.Cancel();
+            cancellation.Dispose();
+        }
+        catch (ObjectDisposedException)
+        {
+            // Already cancelled by a previous stop.
+        }
+    }
+
+    private async Task RunHealthWatchdogAsync(CancellationToken token)
+    {
+        using var timer = new PeriodicTimer(TimeSpan.FromSeconds(WatchdogIntervalSeconds));
+
+        try
+        {
+            while (await timer.WaitForNextTickAsync(token))
+            {
+                if (!IsRecording)
+                {
+                    continue;
+                }
+
+                string? warning = DescribeCaptureProblem(LocationService.Health);
+
+                if (warning is null)
+                {
+                    healthWarningActive = false;
+                    continue;
+                }
+
+                if (healthWarningActive)
+                {
+                    continue;
+                }
+
+                healthWarningActive = true;
+                LocationDiagnostics.Write($"WARNUNG Aufzeichnung: {warning}");
+                MainThread.BeginInvokeOnMainThread(() => StatusText = warning);
+            }
+        }
+        catch (OperationCanceledException)
+        {
+            // Recording stopped; the watchdog is no longer needed.
+        }
+    }
+
+    /// <summary>
+    /// Maps a capture snapshot to a user-facing warning, or null when the capture looks healthy.
+    /// </summary>
+    public static string? DescribeCaptureProblem(LocationCaptureHealth health)
+    {
+        // Platforms that do not report capture details (Android foreground service, desktop) must
+        // not be turned into a warning: their "unknown" state is not a stopped capture.
+        if (!health.IsTracked)
+        {
+            return null;
+        }
+
+        if (!health.IsRunning)
+        {
+            return "Aufzeichnung angehalten – Standortpunkte fehlen";
+        }
+
+        if (health.LastFixAt is { } lastFix)
+        {
+            TimeSpan silence = DateTimeOffset.Now - lastFix;
+
+            if (silence > FixSilenceTolerance)
+            {
+                return $"Seit {silence.TotalSeconds:F0} s kein Standortpunkt";
+            }
+        }
+
+        return null;
+    }
 
     partial void OnIsRecordingChanged(bool value)
     {
@@ -165,6 +276,7 @@ public partial class RecordTripTabPageViewModel : ObservableObject
             IsRecording = false;
             StatusText = "Pausiert";
 
+            StopHealthWatchdog();
             LocationService.StopListening();
 
             Dispatcher.StopTimer();
@@ -177,14 +289,15 @@ public partial class RecordTripTabPageViewModel : ObservableObject
         // permission left the page showing "Aufnahme läuft" with a running timer while nothing was
         // recorded.
         //
-        // Android fragt direkt LocationWhenInUse an: ACCESS_BACKGROUND_LOCATION ist dort bewusst
-        // nicht im Manifest (siehe AndroidManifest.xml), weil ein im Vordergrund gestarteter
-        // location-Foreground-Service auch im Hintergrund weiter aufzeichnen darf (While-in-Use
-        // reicht). Permissions.LocationAlways wirft ohne diesen Manifest-Eintrag eine
-        // PermissionException und hat die App hier beim Start der Aufnahme abgestuerzt.
-        Permission locationPermission = OperatingSystem.IsAndroid()
-            ? Permission.LocationWhenInUse
-            : Permission.LocationAlways;
+        // Android wird zweistufig gefragt: erst "Beim Verwenden" (das ist die Freigabe, die der
+        // Dialog anbietet und die der im Vordergrund gestartete location-Foreground-Service fuer die
+        // Hintergrundaufzeichnung braucht), dann "Immer". ACCESS_BACKGROUND_LOCATION steht inzwischen
+        // im Manifest, sonst wuerde Permissions.LocationAlways eine PermissionException werfen (das
+        // hat die App hier beim Start der Aufnahme abgestuerzt). Ab Android 11 bietet der Dialog
+        // "Immer erlauben" nicht mehr an: Die Anfrage kommt ohne Dialog als "abgelehnt" zurueck, die
+        // Aufnahme laeuft trotzdem, und die Einstellungen-Seite fuehrt auf die Systemseite.
+        bool isAndroid = OperatingSystem.IsAndroid();
+        Permission locationPermission = PermissionHelper.PrimaryLocationPermission(isAndroid);
 
         PermissionStatus locationPermissionStatus = await PermissionHelper.CheckAndRequestPermission(Permissions, locationPermission);
 
@@ -194,10 +307,23 @@ public partial class RecordTripTabPageViewModel : ObservableObject
             return;
         }
 
+        bool backgroundLocationMissing = false;
+
+        if (PermissionHelper.RequiresBackgroundLocationStep(isAndroid, locationPermissionStatus))
+        {
+            PermissionStatus backgroundStatus = await PermissionHelper.CheckAndRequestPermission(Permissions, Permission.LocationAlways);
+            backgroundLocationMissing = backgroundStatus is not PermissionStatus.Granted;
+
+            LocationDiagnostics.Write(
+                $"Android Hintergrund-Freigabe (ACCESS_BACKGROUND_LOCATION): {backgroundStatus}.");
+        }
+
         GpsDataStorageService.CurrentTripTypeId = SelectedTripType?.ID;
 
         IsRecording = true;
-        StatusText = "Aufnahme läuft";
+        StatusText = backgroundLocationMissing
+            ? "Aufnahme läuft – Immer-Freigabe offen"
+            : "Aufnahme läuft";
         RecordIconColor = RedColor;
         RecordIconSourceString = $"{ApplicationConstants.RawIconBasePath}{ApplicationIconConstants.StopIcon}";
 
@@ -205,15 +331,26 @@ public partial class RecordTripTabPageViewModel : ObservableObject
         // resume, so pausing and continuing threw the already recorded duration away.
         stopWatch.Start();
         Dispatcher.StartTimer();
+        StartHealthWatchdog();
 
         await LocationService.StartListening();
     }
 
     [RelayCommand]
-    private void StopListening()
+    private async Task StopListening()
     {
-        LocationService.StopListening();
-        GpsDataStorageService.FinalizeTrip();
+        // Stop capture and wait for the drain window first: iOS may still hold locations of the
+        // trip, and finalising before they arrive drops them from the finished trip.
+        await LocationService.StopListeningAndDrainAsync();
+
+        // Only close a trip that is actually running. Finalising unconditionally used to end a
+        // recording whenever this command ran while a trip was in progress.
+        if (GpsDataStorageService.IsTripInProgress)
+        {
+            GpsDataStorageService.FinalizeTrip();
+        }
+
+        StopHealthWatchdog();
         Dispatcher.StopTimer();
         stopWatch.Stop();
 

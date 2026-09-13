@@ -39,6 +39,27 @@ public class GpsDataStorageService : IGpsDataStorageService
 
     public Guid? CurrentTripTypeId { get; set; }
 
+    /// <summary>
+    /// True while a trip is being recorded. The trip lives only in memory until <see cref="FinalizeTrip"/>,
+    /// so a caller can tell "nothing to finalise" from "finalise what is running" - calling FinalizeTrip()
+    /// on a page that is only being created used to end a running recording silently.
+    /// </summary>
+    public bool IsTripInProgress
+    {
+        get
+        {
+            storeGate.Wait();
+            try
+            {
+                return currentTrip is not null;
+            }
+            finally
+            {
+                storeGate.Release();
+            }
+        }
+    }
+
     public void FinalizeTrip()
     {
         storeGate.Wait();

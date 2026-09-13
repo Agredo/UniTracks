@@ -38,7 +38,7 @@
                     </Border>
                     <VerticalStackLayout Spacing="2" VerticalOptions="Center">
                         <Label Style="{StaticResource TitleLabel}" Text="Dein Profil" />
-                        <Label Style="{StaticResource SubtitleLabel}" Text="Bereit für den nächsten Trip" />
+                        <Label Style="{StaticResource SubtitleLabel}" Text="{Binding GreetingText}" />
                     </VerticalStackLayout>
                 </HorizontalStackLayout>
 
@@ -84,12 +84,79 @@
                         </VerticalStackLayout>
                     </Border>
                 </Grid>
+
+                <!-- This week, this year and the trip count -->
+                <Grid ColumnDefinitions="*,*,*" ColumnSpacing="8">
+                    <Border Grid.Column="0" Style="{StaticResource ChipBorder}">
+                        <VerticalStackLayout Spacing="2">
+                            <Label Style="{StaticResource StatLabel}" Text="DIESE WOCHE" />
+                            <HorizontalStackLayout Spacing="3">
+                                <Label
+                                    FontFamily="OpenSansSemibold"
+                                    FontSize="16"
+                                    Text="{Binding WeekDistanceText}" />
+                                <Label
+                                    FontSize="11"
+                                    Text="km"
+                                    TextColor="{StaticResource TextMuted}"
+                                    VerticalOptions="End" />
+                            </HorizontalStackLayout>
+                        </VerticalStackLayout>
+                    </Border>
+                    <Border Grid.Column="1" Style="{StaticResource ChipBorder}">
+                        <VerticalStackLayout Spacing="2">
+                            <Label Style="{StaticResource StatLabel}" Text="TOUREN" />
+                            <Label
+                                FontFamily="OpenSansSemibold"
+                                FontSize="16"
+                                Text="{Binding TripsText}" />
+                        </VerticalStackLayout>
+                    </Border>
+                    <Border Grid.Column="2" Style="{StaticResource ChipBorder}">
+                        <VerticalStackLayout Spacing="2">
+                            <Label Style="{StaticResource StatLabel}" Text="DIESES JAHR" />
+                            <HorizontalStackLayout Spacing="3">
+                                <Label
+                                    FontFamily="OpenSansSemibold"
+                                    FontSize="16"
+                                    Text="{Binding YearDistanceText}" />
+                                <Label
+                                    FontSize="11"
+                                    Text="km"
+                                    TextColor="{StaticResource TextMuted}"
+                                    VerticalOptions="End" />
+                            </HorizontalStackLayout>
+                        </VerticalStackLayout>
+                    </Border>
+                </Grid>
+
+                <Button
+                    Command="{Binding OpenProfileCommand}"
+                    Style="{StaticResource SecondaryButton}"
+                    Text="Profil bearbeiten" />
             </VerticalStackLayout>
         </Border>
 
-        <!-- Progress section -->
+        <!-- Profile section -->
         <VerticalStackLayout Spacing="8">
-            <Label Style="{StaticResource SectionHeader}" Text="FORTSCHRITT" />
+            <Label Style="{StaticResource SectionHeader}" Text="MEIN PROFIL" />
+            <Border Style="{StaticResource CardBorder}">
+                <Grid ColumnDefinitions="*,Auto">
+                    <VerticalStackLayout Grid.Column="0" Spacing="2" VerticalOptions="Center">
+                        <Label FontFamily="OpenSansSemibold" FontSize="15" Text="Profil bearbeiten" />
+                        <Label
+                            FontSize="12"
+                            Text="Name, E-Mail, Größe und Gewicht"
+                            TextColor="{StaticResource TextSecondary}" />
+                    </VerticalStackLayout>
+                    <Button
+                        Command="{Binding OpenProfileCommand}"
+                        Grid.Column="1"
+                        Style="{StaticResource SecondaryButton}"
+                        Text="Öffnen"
+                        VerticalOptions="Center" />
+                </Grid>
+            </Border>
             <Border Style="{StaticResource CardBorder}">
                 <Grid ColumnDefinitions="*,Auto">
                     <VerticalStackLayout Grid.Column="0" Spacing="2" VerticalOptions="Center">
@@ -109,23 +176,23 @@
             </Border>
         </VerticalStackLayout>
 
-        <!-- Data section -->
+        <!-- Settings section -->
         <VerticalStackLayout Spacing="8">
-            <Label Style="{StaticResource SectionHeader}" Text="DATEN" />
+            <Label Style="{StaticResource SectionHeader}" Text="EINSTELLUNGEN" />
             <Border Style="{StaticResource CardBorder}">
                 <Grid ColumnDefinitions="*,Auto">
                     <VerticalStackLayout Grid.Column="0" Spacing="2" VerticalOptions="Center">
-                        <Label FontFamily="OpenSansSemibold" FontSize="15" Text="Datenbank teilen" />
+                        <Label FontFamily="OpenSansSemibold" FontSize="15" Text="Karte, GPS &amp; Daten" />
                         <Label
                             FontSize="12"
-                            Text="Exportiere deine Trips als Datei"
+                            Text="Kartenstil, Glättung, Datenbank und Standortfreigabe"
                             TextColor="{StaticResource TextSecondary}" />
                     </VerticalStackLayout>
                     <Button
-                        Command="{Binding ShareDatabaseCommand}"
+                        Command="{Binding OpenSettingsCommand}"
                         Grid.Column="1"
                         Style="{StaticResource SecondaryButton}"
-                        Text="Teilen"
+                        Text="Öffnen"
                         VerticalOptions="Center" />
                 </Grid>
             </Border>

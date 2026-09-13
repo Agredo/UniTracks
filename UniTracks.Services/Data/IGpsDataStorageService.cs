@@ -19,4 +19,7 @@ public interface IGpsDataStorageService
 
     /// <summary>Ends the current recording session so the next one creates a fresh trip.</summary>
     void FinalizeTrip();
+
+    /// <summary>True while a trip is being recorded and has not been finalised yet.</summary>
+    bool IsTripInProgress { get; }
 }
