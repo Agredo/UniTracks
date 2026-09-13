@@ -8,5 +8,17 @@ public partial class TripOverviewPage : ContentPage
 	{
 		InitializeComponent();
         BindingContext = viewModel;
+		this.viewModel = viewModel;
+    }
+
+    private readonly TripOverviewViewModel viewModel;
+
+    protected override void OnAppearing()
+    {
+		base.OnAppearing();
+
+		// The settings page lives on the profile tab; coming back here must not keep showing a route
+		// that was drawn with the previous smoothing setting.
+		viewModel.RefreshSettings();
     }
 }

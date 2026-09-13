@@ -46,6 +46,16 @@ public static class TrackSmoother
         return MovingAverage(filtered);
     }
 
+    /// <summary>
+    /// Returns the point list that is actually drawn/measured. With <paramref name="smoothingEnabled"/>
+    /// set to <c>false</c> the recorded points are handed back untouched (only ordered by timestamp),
+    /// which is what the settings switch uses to show what the smoothing swallows — for example tight
+    /// turnarounds of a 100 m out-and-back leg, whose points the noise filter collapses onto the anchor.
+    /// The stored raw points are identical either way; this only decides how they are interpreted.
+    /// </summary>
+    public static List<LocationModel> Smooth(IReadOnlyList<LocationModel> track, bool smoothingEnabled)
+        => smoothingEnabled ? Smooth(track) : track.OrderBy(l => l.Timestamp).ToList();
+
     /// <summary>Distance in meters of the smoothed track.</summary>
     public static double SmoothedDistanceMeters(IReadOnlyList<LocationModel> track)
     {

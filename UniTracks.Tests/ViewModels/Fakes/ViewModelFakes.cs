@@ -417,3 +417,11 @@ internal sealed class InMemoryRepository : IRepository
         return table;
     }
 }
+
+/// <summary>
+/// Settings fake that keeps the value in memory, so a test can assert what the ViewModel wrote.
+/// </summary>
+internal sealed class FakeTrackSmoothingSettings : UniTracks.Services.Settings.ITrackSmoothingSettings
+{
+    public bool IsEnabled { get; set; } = true;
+}

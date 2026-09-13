@@ -114,9 +114,35 @@ public partial class MapView : ContentView
     [BindableProperty(PropertyChangedMethodName = nameof(OnLocationsPropertyChanged))]
     public partial IReadOnlyList<Location>? Locations { get; set; }
 
+    /// <summary>Last drawn point set, kept so a settings change can redraw without new data.</summary>
+    private IReadOnlyList<Location>? drawnLocations;
+
     private static void OnLocationsPropertyChanged(BindableObject bindable, object oldValue, object newValue)
     {
         if (bindable is MapView mapView && newValue is IReadOnlyList<Location> locations)
+        {
+            mapView.DrawRoute(locations);
+        }
+    }
+
+    // Classic BindableProperty.Create (instead of the source generator used above) because the
+    // default has to be true: the smoothing was the app's behaviour before this switch existed.
+    public static readonly BindableProperty SmoothingEnabledProperty = BindableProperty.Create(
+        nameof(SmoothingEnabled), typeof(bool), typeof(MapView), true,
+        propertyChanged: OnSmoothingEnabledPropertyChanged);
+
+    /// <summary>
+    /// Whether the route is drawn from the smoothed track (default) or from the raw recorded points.
+    /// </summary>
+    public bool SmoothingEnabled
+    {
+        get => (bool)GetValue(SmoothingEnabledProperty);
+        set => SetValue(SmoothingEnabledProperty, value);
+    }
+
+    private static void OnSmoothingEnabledPropertyChanged(BindableObject bindable, object oldValue, object newValue)
+    {
+        if (bindable is MapView mapView && mapView.drawnLocations is { Count: > 0 } locations)
         {
             mapView.DrawRoute(locations);
         }
@@ -151,16 +177,18 @@ public partial class MapView : ContentView
     private void DrawRoute(IReadOnlyList<Location> locations)
     {
         RemoveRouteLayers();
+        drawnLocations = locations;
 
         if (locations.Count == 0)
         {
             return;
         }
 
-        // Post-processing: draw the smoothed track (GPS jitter filtered/averaged). Raw points
-        // stay untouched in the database. The smoother may drop every point (e.g. all fixes
+        // Post-processing: draw the smoothed track (GPS jitter filtered/averaged) or — when the user
+        // switched the smoothing off in the settings — the raw recorded points. Raw points stay
+        // untouched in the database either way. The smoother may drop every point (e.g. all fixes
         // with bad accuracy) — then there is simply nothing to draw.
-        var smoothed = UniTracks.Services.Location.TrackSmoother.Smooth(locations);
+        var smoothed = UniTracks.Services.Location.TrackSmoother.Smooth(locations, SmoothingEnabled);
 
         if (smoothed.Count == 0)
         {

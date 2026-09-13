@@ -72,6 +72,12 @@ public partial class UserPagevViewModel : ObservableObject
     }
 
     [RelayCommand]
+    private async Task OpenSettings()
+    {
+        await Navigation.ShellNavigationTo("SettingsPage", new Dictionary<string, object>());
+    }
+
+    [RelayCommand]
     private async Task ShareDatabase()
     {
         List<Trip> trips = (await Repository.GetAllAsync<Trip>(trip => trip.Locations)).ToList();

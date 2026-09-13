@@ -131,6 +131,28 @@
             </Border>
         </VerticalStackLayout>
 
+        <!-- Settings section -->
+        <VerticalStackLayout Spacing="8">
+            <Label Style="{StaticResource SectionHeader}" Text="EINSTELLUNGEN" />
+            <Border Style="{StaticResource CardBorder}">
+                <Grid ColumnDefinitions="*,Auto">
+                    <VerticalStackLayout Grid.Column="0" Spacing="2" VerticalOptions="Center">
+                        <Label FontFamily="OpenSansSemibold" FontSize="15" Text="Karte &amp; GPS" />
+                        <Label
+                            FontSize="12"
+                            Text="GPS-Glättung der Strecke ein- und ausschalten"
+                            TextColor="{StaticResource TextSecondary}" />
+                    </VerticalStackLayout>
+                    <Button
+                        Command="{Binding OpenSettingsCommand}"
+                        Grid.Column="1"
+                        Style="{StaticResource SecondaryButton}"
+                        Text="Öffnen"
+                        VerticalOptions="Center" />
+                </Grid>
+            </Border>
+        </VerticalStackLayout>
+
         <!-- About section -->
         <VerticalStackLayout Spacing="8">
             <Label Style="{StaticResource SectionHeader}" Text="ÜBER" />

@@ -11,6 +11,7 @@ using UniTracks.Data.Seeding;
 using UniTracks.Data.SQLite;
 using UniTracks.Maui.Services.Changelog;
 using UniTracks.Maui.Services.Location;
+using UniTracks.Maui.Services.Settings;
 using UniTracks.Maui.Views.Controls.Popups;
 using UniTracks.Maui.Views.Pages;
 using UniTracks.Maui.Views.Pages.Tabs;
@@ -23,6 +24,7 @@ using UniTracks.Services.Data;
 using UniTracks.Services.Feedback;
 using UniTracks.Services.Game;
 using UniTracks.Services.Location;
+using UniTracks.Services.Settings;
 using UniTracks.Services.Stats;
 using UniTracks.ViewModels.Changelog;
 using UniTracks.ViewModels.Controls.Popups;
@@ -169,6 +171,9 @@ public static class MauiProgram
         services.AddSingleton<IStatisticsService, StatisticsService>();
         services.AddSingleton<TripDistanceRecalculator>();
 
+        // User preference: whether the map draws the smoothed track or the raw GPS points.
+        services.AddSingleton<ITrackSmoothingSettings, PreferencesTrackSmoothingSettings>();
+
         // BugBear feedback (version is read automatically from the app's display version).
         services.AddSingleton<IFeedbackService>(_ => new FeedbackService(GetDisplayVersion()));
 
@@ -248,6 +253,7 @@ public static class MauiProgram
         services.AddTransient<StatisticsPage, StatisticsPageViewModel>();
         services.AddTransient<HelpPageViewModel>(_ => new HelpPageViewModel(GetDisplayVersion()));
         services.AddTransient<HelpPage>();
+        services.AddTransient<SettingsPage, SettingsPageViewModel>();
     }
 
     private static void RegisterPopups(IServiceCollection services)

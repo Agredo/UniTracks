@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage
+    x:Class="UniTracks.Maui.Views.Pages.SettingsPage"
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    xmlns:viewModels="clr-namespace:UniTracks.ViewModels.Pages;assembly=UniTracks.ViewModels"
+    Title="Einstellungen"
+    x:DataType="viewModels:SettingsPageViewModel">
+
+    <ScrollView>
+        <VerticalStackLayout Padding="20" Spacing="20">
+
+            <!-- Hero -->
+            <Border
+                Background="{StaticResource HeroGradientBrush}"
+                Padding="24,20"
+                Stroke="{StaticResource CardStroke}"
+                StrokeThickness="1">
+                <Border.StrokeShape>
+                    <RoundRectangle CornerRadius="24" />
+                </Border.StrokeShape>
+                <HorizontalStackLayout Spacing="16">
+                    <Border
+                        Background="{StaticResource AccentSoft}"
+                        HeightRequest="72"
+                        Stroke="{StaticResource AccentDim}"
+                        StrokeThickness="1"
+                        WidthRequest="72">
+                        <Border.StrokeShape>
+                            <RoundRectangle CornerRadius="36" />
+                        </Border.StrokeShape>
+                        <Label
+                            FontSize="34"
+                            HorizontalOptions="Center"
+                            Text="⚙️"
+                            VerticalOptions="Center" />
+                    </Border>
+                    <VerticalStackLayout Spacing="2" VerticalOptions="Center">
+                        <Label Style="{StaticResource TitleLabel}" Text="Einstellungen" />
+                        <Label Style="{StaticResource SubtitleLabel}" Text="Verhalten der App anpassen" />
+                    </VerticalStackLayout>
+                </HorizontalStackLayout>
+            </Border>
+
+            <!-- Map section -->
+            <VerticalStackLayout Spacing="8">
+                <Label Style="{StaticResource SectionHeader}" Text="KARTE" />
+                <Border Style="{StaticResource CardBorder}">
+                    <VerticalStackLayout Spacing="12">
+                        <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
+                            <VerticalStackLayout
+                                Grid.Column="0"
+                                Spacing="2"
+                                VerticalOptions="Center">
+                                <Label
+                                    FontFamily="OpenSansSemibold"
+                                    FontSize="15"
+                                    Text="GPS-Glättung" />
+                                <Label
+                                    FontSize="12"
+                                    Text="{Binding SmoothingStateText}"
+                                    TextColor="{StaticResource TextSecondary}" />
+                            </VerticalStackLayout>
+                            <Switch
+                                Grid.Column="1"
+                                IsToggled="{Binding TrackSmoothingEnabled}"
+                                VerticalOptions="Center" />
+                        </Grid>
+                        <Label
+                            FontSize="12"
+                            Text="{Binding SmoothingHint}"
+                            TextColor="{StaticResource TextMuted}" />
+                    </VerticalStackLayout>
+                </Border>
+            </VerticalStackLayout>
+
+            <Grid HeightRequest="20" />
+        </VerticalStackLayout>
+    </ScrollView>
+</ContentPage>

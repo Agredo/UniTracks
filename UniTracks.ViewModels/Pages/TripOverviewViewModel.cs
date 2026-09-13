@@ -4,6 +4,7 @@ using AgredoApplication.MVVM.Services.Abstractions.Navigation;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using UniTracks.Models.Trip;
+using UniTracks.Services.Settings;
 using LocationModel = UniTracks.Models.Location.Location;
 
 namespace UniTracks.ViewModels.Pages;
@@ -13,6 +14,8 @@ public partial class TripOverviewViewModel : ObservableObject
     private static readonly CultureInfo GermanCulture = CultureInfo.GetCultureInfo("de-DE");
 
     public INavigationService Navigation { get; }
+
+    private readonly ITrackSmoothingSettings smoothingSettings;
 
     [ObservableProperty]
     private Trip? trip;
@@ -59,9 +62,19 @@ public partial class TripOverviewViewModel : ObservableObject
     [ObservableProperty]
     private IList<double> altitudeProfile = new List<double>();
 
-    public TripOverviewViewModel(INavigationService navigation)
+    /// <summary>
+    /// Drives whether <c>MapView</c> draws the smoothed track or the raw recorded points. Read from
+    /// the settings on every appearance so a change made on the settings page shows up.
+    /// </summary>
+    [ObservableProperty]
+    private bool isSmoothingEnabled = true;
+
+    public TripOverviewViewModel(INavigationService navigation, ITrackSmoothingSettings smoothingSettings)
     {
         Navigation = navigation;
+        this.smoothingSettings = smoothingSettings;
+
+        IsSmoothingEnabled = smoothingSettings.IsEnabled;
 
         Navigation.Parameters.TryGetValue("parameter", out var parameter);
 
@@ -73,6 +86,12 @@ public partial class TripOverviewViewModel : ObservableObject
             ApplyTripStats(Trip);
         }
     }
+
+    /// <summary>
+    /// Re-reads the smoothing switch. Called from the page's <c>OnAppearing</c> because a Shell tab
+    /// switch keeps this page (and its map) alive, so the setting could have changed in between.
+    /// </summary>
+    public void RefreshSettings() => IsSmoothingEnabled = smoothingSettings.IsEnabled;
 
     private void ApplyTripStats(Trip trip)
     {
