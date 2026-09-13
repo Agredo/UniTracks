@@ -26,7 +26,7 @@
     <Border
         x:Name="PopupCard"
         Padding="24"
-        Style="{StaticResource CardBorder}">
+        Style="{StaticResource ScrollCardBorder}">
         <VerticalStackLayout Spacing="12">
 
             <Label Style="{StaticResource TitleLabel}" Text="Trip-Typ suchen" />

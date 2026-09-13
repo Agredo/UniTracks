@@ -352,7 +352,7 @@
             <!-- Kilometre splits: one column per run when more than two trips are compared -->
             <VerticalStackLayout IsVisible="{Binding ShowMultiSplits}" Spacing="8">
                 <Label Style="{StaticResource SectionHeader}" Text="KILOMETER-SPLITS" />
-                <Border Padding="14" Style="{StaticResource CardBorder}">
+                <Border Padding="14" Style="{StaticResource ScrollCardBorder}">
                     <ScrollView Orientation="Horizontal">
                         <VerticalStackLayout Spacing="10">
                             <HorizontalStackLayout Spacing="12">

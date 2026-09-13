@@ -42,7 +42,7 @@
     <Border
         x:Name="PopupCard"
         Padding="24"
-        Style="{StaticResource CardBorder}">
+        Style="{StaticResource ScrollCardBorder}">
         <VerticalStackLayout Spacing="14">
 
             <Label Style="{StaticResource TitleLabel}" Text="Was ist neu?" />

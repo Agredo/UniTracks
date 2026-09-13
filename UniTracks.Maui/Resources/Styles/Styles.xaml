@@ -272,6 +272,15 @@
         </Setter>
     </Style>
 
+    <!-- Cards that contain a ScrollView/CollectionView must not carry a Shadow. MAUI draws the
+         Android shadow by re-rendering a blurred bitmap of the whole card whenever any descendant
+         invalidates (PlatformWrapperView.onDescendantInvalidated in the MAUI Android runtime). A
+         scrolling child invalidates on every frame, so such a card is redrawn and re-uploaded ~60x
+         per second: measured 15 fps instead of 60 on the changelog popup. -->
+    <Style x:Key="ScrollCardBorder" TargetType="Border" BasedOn="{StaticResource CardBorder}">
+        <Setter Property="Shadow" Value="{x:Null}" />
+    </Style>
+
     <Style x:Key="ChipBorder" TargetType="Border">
         <Setter Property="BackgroundColor" Value="{StaticResource CardAlt}" />
         <Setter Property="Stroke" Value="{StaticResource CardStroke}" />
