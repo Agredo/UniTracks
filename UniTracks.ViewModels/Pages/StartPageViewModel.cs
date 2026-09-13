@@ -35,8 +35,6 @@ public partial class StartPageViewModel : ObservableObject
         GpsDataStorageService = gpsDataStorageService;
         Repository = repository;
         DatabasePath = repository.DatabasePath;
-
-        _ = StopListening();
     }
 
     [RelayCommand]

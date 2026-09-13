@@ -14,4 +14,10 @@ public interface IBackgroundLocationController
 
     /// <summary>Stops location capture and releases resources.</summary>
     void Stop();
+
+    /// <summary>
+    /// Current capture health. Platforms that can capture in the background without a known silent
+    /// stop keep the default; iOS reports the real authorization and detected gaps here.
+    /// </summary>
+    LocationCaptureHealth Health => LocationCaptureHealth.Unknown;
 }

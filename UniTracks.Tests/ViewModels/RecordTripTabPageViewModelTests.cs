@@ -4,6 +4,7 @@ using UniTracks.Models.Trip;
 using UniTracks.Models.User;
 using UniTracks.Services.ApplicationModel;
 using UniTracks.Services.ApplicationModel.Permissions;
+using UniTracks.Services.Location;
 using UniTracks.Tests.ViewModels.Fakes;
 using UniTracks.ViewModels.Controls.Popups;
 using UniTracks.ViewModels.Pages.Tabs;
@@ -21,8 +22,9 @@ public sealed class RecordTripTabPageViewModelTests
     private const string StopIcon = ApplicationConstants.RawIconBasePath + ApplicationIconConstants.StopIcon;
 
     /// <summary>
-    /// The constructor registers a timer and calls <c>StopListening()</c> plus a fire-and-forget
-    /// <c>_ = LoadTripTypesAsync()</c>, so every fake has to be wired up before it is built.
+    /// The constructor registers a timer and calls a fire-and-forget <c>_ = LoadTripTypesAsync()</c>,
+    /// so every fake has to be wired up before it is built. It deliberately does <em>not</em> stop
+    /// listening any more: creating the page used to end a running recording.
     /// </summary>
     private sealed class Fixture
     {
@@ -98,10 +100,12 @@ public sealed class RecordTripTabPageViewModelTests
         Assert.Equal(1, fixture.Dispatcher.CreateTimerCalls);
         Assert.Equal(TimeSpan.FromMilliseconds(100), fixture.Dispatcher.TimerInterval!.Value);
 
-        // The constructor runs a full stop once, which is also what finalises a trip left over from
-        // a previous session.
-        Assert.Equal(1, fixture.Location.StopListeningCalls);
-        Assert.Equal(1, fixture.Gps.FinalizeTripCalls);
+        // Creating the page must not touch an in-flight recording. The constructor used to stop
+        // listening and finalise the trip, which silently ended a recording whenever this page was
+        // re-created (every navigation, and on app start).
+        Assert.Equal(0, fixture.Location.StopListeningCalls);
+        Assert.Equal(0, fixture.Location.StopListeningAndDrainCalls);
+        Assert.Equal(0, fixture.Gps.FinalizeTripCalls);
     }
 
     /// <summary>
@@ -185,14 +189,15 @@ public sealed class RecordTripTabPageViewModelTests
         var beforePause = TimeSpan.Parse(fixture.ViewModel.StopWatchTime);
         Assert.True(beforePause >= TimeSpan.FromMilliseconds(100), $"Uhr lief nicht: {beforePause}.");
 
-        // Pause. The constructor already stopped once, so this is the second stop.
+        // Pause: the capture is stopped but the trip stays open.
         await fixture.ViewModel.StartListeningCommand.ExecuteAsync(null);
         Assert.False(fixture.ViewModel.IsRecording);
         Assert.Equal("Pausiert", fixture.ViewModel.StatusText);
-        Assert.Equal(2, fixture.Location.StopListeningCalls);
+        Assert.Equal(1, fixture.Location.StopListeningCalls);
+        Assert.Equal(0, fixture.Location.StopListeningAndDrainCalls);
 
         // A pause must not finalise the trip, otherwise the recorded points would be written out.
-        Assert.Equal(1, fixture.Gps.FinalizeTripCalls);
+        Assert.Equal(0, fixture.Gps.FinalizeTripCalls);
 
         await Task.Delay(60, TestContext.Current.CancellationToken);
 
@@ -228,16 +233,66 @@ public sealed class RecordTripTabPageViewModelTests
         fixture.Dispatcher.RaiseTimerTick();
         Assert.NotEqual("00:00:000", fixture.ViewModel.StopWatchTime);
 
-        fixture.ViewModel.StopListeningCommand.Execute(null);
+        await fixture.ViewModel.StopListeningCommand.ExecuteAsync(null);
 
         Assert.False(fixture.ViewModel.IsRecording);
         Assert.Equal("Bereit", fixture.ViewModel.StatusText);
         Assert.Equal("00:00:000", fixture.ViewModel.StopWatchTime);
         Assert.Equal("#FFFFFF", fixture.ViewModel.RecordIconColor);
 
-        Assert.Equal(2, fixture.Location.StopListeningCalls);
-        Assert.Equal(2, fixture.Gps.FinalizeTripCalls);
-        Assert.Equal(2, fixture.Dispatcher.StopTimerCalls);
+        // A full stop waits for the platform drain window before the trip is closed: locations that
+        // iOS still holds arrive during that window and belong to this trip.
+        Assert.Equal(0, fixture.Location.StopListeningCalls);
+        Assert.Equal(1, fixture.Location.StopListeningAndDrainCalls);
+        Assert.Equal(1, fixture.Gps.FinalizeTripCalls);
+        Assert.Equal(1, fixture.Dispatcher.StopTimerCalls);
+    }
+
+    /// <summary>
+    /// Finalising only makes sense while a trip is open. Calling it unconditionally is what let a
+    /// page construction end a running recording, so a stop without an open trip must stay a no-op.
+    /// </summary>
+    [Fact]
+    public async Task StopListening_WithoutRunningTrip_DoesNotFinalize()
+    {
+        var fixture = new Fixture();
+        fixture.Gps.IsTripInProgress = false;
+
+        await fixture.ViewModel.StopListeningCommand.ExecuteAsync(null);
+
+        Assert.Equal(0, fixture.Gps.FinalizeTripCalls);
+        Assert.False(fixture.ViewModel.IsRecording);
+    }
+
+    /// <summary>
+    /// iOS can end background updates without any error. The watchdog maps the platform snapshot to
+    /// a visible warning so a silently stopped recording is no longer invisible.
+    /// </summary>
+    [Fact]
+    public void DescribeCaptureProblem_ReportsAStoppedCapture()
+    {
+        var stopped = LocationCaptureHealth.Tracked(false, "Immer", 919, DateTimeOffset.Now, 1.2);
+
+        Assert.NotNull(RecordTripTabPageViewModel.DescribeCaptureProblem(stopped));
+    }
+
+    [Fact]
+    public void DescribeCaptureProblem_ReportsAFixGapLongerThanTheTolerance()
+    {
+        var silent = LocationCaptureHealth.Tracked(true, "Immer", 919, DateTimeOffset.Now.AddSeconds(-90), 90);
+
+        Assert.NotNull(RecordTripTabPageViewModel.DescribeCaptureProblem(silent));
+    }
+
+    [Fact]
+    public void DescribeCaptureProblem_StaysQuiet_ForAHealthyCaptureAndForUntrackedPlatforms()
+    {
+        var healthy = LocationCaptureHealth.Tracked(true, "Immer", 42, DateTimeOffset.Now, 1.2);
+
+        Assert.Null(RecordTripTabPageViewModel.DescribeCaptureProblem(healthy));
+
+        // Android and desktop report no capture details; "unbekannt" is not "gestoppt".
+        Assert.Null(RecordTripTabPageViewModel.DescribeCaptureProblem(LocationCaptureHealth.Unknown));
     }
 
     [Fact]

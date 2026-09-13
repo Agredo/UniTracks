@@ -7,5 +7,14 @@ public interface ILocationService
     public Task StartListening(Action<GPSInformatoion> action);
     public Task StartListening();
     public void StopListening();
+
+    /// <summary>
+    /// Stops capture and waits for the platform's drain window, so locations that iOS queued while
+    /// the app was suspended are still stored before the trip is finalised.
+    /// </summary>
+    public Task StopListeningAndDrainAsync();
+
+    /// <summary>Current platform capture health (authorization, fixes, gaps).</summary>
+    public LocationCaptureHealth Health => LocationCaptureHealth.Unknown;
 }
 

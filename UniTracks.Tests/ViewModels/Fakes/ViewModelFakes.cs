@@ -140,6 +140,12 @@ internal sealed class FakeLocationService : ILocationService
 
     public int StopListeningCalls { get; private set; }
 
+    /// <summary>Full stops, which wait for platform drain delivery before returning.</summary>
+    public int StopListeningAndDrainCalls { get; private set; }
+
+    /// <summary>What <see cref="Health"/> reports; tests set this to drive the capture watchdog.</summary>
+    public LocationCaptureHealth Health { get; set; } = LocationCaptureHealth.Unknown;
+
     public Action<GPSInformatoion>? LastCallback { get; private set; }
 
     public Task StartListening(Action<GPSInformatoion> onLocationReceived)
@@ -156,6 +162,12 @@ internal sealed class FakeLocationService : ILocationService
     }
 
     public void StopListening() => StopListeningCalls++;
+
+    public Task StopListeningAndDrainAsync()
+    {
+        StopListeningAndDrainCalls++;
+        return Task.CompletedTask;
+    }
 }
 
 /// <summary>
@@ -283,6 +295,9 @@ internal sealed class FakeGpsDataStorageService : IGpsDataStorageService
     public Guid? CurrentTripTypeId { get; set; }
 
     public int FinalizeTripCalls { get; private set; }
+
+    /// <summary>Set to true to mimic a recording that is still open, so a stop has a trip to finalise.</summary>
+    public bool IsTripInProgress { get; set; } = true;
 
     public List<GPSInformatoion> StoredData { get; } = new();
 
