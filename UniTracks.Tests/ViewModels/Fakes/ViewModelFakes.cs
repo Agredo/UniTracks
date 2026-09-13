@@ -539,6 +539,21 @@ internal sealed class FakeTripCardLayoutSettings : UniTracks.Services.Settings.I
     public bool IsCompact { get; set; }
 }
 
+/// <summary>Static trip type catalogue; the edit popup resolves the trip's current type through it.</summary>
+internal sealed class FakeTripTypeCatalog : UniTracks.Services.Comparison.ITripTypeCatalog
+{
+    private readonly Dictionary<Guid, UniTracks.Models.Trip.TripType> types;
+
+    public FakeTripTypeCatalog(params UniTracks.Models.Trip.TripType[] types) =>
+        this.types = types.ToDictionary(type => type.ID);
+
+    public Task<IReadOnlyDictionary<Guid, UniTracks.Models.Trip.TripType>> GetAllAsync() =>
+        Task.FromResult<IReadOnlyDictionary<Guid, UniTracks.Models.Trip.TripType>>(types);
+
+    public Task<UniTracks.Models.Trip.TripType?> GetAsync(Guid? tripTypeId) =>
+        Task.FromResult(tripTypeId is Guid id && types.TryGetValue(id, out var type) ? type : null);
+}
+
 /// <summary>Map style fake, mirroring <see cref="FakeTrackSmoothingSettings"/>.</summary>
 internal sealed class FakeMapStyleSettings : UniTracks.Services.Settings.IMapStyleSettings
 {
@@ -663,6 +678,15 @@ internal sealed class FakeTripFingerprintService : UniTracks.Services.Comparison
 
     public Task<UniTracks.Models.Comparison.TripFingerprint?> EnsureAsync(UniTracks.Models.Trip.Trip trip)
         => Task.FromResult(Stored.FirstOrDefault(fingerprint => fingerprint.TripID == trip.ID));
+
+    /// <summary>Trip ids passed to <see cref="RebuildAsync"/>, in call order.</summary>
+    public List<Guid> Rebuilt { get; } = new();
+
+    public Task<UniTracks.Models.Comparison.TripFingerprint?> RebuildAsync(UniTracks.Models.Trip.Trip trip)
+    {
+        Rebuilt.Add(trip.ID);
+        return Task.FromResult(Stored.FirstOrDefault(fingerprint => fingerprint.TripID == trip.ID));
+    }
 
     public Task<int> BackfillAsync(CancellationToken cancellationToken = default) => Task.FromResult(0);
 

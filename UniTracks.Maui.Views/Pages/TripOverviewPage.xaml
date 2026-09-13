@@ -92,7 +92,7 @@
                     </Border>
                 </Grid>
 
-                <Grid ColumnDefinitions="Auto,*" ColumnSpacing="10">
+                <Grid ColumnDefinitions="Auto,Auto,*" ColumnSpacing="8">
                     <!-- A Button rather than a tap label: a button consumes the touch, so the card's
                          own "open charts" gesture does not fire as well. -->
                     <Button
@@ -106,8 +106,19 @@
                         FontSize="12"
                         Text="Vergleichen"
                         TextColor="{StaticResource Accent}" />
-                    <Label
+                    <Button
                         Grid.Column="1"
+                        Padding="14,6"
+                        BackgroundColor="Transparent"
+                        BorderColor="{StaticResource CardStroke}"
+                        BorderWidth="1"
+                        Command="{Binding EditCommand}"
+                        CornerRadius="15"
+                        FontSize="12"
+                        Text="Bearbeiten"
+                        TextColor="{StaticResource TextSecondary}" />
+                    <Label
+                        Grid.Column="2"
                         FontSize="11"
                         HorizontalTextAlignment="End"
                         Text="Details &amp; Charts ›"
