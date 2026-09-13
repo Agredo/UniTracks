@@ -89,6 +89,15 @@ public sealed class RecordTripTabPageViewModelTests
         Locations = new(),
     };
 
+    /// <summary>Parses the clock label's adaptive format: "mm:ss" below one hour, "h:mm:ss" above.</summary>
+    private static TimeSpan ParseElapsed(string text)
+    {
+        var parts = text.Split(':');
+        return parts.Length == 3
+            ? new TimeSpan(int.Parse(parts[0]), int.Parse(parts[1]), int.Parse(parts[2]))
+            : new TimeSpan(0, int.Parse(parts[0]), int.Parse(parts[1]));
+    }
+
     [Fact]
     public void Constructor_StartsIdleAndConfiguresTheClock()
     {
@@ -96,12 +105,12 @@ public sealed class RecordTripTabPageViewModelTests
 
         Assert.False(fixture.ViewModel.IsRecording);
         Assert.Equal("Bereit", fixture.ViewModel.StatusText);
-        Assert.Equal("00:00:000", fixture.ViewModel.StopWatchTime);
+        Assert.Equal("00:00", fixture.ViewModel.StopWatchTime);
         Assert.Equal(PlayIcon, fixture.ViewModel.RecordIconSourceString);
         Assert.Equal("#FFFFFF", fixture.ViewModel.RecordIconColor);
 
         Assert.Equal(1, fixture.Dispatcher.CreateTimerCalls);
-        Assert.Equal(TimeSpan.FromMilliseconds(100), fixture.Dispatcher.TimerInterval!.Value);
+        Assert.Equal(TimeSpan.FromMilliseconds(250), fixture.Dispatcher.TimerInterval!.Value);
 
         // Creating the page must not touch an in-flight recording. The constructor used to stop
         // listening and finalise the trip, which silently ended a recording whenever this page was
@@ -186,11 +195,11 @@ public sealed class RecordTripTabPageViewModelTests
         fixture.Permissions.Status = PermissionStatus.Granted;
 
         await fixture.ViewModel.StartListeningCommand.ExecuteAsync(null);
-        await Task.Delay(120, TestContext.Current.CancellationToken);
+        await Task.Delay(1100, TestContext.Current.CancellationToken);
         fixture.Dispatcher.RaiseTimerTick();
 
-        var beforePause = TimeSpan.Parse(fixture.ViewModel.StopWatchTime);
-        Assert.True(beforePause >= TimeSpan.FromMilliseconds(100), $"Uhr lief nicht: {beforePause}.");
+        var beforePause = ParseElapsed(fixture.ViewModel.StopWatchTime);
+        Assert.True(beforePause >= TimeSpan.FromSeconds(1), $"Uhr lief nicht: {beforePause}.");
 
         // Pause: the capture is suspended but the trip stays open.
         await fixture.ViewModel.StartListeningCommand.ExecuteAsync(null);
@@ -217,7 +226,7 @@ public sealed class RecordTripTabPageViewModelTests
         Assert.False(fixture.ViewModel.IsPaused);
         Assert.Equal(2, fixture.Dispatcher.StartTimerCalls);
 
-        var afterResume = TimeSpan.Parse(fixture.ViewModel.StopWatchTime);
+        var afterResume = ParseElapsed(fixture.ViewModel.StopWatchTime);
         Assert.True(
             afterResume >= beforePause,
             $"Start() statt Restart(): die gemessene Zeit wurde zurueckgesetzt ({beforePause} -> {afterResume}).");
@@ -226,10 +235,6 @@ public sealed class RecordTripTabPageViewModelTests
     /// <summary>
     /// A full stop ends the recording, so the next one has to begin at zero again — <c>Stop()</c> alone
     /// keeps the elapsed time and the next recording would continue the previous clock.
-    ///
-    /// Note: the reset literal <c>"00:00:000"</c> does not match the <c>hh\:mm\:ss\.fff</c> format the
-    /// timer produces (<c>"00:00:00.000"</c>), so the label briefly shows a malformed value until the
-    /// next tick. Recorded as observed behaviour; production is unchanged.
     /// </summary>
     [Fact]
     public async Task StopListening_ResetsTheClockAndFinalizesTheTrip()
@@ -238,15 +243,15 @@ public sealed class RecordTripTabPageViewModelTests
         fixture.Permissions.Status = PermissionStatus.Granted;
 
         await fixture.ViewModel.StartListeningCommand.ExecuteAsync(null);
-        await Task.Delay(60, TestContext.Current.CancellationToken);
+        await Task.Delay(1100, TestContext.Current.CancellationToken);
         fixture.Dispatcher.RaiseTimerTick();
-        Assert.NotEqual("00:00:000", fixture.ViewModel.StopWatchTime);
+        Assert.NotEqual("00:00", fixture.ViewModel.StopWatchTime);
 
         await fixture.ViewModel.StopListeningCommand.ExecuteAsync(null);
 
         Assert.False(fixture.ViewModel.IsRecording);
         Assert.Equal("Bereit", fixture.ViewModel.StatusText);
-        Assert.Equal("00:00:000", fixture.ViewModel.StopWatchTime);
+        Assert.Equal("00:00", fixture.ViewModel.StopWatchTime);
         Assert.Equal("#FFFFFF", fixture.ViewModel.RecordIconColor);
 
         // A full stop waits for the platform drain window before the trip is closed: locations that
@@ -305,24 +310,59 @@ public sealed class RecordTripTabPageViewModelTests
     }
 
     [Fact]
-    public void SelectedTripType_UpdatesStorageAndMovesTheTypeToTheFront()
+    public void SelectedTripType_UpdatesStorageContextAndFloatsTheTypeToTheFavoritesFront()
     {
         var first = NewTripType("A");
         var second = NewTripType("B");
         var third = NewTripType("C");
         var fixture = new Fixture(repository => repository.Seed(first, second, third));
 
+        // The full list keeps its stable usage order; the quick-pick chips mirror its front.
         Assert.Equal(new[] { first.ID, second.ID, third.ID }, fixture.ViewModel.TripTypes.Select(t => t.ID));
+        Assert.Equal(new[] { first.ID, second.ID, third.ID }, fixture.ViewModel.FavoriteTripTypes.Select(t => t.ID));
 
         fixture.ViewModel.SelectedTripType = third;
 
         Assert.Equal(third.ID, fixture.Gps.CurrentTripTypeId);
-        Assert.Equal(new[] { third.ID, first.ID, second.ID }, fixture.ViewModel.TripTypes.Select(t => t.ID));
+        Assert.Equal(third.ID, fixture.ViewModel.Context.TripType?.ID);
+        Assert.Equal("C", fixture.ViewModel.SelectedTripTypeName);
+        Assert.Equal(new[] { third.ID, first.ID, second.ID }, fixture.ViewModel.FavoriteTripTypes.Select(t => t.ID));
+
+        // Reordering the chips must not disturb the stable full list.
+        Assert.Equal(new[] { first.ID, second.ID, third.ID }, fixture.ViewModel.TripTypes.Select(t => t.ID));
 
         fixture.ViewModel.SelectedTripType = null;
 
         Assert.Null(fixture.Gps.CurrentTripTypeId);
-        Assert.Equal(new[] { third.ID, first.ID, second.ID }, fixture.ViewModel.TripTypes.Select(t => t.ID));
+        Assert.Null(fixture.ViewModel.Context.TripType);
+        Assert.Equal("Aktivität wählen", fixture.ViewModel.SelectedTripTypeName);
+    }
+
+    [Fact]
+    public void SelectedTripType_NotInTheFavorites_IsInsertedAtTheFrontAndTrimsTheRest()
+    {
+        var types = new[] { NewTripType("A"), NewTripType("B"), NewTripType("C"), NewTripType("D"), NewTripType("E") };
+        var fixture = new Fixture(repository => repository.Seed(types));
+
+        Assert.Equal(types.Take(4).Select(t => t.ID), fixture.ViewModel.FavoriteTripTypes.Select(t => t.ID));
+
+        fixture.ViewModel.SelectedTripType = types[4];
+
+        Assert.Equal(
+            new[] { types[4].ID, types[0].ID, types[1].ID, types[2].ID },
+            fixture.ViewModel.FavoriteTripTypes.Select(t => t.ID));
+    }
+
+    [Theory]
+    [InlineData(0, "00:00")]
+    [InlineData(59_999, "00:59")]
+    [InlineData(61_000, "01:01")]
+    [InlineData(3_599_000, "59:59")]
+    [InlineData(3_600_000, "1:00:00")]
+    [InlineData(7_323_000, "2:02:03")]
+    public void FormatElapsed_UsesCompactMinutesAndExpandsPastOneHour(double milliseconds, string expected)
+    {
+        Assert.Equal(expected, RecordTripTabPageViewModel.FormatElapsed(TimeSpan.FromMilliseconds(milliseconds)));
     }
 
     /// <summary>
@@ -417,10 +457,10 @@ public sealed class RecordTripTabPageViewModelTests
         fixture.Permissions.Status = PermissionStatus.Granted;
 
         await fixture.ViewModel.StartListeningCommand.ExecuteAsync(null);
-        await Task.Delay(120, TestContext.Current.CancellationToken);
+        await Task.Delay(1100, TestContext.Current.CancellationToken);
         fixture.Dispatcher.RaiseTimerTick();
 
-        var beforePause = TimeSpan.Parse(fixture.ViewModel.StopWatchTime);
+        var beforePause = ParseElapsed(fixture.ViewModel.StopWatchTime);
 
         fixture.Remote.TapPause();
 
@@ -444,9 +484,9 @@ public sealed class RecordTripTabPageViewModelTests
         fixture.Permissions.Status = PermissionStatus.Granted;
 
         await fixture.ViewModel.StartListeningCommand.ExecuteAsync(null);
-        await Task.Delay(120, TestContext.Current.CancellationToken);
+        await Task.Delay(1100, TestContext.Current.CancellationToken);
         fixture.Dispatcher.RaiseTimerTick();
-        var beforePause = TimeSpan.Parse(fixture.ViewModel.StopWatchTime);
+        var beforePause = ParseElapsed(fixture.ViewModel.StopWatchTime);
 
         fixture.Remote.TapPause();
         await Task.Delay(60, TestContext.Current.CancellationToken);
@@ -456,7 +496,7 @@ public sealed class RecordTripTabPageViewModelTests
         Assert.True(fixture.ViewModel.IsRecording);
         Assert.False(fixture.ViewModel.IsPaused);
         Assert.Equal(2, fixture.Location.StartListeningCalls);
-        Assert.True(TimeSpan.Parse(fixture.ViewModel.StopWatchTime) >= beforePause);
+        Assert.True(ParseElapsed(fixture.ViewModel.StopWatchTime) >= beforePause);
     }
 
     /// <summary>A stop from the lock screen ends the trip and clears the clock like the page does.</summary>
@@ -475,7 +515,7 @@ public sealed class RecordTripTabPageViewModelTests
         Assert.False(fixture.ViewModel.IsRecording);
         Assert.False(fixture.ViewModel.IsPaused);
         Assert.Equal("Bereit", fixture.ViewModel.StatusText);
-        Assert.Equal("00:00:000", fixture.ViewModel.StopWatchTime);
+        Assert.Equal("00:00", fixture.ViewModel.StopWatchTime);
         Assert.Equal(1, fixture.Location.StopListeningAndDrainCalls);
         Assert.Equal(1, fixture.Gps.FinalizeTripCalls);
     }

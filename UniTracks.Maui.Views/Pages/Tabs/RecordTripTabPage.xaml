@@ -4,9 +4,14 @@
     xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
     xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
     xmlns:viewModels="clr-namespace:UniTracks.ViewModels.Pages.Tabs;assembly=UniTracks.ViewModels"
+    xmlns:converter="clr-namespace:UniTracks.Maui.Views.Converter"
     xmlns:models="clr-namespace:UniTracks.Models.Trip;assembly=UniTracks.Models"
     Title="Record Trip"
     x:DataType="viewModels:RecordTripTabPageViewModel">
+
+    <ContentPage.Resources>
+        <converter:AreEqualMultiValueConverter x:Key="AreEqualMultiValueConverter" />
+    </ContentPage.Resources>
 
     <Grid Padding="24" RowDefinitions="Auto,Auto,*,Auto">
 
@@ -65,90 +70,145 @@
             </Border.Triggers>
         </Border>
 
-        <!-- Trip type selector -->
-        <Grid
+        <!-- Recording context: what the trip will be tagged with. The active type stays visible
+             the whole time so it cannot be forgotten; future attributes (shoes, heart rate, ...)
+             extend this area alongside the type. -->
+        <VerticalStackLayout
             Grid.Row="1"
             Margin="0,20,0,0"
-            ColumnDefinitions="Auto,*"
-            ColumnSpacing="8">
+            Spacing="12">
 
-            <!-- Search (Lupe) -->
+            <!-- Active activity: prominent and tappable -->
             <Border
-                Grid.Column="0"
-                Padding="14,10"
+                Background="{StaticResource AccentSoft}"
+                Padding="16,12"
                 Stroke="{StaticResource Accent}"
-                StrokeThickness="2"
-                VerticalOptions="Center">
+                StrokeThickness="1.5">
                 <Border.StrokeShape>
-                    <RoundRectangle CornerRadius="20" />
+                    <RoundRectangle CornerRadius="16" />
                 </Border.StrokeShape>
                 <Border.GestureRecognizers>
                     <TapGestureRecognizer Command="{Binding SearchTripTypeCommand}" />
                 </Border.GestureRecognizers>
-                <HorizontalStackLayout Spacing="6">
-                    <Image
-                        HeightRequest="18"
-                        Source="search.png"
-                        VerticalOptions="Center"
-                        WidthRequest="18" />
+                <Grid ColumnDefinitions="*,Auto">
+                    <VerticalStackLayout Grid.Column="0" Spacing="2">
+                        <Label
+                            FontAttributes="Bold"
+                            FontSize="11"
+                            Text="AKTIVITÄT"
+                            TextColor="{StaticResource TextSecondary}" />
+                        <Label
+                            FontFamily="OpenSansSemibold"
+                            FontSize="22"
+                            Text="{Binding SelectedTripTypeName}"
+                            TextColor="{StaticResource TextPrimary}" />
+                    </VerticalStackLayout>
                     <Label
+                        Grid.Column="1"
                         FontAttributes="Bold"
                         FontSize="12"
-                        Text="Suchen"
-                        TextColor="{StaticResource TextSecondary}"
+                        Text="Ändern"
+                        TextColor="{StaticResource Accent}"
                         VerticalOptions="Center" />
-                </HorizontalStackLayout>
+                </Grid>
             </Border>
 
-            <CollectionView
-                Grid.Column="1"
-                HeightRequest="56"
-                HorizontalScrollBarVisibility="Never"
-                ItemsSource="{Binding TripTypes}"
-                SelectedItem="{Binding SelectedTripType}"
-                SelectionMode="Single"
-                VerticalScrollBarVisibility="Never">
-            <CollectionView.ItemsLayout>
-                <LinearItemsLayout ItemSpacing="8" Orientation="Horizontal" />
-            </CollectionView.ItemsLayout>
-            <CollectionView.ItemTemplate>
-                <DataTemplate x:DataType="models:TripType">
-                    <Border
-                        Padding="18,10"
-                        Stroke="{StaticResource CardStroke}"
-                        StrokeThickness="1"
-                        VerticalOptions="Center">
-                        <Border.StrokeShape>
-                            <RoundRectangle CornerRadius="20" />
-                        </Border.StrokeShape>
+            <!-- Quick pick: most used types as filled chips, full list behind "Alle" -->
+            <HorizontalStackLayout
+                IsVisible="{Binding IsTripTypeSelectionVisible}"
+                Spacing="8">
+
+                <CollectionView
+                    HeightRequest="44"
+                    HorizontalScrollBarVisibility="Never"
+                    ItemsSource="{Binding FavoriteTripTypes}"
+                    SelectionMode="None"
+                    VerticalScrollBarVisibility="Never">
+                    <CollectionView.ItemsLayout>
+                        <LinearItemsLayout ItemSpacing="8" Orientation="Horizontal" />
+                    </CollectionView.ItemsLayout>
+                    <CollectionView.ItemTemplate>
+                        <DataTemplate x:DataType="models:TripType">
+                            <Border
+                                Background="{StaticResource Card}"
+                                Padding="16,0"
+                                Stroke="{StaticResource CardStroke}"
+                                StrokeThickness="1"
+                                VerticalOptions="Center">
+                                <Border.StrokeShape>
+                                    <RoundRectangle CornerRadius="20" />
+                                </Border.StrokeShape>
+                                <Border.GestureRecognizers>
+                                    <TapGestureRecognizer Command="{Binding Source={RelativeSource AncestorType={x:Type ContentPage}}, Path=BindingContext.SelectTripTypeCommand}" CommandParameter="{Binding}" />
+                                </Border.GestureRecognizers>
+                                <Label
+                                    FontAttributes="Bold"
+                                    FontSize="13"
+                                    Text="{Binding Name}"
+                                    TextColor="{StaticResource TextSecondary}"
+                                    VerticalOptions="Center">
+                                    <Label.Triggers>
+                                        <DataTrigger
+                                            TargetType="Label"
+                                            Value="True">
+                                            <DataTrigger.Binding>
+                                                <MultiBinding Converter="{StaticResource AreEqualMultiValueConverter}">
+                                                    <Binding />
+                                                    <Binding Path="BindingContext.SelectedTripType" Source="{RelativeSource AncestorType={x:Type ContentPage}}" />
+                                                </MultiBinding>
+                                            </DataTrigger.Binding>
+                                            <Setter Property="TextColor" Value="{StaticResource OnAccent}" />
+                                        </DataTrigger>
+                                    </Label.Triggers>
+                                </Label>
+                                <Border.Triggers>
+                                    <DataTrigger
+                                        TargetType="Border"
+                                        Value="True">
+                                        <DataTrigger.Binding>
+                                            <MultiBinding Converter="{StaticResource AreEqualMultiValueConverter}">
+                                                <Binding />
+                                                <Binding Path="BindingContext.SelectedTripType" Source="{RelativeSource AncestorType={x:Type ContentPage}}" />
+                                            </MultiBinding>
+                                        </DataTrigger.Binding>
+                                        <Setter Property="BackgroundColor" Value="{StaticResource Accent}" />
+                                        <Setter Property="Stroke" Value="{StaticResource Accent}" />
+                                        <Setter Property="StrokeThickness" Value="2" />
+                                    </DataTrigger>
+                                </Border.Triggers>
+                            </Border>
+                        </DataTemplate>
+                    </CollectionView.ItemTemplate>
+                </CollectionView>
+
+                <!-- All types (search popup) -->
+                <Border
+                    Padding="14,0"
+                    Stroke="{StaticResource CardStroke}"
+                    StrokeThickness="1"
+                    VerticalOptions="Center">
+                    <Border.StrokeShape>
+                        <RoundRectangle CornerRadius="20" />
+                    </Border.StrokeShape>
+                    <Border.GestureRecognizers>
+                        <TapGestureRecognizer Command="{Binding SearchTripTypeCommand}" />
+                    </Border.GestureRecognizers>
+                    <HorizontalStackLayout Spacing="6">
+                        <Image
+                            HeightRequest="16"
+                            Source="search.png"
+                            VerticalOptions="Center"
+                            WidthRequest="16" />
                         <Label
                             FontAttributes="Bold"
                             FontSize="13"
-                            Text="{Binding Name}"
+                            Text="Alle"
                             TextColor="{StaticResource TextSecondary}"
                             VerticalOptions="Center" />
-                        <Border.VisualStateManager.VisualStateGroups>
-                            <VisualStateGroup Name="CommonStates">
-                                <VisualState Name="Normal">
-                                    <VisualState.Setters>
-                                        <Setter Property="BackgroundColor" Value="{StaticResource Card}" />
-                                        <Setter Property="Stroke" Value="{StaticResource CardStroke}" />
-                                    </VisualState.Setters>
-                                </VisualState>
-                                <VisualState Name="Selected">
-                                    <VisualState.Setters>
-                                        <Setter Property="BackgroundColor" Value="{StaticResource CardAlt}" />
-                                        <Setter Property="Stroke" Value="{StaticResource Accent}" />
-                                        <Setter Property="StrokeThickness" Value="2" />
-                                    </VisualState.Setters>
-                                </VisualState>
-                            </VisualStateGroup>
-                        </Border.VisualStateManager.VisualStateGroups>
-                    </Border>
-                </DataTemplate>
-            </CollectionView.ItemTemplate>
-        </CollectionView>
-        </Grid>
+                    </HorizontalStackLayout>
+                </Border>
+            </HorizontalStackLayout>
+        </VerticalStackLayout>
 
         <!-- Timer -->
         <Label
@@ -158,20 +218,29 @@
             Text="{Binding StopWatchTime}"
             VerticalOptions="Center" />
 
-        <!-- Controls -->
-        <HorizontalStackLayout
+        <!-- Controls: one dominant central action (start / pause), stop as the small
+             secondary action beside it -->
+        <Grid
             Grid.Row="3"
-            HorizontalOptions="Center"
-            Spacing="16"
+            ColumnDefinitions="*,Auto,*"
             VerticalOptions="End">
 
             <Button
+                Grid.Column="0"
                 Command="{Binding StopListeningCommand}"
+                FontSize="13"
+                HeightRequest="44"
+                HorizontalOptions="End"
+                Padding="20,0"
                 Style="{StaticResource DangerButton}"
                 Text="Stop"
                 VerticalOptions="Center" />
 
-            <Button Command="{Binding StartListeningCommand}" Style="{StaticResource RoundActionButton}">
+            <Button
+                Grid.Column="1"
+                Margin="24,0,0,0"
+                Command="{Binding StartListeningCommand}"
+                Style="{StaticResource RoundActionButton}">
                 <Button.ImageSource>
                     <FileImageSource File="play.png" />
                 </Button.ImageSource>
@@ -180,7 +249,7 @@
                         Binding="{Binding IsRecording}"
                         TargetType="Button"
                         Value="True">
-                        <Setter Property="ImageSource" Value="stop.png" />
+                        <Setter Property="ImageSource" Value="pause.png" />
                         <Setter Property="BackgroundColor" Value="{StaticResource Record}" />
                         <Setter Property="Shadow">
                             <Setter.Value>
@@ -194,6 +263,8 @@
                     </DataTrigger>
                 </Button.Triggers>
             </Button>
-        </HorizontalStackLayout>
+
+            <BoxView Grid.Column="2" />
+        </Grid>
     </Grid>
 </ContentPage>
