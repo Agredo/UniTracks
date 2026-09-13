@@ -16,6 +16,7 @@
              events, which prevents a TapGestureRecognizer from ever firing on Android. -->
         <controls:MapView
             Locations="{Binding Locations}"
+            MapStyle="{Binding MapStyle}"
             SmoothingEnabled="{Binding IsSmoothingEnabled}"
             TapCommand="{Binding ToggleOverlayCommand}" />
 

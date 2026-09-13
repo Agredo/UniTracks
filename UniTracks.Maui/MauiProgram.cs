@@ -12,6 +12,7 @@ using UniTracks.Data.SQLite;
 using UniTracks.Maui.Services.Changelog;
 using UniTracks.Maui.Services.Location;
 using UniTracks.Maui.Services.Settings;
+using UniTracks.Maui.Views;
 using UniTracks.Maui.Views.Controls.Popups;
 using UniTracks.Maui.Views.Pages;
 using UniTracks.Maui.Views.Pages.Tabs;
@@ -123,7 +124,24 @@ public static class MauiProgram
         builder.Logging.AddDebug();
 #endif
 
-        return builder.Build();
+        var app = builder.Build();
+
+        // A staged import or reset from the settings has to run before anything opens the database:
+        // both the repository and the initializer hold the file handle for the whole session.
+        // Resolving only IDatabaseMaintenance here keeps that true - its factory needs the file
+        // system and nothing else.
+        try
+        {
+            var maintenance = app.Services.GetRequiredService<IDatabaseMaintenance>();
+            var report = app.Services.GetRequiredService<StartupDatabaseReport>();
+            report.Record(maintenance.ApplyPending());
+        }
+        catch (Exception exception)
+        {
+            CrashLog.Write($"Startup database operation failed: {exception}");
+        }
+
+        return app;
     }
 
     // Reads the app's display version (e.g. "0.2") automatically. On unpackaged Windows the
@@ -174,6 +192,9 @@ public static class MauiProgram
         // User preference: whether the map draws the smoothed track or the raw GPS points.
         services.AddSingleton<ITrackSmoothingSettings, PreferencesTrackSmoothingSettings>();
 
+        // User preference: which tile layer the maps use.
+        services.AddSingleton<IMapStyleSettings, PreferencesMapStyleSettings>();
+
         // BugBear feedback (version is read automatically from the app's display version).
         services.AddSingleton<IFeedbackService>(_ => new FeedbackService(GetDisplayVersion()));
 
@@ -223,6 +244,9 @@ public static class MauiProgram
             return new LiteDatabase(databasePath);
         });
         services.AddSingleton<IRepository, LiteDbRepository>();
+        services.AddSingleton<IDatabaseMaintenance>(sp => new DatabaseMaintenance(
+            sp.GetRequiredService<AgredoApplication.MVVM.Services.Abstractions.IO.IFileSystem>(),
+            useLiteDatabase: true));
 #else
         // Android, Mac Catalyst and Windows run on JIT, where EF Core can build its model at
         // runtime and execute Database.Migrate(), so SQLite + EF Core remains the store.
@@ -233,7 +257,11 @@ public static class MauiProgram
             return new SqliteDBContext(databasePath);
         });
         services.AddSingleton<IRepository, EfRepository>();
+        services.AddSingleton<IDatabaseMaintenance>(sp => new DatabaseMaintenance(
+            sp.GetRequiredService<AgredoApplication.MVVM.Services.Abstractions.IO.IFileSystem>(),
+            useLiteDatabase: false));
 #endif
+        services.AddSingleton<StartupDatabaseReport>();
     }
 
     private static void RegisterPages(IServiceCollection services)
@@ -255,6 +283,7 @@ public static class MauiProgram
         services.AddTransient<HelpPageViewModel>(_ => new HelpPageViewModel(GetDisplayVersion()));
         services.AddTransient<HelpPage>();
         services.AddTransient<SettingsPage, SettingsPageViewModel>();
+        services.AddTransient<ProfilePage, ProfilePageViewModel>();
     }
 
     private static void RegisterPopups(IServiceCollection services)

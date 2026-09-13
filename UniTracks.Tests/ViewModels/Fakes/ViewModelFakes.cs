@@ -283,7 +283,12 @@ internal sealed class FakeFileSystem : IFileSystem
 {
     public string AppDataDirectory { get; set; } = "test://app-data";
 
-    public Task<string> PickFilePath() => Task.FromResult(string.Empty);
+    /// <summary>Answer of <see cref="PickFilePath"/>; set to mimic a file the user picked.</summary>
+    public string PickFilePathResult { get; set; } = string.Empty;
+
+    public List<(string Title, IReadOnlyList<string> Files)> SharedFiles { get; } = new();
+
+    public Task<string> PickFilePath() => Task.FromResult(PickFilePathResult);
 
     public Task<string> PickDirectoryPath() => Task.FromResult(string.Empty);
 
@@ -298,7 +303,11 @@ internal sealed class FakeFileSystem : IFileSystem
 
     public Task ShareFileAsync(string fileName, string title) => Task.CompletedTask;
 
-    public Task ShareFilesAsync(string title, IEnumerable<string> fileNames) => Task.CompletedTask;
+    public Task ShareFilesAsync(string title, IEnumerable<string> fileNames)
+    {
+        SharedFiles.Add((title, fileNames.ToList()));
+        return Task.CompletedTask;
+    }
 
     public Task SaveFileAsync(string fileName) => Task.CompletedTask;
 
@@ -454,4 +463,108 @@ internal sealed class InMemoryRepository : IRepository
 internal sealed class FakeTrackSmoothingSettings : UniTracks.Services.Settings.ITrackSmoothingSettings
 {
     public bool IsEnabled { get; set; } = true;
+}
+
+/// <summary>Map style fake, mirroring <see cref="FakeTrackSmoothingSettings"/>.</summary>
+internal sealed class FakeMapStyleSettings : UniTracks.Services.Settings.IMapStyleSettings
+{
+    public UniTracks.Services.Settings.MapStyleKind Style { get; set; } =
+        UniTracks.Services.Settings.MapStyleCatalog.Default;
+}
+
+/// <summary>
+/// Statistics fake: returns the seeded snapshot and records how many weekly buckets were asked for,
+/// so the profile hero can be tested without building real trips.
+/// </summary>
+internal sealed class FakeStatisticsService : UniTracks.Services.Stats.IStatisticsService
+{
+    public UniTracks.Services.Stats.StatisticsSnapshot Snapshot { get; set; } = new();
+
+    public int? RequestedWeekCount { get; private set; }
+
+    public Task<UniTracks.Services.Stats.StatisticsSnapshot> GetSnapshotAsync(int weekCount = 8)
+    {
+        RequestedWeekCount = weekCount;
+        return Task.FromResult(Snapshot);
+    }
+}
+
+/// <summary>
+/// Dialog fake: records what was shown and answers <see cref="ConfirmAsync"/> with
+/// <see cref="ConfirmResult"/> so the destructive database actions can be tested both ways.
+/// </summary>
+internal sealed class FakeDialogService : AgredoApplication.MVVM.Services.Abstractions.UI.IDialogService
+{
+    public bool ConfirmResult { get; set; } = true;
+
+    public List<(string Title, string Message)> Alerts { get; } = new();
+
+    public List<(string Title, string Message, string Accept, string Cancel)> Confirms { get; } = new();
+
+    public List<string> Toasts { get; } = new();
+
+    public Task AlertAsync(string title, string message, string cancel)
+    {
+        Alerts.Add((title, message));
+        return Task.CompletedTask;
+    }
+
+    public Task<bool> ConfirmAsync(string title, string message, string accept, string cancel)
+    {
+        Confirms.Add((title, message, accept, cancel));
+        return Task.FromResult(ConfirmResult);
+    }
+
+    public Task<string?> ShowActionSheetAsync(string title, string cancel, params string[] options) =>
+        Task.FromResult<string?>(null);
+
+    public Task ToastAsync(string message)
+    {
+        Toasts.Add(message);
+        return Task.CompletedTask;
+    }
+}
+
+/// <summary>
+/// Database maintenance fake: performs nothing and reports the state a test seeds, so the settings
+/// page can be tested without touching real files.
+/// </summary>
+internal sealed class FakeDatabaseMaintenance : IDatabaseMaintenance
+{
+    public string DatabasePath { get; set; } = "test://unitracks.db";
+
+    public string DatabaseFileName { get; set; } = "unitracks.db";
+
+    public long DatabaseSizeBytes { get; set; } = 2 * 1024 * 1024;
+
+    public bool HasPendingOperation { get; set; }
+
+    public string PendingOperationText { get; set; } = string.Empty;
+
+    public DateTimeOffset? LastImport { get; set; }
+
+    public Task<string?> CreateExportCopyAsync() => Task.FromResult<string?>(ExportCopyPath);
+
+    /// <summary>Path handed to the share sheet; null mimics "no database yet".</summary>
+    public string? ExportCopyPath { get; set; } = "test://unitracks-export.db";
+
+    public string? StageImportError { get; set; }
+
+    public List<string> StagedImports { get; } = new();
+
+    public int StagedResets { get; private set; }
+
+    public Task<string?> StageImportAsync(string? sourceFilePath)
+    {
+        StagedImports.Add(sourceFilePath ?? string.Empty);
+        return Task.FromResult(StageImportError);
+    }
+
+    public Task<string?> StageResetAsync()
+    {
+        StagedResets++;
+        return Task.FromResult<string?>(null);
+    }
+
+    public DatabaseOperationResult ApplyPending() => new(false, null);
 }

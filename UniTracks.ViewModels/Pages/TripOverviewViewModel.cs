@@ -16,6 +16,7 @@ public partial class TripOverviewViewModel : ObservableObject
     public INavigationService Navigation { get; }
 
     private readonly ITrackSmoothingSettings smoothingSettings;
+    private readonly IMapStyleSettings mapStyleSettings;
 
     [ObservableProperty]
     private Trip? trip;
@@ -69,12 +70,21 @@ public partial class TripOverviewViewModel : ObservableObject
     [ObservableProperty]
     private bool isSmoothingEnabled = true;
 
-    public TripOverviewViewModel(INavigationService navigation, ITrackSmoothingSettings smoothingSettings)
+    /// <summary>Tile layer of the map; also re-read on every appearance.</summary>
+    [ObservableProperty]
+    private MapStyleKind mapStyle = MapStyleCatalog.Default;
+
+    public TripOverviewViewModel(
+        INavigationService navigation,
+        ITrackSmoothingSettings smoothingSettings,
+        IMapStyleSettings mapStyleSettings)
     {
         Navigation = navigation;
         this.smoothingSettings = smoothingSettings;
+        this.mapStyleSettings = mapStyleSettings;
 
         IsSmoothingEnabled = smoothingSettings.IsEnabled;
+        MapStyle = mapStyleSettings.Style;
 
         Navigation.Parameters.TryGetValue("parameter", out var parameter);
 
@@ -91,7 +101,11 @@ public partial class TripOverviewViewModel : ObservableObject
     /// Re-reads the smoothing switch. Called from the page's <c>OnAppearing</c> because a Shell tab
     /// switch keeps this page (and its map) alive, so the setting could have changed in between.
     /// </summary>
-    public void RefreshSettings() => IsSmoothingEnabled = smoothingSettings.IsEnabled;
+    public void RefreshSettings()
+    {
+        IsSmoothingEnabled = smoothingSettings.IsEnabled;
+        MapStyle = mapStyleSettings.Style;
+    }
 
     private void ApplyTripStats(Trip trip)
     {

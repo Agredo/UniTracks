@@ -1,0 +1,149 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage
+    x:Class="UniTracks.Maui.Views.Pages.ProfilePage"
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    xmlns:vm="clr-namespace:UniTracks.ViewModels.Pages;assembly=UniTracks.ViewModels"
+    Title="Profil bearbeiten"
+    x:DataType="vm:ProfilePageViewModel">
+
+    <ContentPage.Resources>
+        <Style x:Key="FieldBorder" TargetType="Border">
+            <Setter Property="BackgroundColor" Value="{StaticResource CardAlt}" />
+            <Setter Property="Stroke" Value="{StaticResource CardStroke}" />
+            <Setter Property="StrokeThickness" Value="1" />
+            <Setter Property="Padding" Value="12,0" />
+            <Setter Property="StrokeShape">
+                <Setter.Value>
+                    <RoundRectangle CornerRadius="12" />
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </ContentPage.Resources>
+
+    <ScrollView>
+        <VerticalStackLayout Padding="20" Spacing="20">
+
+            <!-- Hero -->
+            <Border
+                Background="{StaticResource HeroGradientBrush}"
+                Padding="24,20"
+                Stroke="{StaticResource CardStroke}"
+                StrokeThickness="1">
+                <Border.StrokeShape>
+                    <RoundRectangle CornerRadius="24" />
+                </Border.StrokeShape>
+                <HorizontalStackLayout Spacing="16">
+                    <Border
+                        Background="{StaticResource AccentSoft}"
+                        HeightRequest="72"
+                        Stroke="{StaticResource AccentDim}"
+                        StrokeThickness="1"
+                        WidthRequest="72">
+                        <Border.StrokeShape>
+                            <RoundRectangle CornerRadius="36" />
+                        </Border.StrokeShape>
+                        <Label
+                            FontSize="34"
+                            HorizontalOptions="Center"
+                            Text="🧑‍🚀"
+                            VerticalOptions="Center" />
+                    </Border>
+                    <VerticalStackLayout Spacing="2" VerticalOptions="Center">
+                        <Label Style="{StaticResource TitleLabel}" Text="Mein Profil" />
+                        <Label Style="{StaticResource SubtitleLabel}" Text="{Binding BodySummaryText}" />
+                    </VerticalStackLayout>
+                </HorizontalStackLayout>
+            </Border>
+
+            <!-- Personal data -->
+            <VerticalStackLayout Spacing="8">
+                <Label Style="{StaticResource SectionHeader}" Text="PERSÖNLICHE DATEN" />
+                <Border Style="{StaticResource CardBorder}">
+                    <VerticalStackLayout Spacing="12">
+                        <VerticalStackLayout Spacing="4">
+                            <Label Style="{StaticResource StatLabel}" Text="NAME" />
+                            <Border Style="{StaticResource FieldBorder}">
+                                <Entry
+                                    Placeholder="Dein Name"
+                                    PlaceholderColor="{StaticResource TextMuted}"
+                                    Text="{Binding Name}"
+                                    TextColor="{StaticResource TextPrimary}" />
+                            </Border>
+                        </VerticalStackLayout>
+                        <VerticalStackLayout Spacing="4">
+                            <Label Style="{StaticResource StatLabel}" Text="E-MAIL" />
+                            <Border Style="{StaticResource FieldBorder}">
+                                <Entry
+                                    Keyboard="Email"
+                                    Placeholder="name@example.com"
+                                    PlaceholderColor="{StaticResource TextMuted}"
+                                    Text="{Binding Email}"
+                                    TextColor="{StaticResource TextPrimary}" />
+                            </Border>
+                        </VerticalStackLayout>
+                    </VerticalStackLayout>
+                </Border>
+            </VerticalStackLayout>
+
+            <!-- Body data -->
+            <VerticalStackLayout Spacing="8">
+                <Label Style="{StaticResource SectionHeader}" Text="KÖRPER" />
+                <Border Style="{StaticResource CardBorder}">
+                    <VerticalStackLayout Spacing="12">
+                        <Grid ColumnDefinitions="*,*" ColumnSpacing="12">
+                            <VerticalStackLayout Grid.Column="0" Spacing="4">
+                                <Label Style="{StaticResource StatLabel}" Text="GRÖSSE (CM)" />
+                                <Border Style="{StaticResource FieldBorder}">
+                                    <Entry
+                                        Keyboard="Numeric"
+                                        Placeholder="182"
+                                        PlaceholderColor="{StaticResource TextMuted}"
+                                        Text="{Binding HeightText}"
+                                        TextColor="{StaticResource TextPrimary}" />
+                                </Border>
+                            </VerticalStackLayout>
+                            <VerticalStackLayout Grid.Column="1" Spacing="4">
+                                <Label Style="{StaticResource StatLabel}" Text="GEWICHT (KG)" />
+                                <Border Style="{StaticResource FieldBorder}">
+                                    <Entry
+                                        Keyboard="Numeric"
+                                        Placeholder="78,5"
+                                        PlaceholderColor="{StaticResource TextMuted}"
+                                        Text="{Binding WeightText}"
+                                        TextColor="{StaticResource TextPrimary}" />
+                                </Border>
+                            </VerticalStackLayout>
+                        </Grid>
+                        <Label
+                            FontSize="12"
+                            Text="{Binding HeightHint}"
+                            TextColor="{StaticResource TextMuted}" />
+                        <Label
+                            FontSize="12"
+                            Text="{Binding WeightHint}"
+                            TextColor="{StaticResource TextMuted}" />
+                    </VerticalStackLayout>
+                </Border>
+            </VerticalStackLayout>
+
+            <VerticalStackLayout Spacing="10">
+                <Button
+                    Command="{Binding SaveCommand}"
+                    IsEnabled="{Binding IsNotBusy}"
+                    Text="Speichern" />
+                <Button
+                    Command="{Binding CancelCommand}"
+                    Style="{StaticResource SecondaryButton}"
+                    Text="Abbrechen" />
+                <Label
+                    FontSize="12"
+                    HorizontalTextAlignment="Center"
+                    Text="{Binding StatusMessage}"
+                    TextColor="{StaticResource TextSecondary}" />
+            </VerticalStackLayout>
+
+            <Grid HeightRequest="20" />
+        </VerticalStackLayout>
+    </ScrollView>
+</ContentPage>

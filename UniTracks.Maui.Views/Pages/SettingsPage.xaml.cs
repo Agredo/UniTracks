@@ -14,8 +14,9 @@ public partial class SettingsPage : ContentPage
 	}
 
 	/// <summary>
-	/// The user may have changed the location permission on the system page; re-read it on every
-	/// appearance so the state shown is never stale.
+	/// The user may have changed the location permission on the system page and the database file
+	/// can change while the page is off screen; re-read both on every appearance so the state shown
+	/// is never stale.
 	/// </summary>
 	protected override async void OnAppearing()
 	{
@@ -30,5 +31,7 @@ public partial class SettingsPage : ContentPage
 			// The settings page must never fail to appear because a permission could not be read.
 			System.Diagnostics.Debug.WriteLine($"[UniTracks] SettingsPage.OnAppearing: {ex}");
 		}
+
+		viewModel.RefreshDatabaseStatus();
 	}
 }
