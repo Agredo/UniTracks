@@ -533,6 +533,12 @@ internal sealed class FakeTrackSmoothingSettings : UniTracks.Services.Settings.I
     public bool IsEnabled { get; set; } = true;
 }
 
+/// <summary>Trip card layout fake, mirroring <see cref="FakeTrackSmoothingSettings"/>.</summary>
+internal sealed class FakeTripCardLayoutSettings : UniTracks.Services.Settings.ITripCardLayoutSettings
+{
+    public bool IsCompact { get; set; }
+}
+
 /// <summary>Map style fake, mirroring <see cref="FakeTrackSmoothingSettings"/>.</summary>
 internal sealed class FakeMapStyleSettings : UniTracks.Services.Settings.IMapStyleSettings
 {

@@ -59,6 +59,39 @@ public sealed class SettingsPageViewModelTests
     }
 
     [Fact]
+    public void Constructor_ReadsTheStoredTripCardLayout()
+    {
+        var layout = new FakeTripCardLayoutSettings { IsCompact = true };
+
+        var viewModel = Create(tripCardLayoutSettings: layout);
+
+        Assert.True(viewModel.TripCardsCompact);
+        Assert.Equal("Kompakte Karten aktiv", viewModel.TripCardsStateText);
+    }
+
+    [Fact]
+    public void TripCards_AreFullByDefault()
+    {
+        var viewModel = Create();
+
+        Assert.False(viewModel.TripCardsCompact);
+        Assert.Equal("Ausführliche Karten", viewModel.TripCardsStateText);
+    }
+
+    [Fact]
+    public void EveryTripCardLayoutFlip_IsPersisted()
+    {
+        var layout = new FakeTripCardLayoutSettings();
+        var viewModel = Create(tripCardLayoutSettings: layout);
+
+        viewModel.TripCardsCompact = true;
+        Assert.True(layout.IsCompact);
+
+        viewModel.TripCardsCompact = false;
+        Assert.False(layout.IsCompact);
+    }
+
+    [Fact]
     public async Task Refresh_ReadsTheAlwaysPermission()
     {
         var permissions = new FakePermissions { Status = PermissionStatus.Denied };
@@ -409,6 +442,7 @@ public sealed class SettingsPageViewModelTests
 
     private static SettingsPageViewModel Create(
         FakeTrackSmoothingSettings? settings = null,
+        FakeTripCardLayoutSettings? tripCardLayoutSettings = null,
         FakePermissions? permissions = null,
         FakeAppSettings? appSettings = null,
         bool hasSeparateGrant = false,
@@ -421,6 +455,7 @@ public sealed class SettingsPageViewModelTests
         FakeChangelogPresenter? changelogPresenter = null) =>
         new(
             settings ?? new FakeTrackSmoothingSettings(),
+            tripCardLayoutSettings ?? new FakeTripCardLayoutSettings(),
             permissions ?? new FakePermissions(),
             appSettings ?? new FakeAppSettings(),
             mapStyleSettings ?? new FakeMapStyleSettings(),

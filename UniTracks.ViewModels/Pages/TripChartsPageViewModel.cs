@@ -3,6 +3,7 @@ using System.Globalization;
 using AgredoApplication.MVVM.Services.Abstractions.Navigation;
 using CommunityToolkit.Mvvm.ComponentModel;
 using UniTracks.Models.Trip;
+using UniTracks.Services.Comparison;
 using UniTracks.Services.Stats;
 using LocationModel = UniTracks.Models.Location.Location;
 
@@ -93,14 +94,8 @@ public partial class TripChartsPageViewModel : ObservableObject
 
     private void ApplyTripStats(Trip trip)
     {
-        TripName = trip.StartTime.Hour switch
-        {
-            >= 5 and < 11 => "Morgen Trip",
-            >= 11 and < 14 => "Mittags Trip",
-            >= 14 and < 18 => "Nachmittags Trip",
-            _ => "Abend Trip",
-        };
-        DateText = trip.StartTime.ToString("dddd, dd. MMMM yyyy · HH:mm", GermanCulture);
+        TripName = TripDisplay.TimeOfDayName(trip.StartTime);
+        DateText = trip.StartTime.LocalDateTime.ToString("dddd, dd. MMMM yyyy · HH:mm", GermanCulture);
 
         if (trip.Distance is { } distance)
         {

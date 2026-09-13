@@ -26,7 +26,8 @@ public sealed class TripTabPageViewModelTests
                 FileSystem,
                 Gps,
                 Repository,
-                Fingerprints);
+                Fingerprints,
+                CardLayout);
         }
 
         public FakeNavigationService Navigation { get; } = new();
@@ -42,6 +43,8 @@ public sealed class TripTabPageViewModelTests
         public InMemoryRepository Repository { get; } = new();
 
         public FakeTripFingerprintService Fingerprints { get; } = new();
+
+        public FakeTripCardLayoutSettings CardLayout { get; } = new();
 
         public TripTabPageViewModel ViewModel { get; }
     }
@@ -119,6 +122,23 @@ public sealed class TripTabPageViewModelTests
         // keeps a second collection of one trip's points on top.
         Assert.Equal(2, fixture.ViewModel.Trips.Count);
         Assert.Null(typeof(TripTabPageViewModel).GetProperty("Locations"));
+    }
+
+    /// <summary>
+    /// The trips tab re-reads the compact-card preference every time it appears, so a flip on the
+    /// settings page applies without restarting the app.
+    /// </summary>
+    [Fact]
+    public void RefreshLayoutSettings_ReReadsTheStoredPreference()
+    {
+        var fixture = new Fixture();
+
+        Assert.False(fixture.ViewModel.IsCompactLayout);
+
+        fixture.CardLayout.IsCompact = true;
+        fixture.ViewModel.RefreshLayoutSettings();
+
+        Assert.True(fixture.ViewModel.IsCompactLayout);
     }
 
     /// <summary>

@@ -8,6 +8,7 @@ using UniTracks.Models.Trip;
 using UniTracks.Services.Comparison;
 using UniTracks.Services.Data;
 using UniTracks.Services.Location;
+using UniTracks.Services.Settings;
 using LocationModel = UniTracks.Models.Location.Location;
 
 namespace UniTracks.ViewModels.Pages.Tabs;
@@ -20,12 +21,16 @@ public partial class TripTabPageViewModel : ObservableObject
     public IFileSystem FileSystem { get; }
     public IGpsDataStorageService GpsDataStorageService { get; }
     public IRepository Repository { get; }
+    public ITripCardLayoutSettings TripCardLayoutSettings { get; }
     public string DatabasePath { get; }
 
     private readonly ITripFingerprintService fingerprints;
 
     [ObservableProperty]
     private ObservableCollection<Trip> trips = new ObservableCollection<Trip>();
+
+    [ObservableProperty]
+    private bool isCompactLayout;
 
     [ObservableProperty]
     private string? debugText;
@@ -53,7 +58,8 @@ public partial class TripTabPageViewModel : ObservableObject
         IFileSystem fileSystem,
         IGpsDataStorageService gpsDataStorageService,
         IRepository repository,
-        ITripFingerprintService fingerprints)
+        ITripFingerprintService fingerprints,
+        ITripCardLayoutSettings tripCardLayoutSettings)
     {
         Navigation = navigation;
         PopupNavigation = popupNavigation;
@@ -62,14 +68,26 @@ public partial class TripTabPageViewModel : ObservableObject
         GpsDataStorageService = gpsDataStorageService;
         Repository = repository;
         this.fingerprints = fingerprints;
+        TripCardLayoutSettings = tripCardLayoutSettings;
         DatabasePath = repository.DatabasePath;
+        IsCompactLayout = tripCardLayoutSettings.IsCompact;
 
         _ = GetTrips();
     }
 
+    /// <summary>Re-reads the card layout preference (called from the page's OnAppearing).</summary>
+    public void RefreshLayoutSettings()
+    {
+        IsCompactLayout = TripCardLayoutSettings.IsCompact;
+    }
+
     private async Task GetTrips()
     {
-        var orderedTrips = (await Repository.GetAllAsync<Trip>(trip => trip.Locations))
+        var orderedTrips = (await Repository.GetAllAsync<Trip>(
+                trip => trip.Locations,
+                trip => trip.TripType,
+                trip => trip.HeartRates,
+                trip => trip.Weather))
             .OrderByDescending(trip => trip.StartTime)
             .ToList();
 

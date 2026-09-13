@@ -110,7 +110,7 @@ public partial class TripOverviewViewModel : ObservableObject
     private void ApplyTripStats(Trip trip)
     {
         TripName = GetTripName(trip.StartTime);
-        DateText = trip.StartTime.ToString("dddd, dd. MMMM yyyy · HH:mm", GermanCulture);
+        DateText = trip.StartTime.LocalDateTime.ToString("dddd, dd. MMMM yyyy · HH:mm", GermanCulture);
 
         if (trip.Distance is { } distance)
         {
@@ -217,12 +217,6 @@ public partial class TripOverviewViewModel : ObservableObject
 
     private static string GetTripName(DateTimeOffset startTime)
     {
-        return startTime.Hour switch
-        {
-            >= 5 and < 11 => "Morgen Trip",
-            >= 11 and < 14 => "Mittags Trip",
-            >= 14 and < 18 => "Nachmittags Trip",
-            _ => "Abend Trip",
-        };
+        return Services.Comparison.TripDisplay.TimeOfDayName(startTime);
     }
 }
