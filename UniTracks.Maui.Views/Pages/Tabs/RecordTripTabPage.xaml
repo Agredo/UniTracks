@@ -218,51 +218,143 @@
             Text="{Binding StopWatchTime}"
             VerticalOptions="Center" />
 
-        <!-- Controls: one dominant central action (start / pause), stop as the small
-             secondary action beside it -->
+        <!-- Controls: one dominant central action (start / pause / resume) with halo and caption,
+             stop as the small secondary action beside it -->
         <Grid
             Grid.Row="3"
             ColumnDefinitions="*,Auto,*"
             VerticalOptions="End">
 
-            <Button
+            <!-- Stop: circular icon button, only active while a trip is open -->
+            <VerticalStackLayout
                 Grid.Column="0"
-                Command="{Binding StopListeningCommand}"
-                FontSize="13"
-                HeightRequest="44"
-                HorizontalOptions="End"
-                Padding="20,0"
-                Style="{StaticResource DangerButton}"
-                Text="Stop"
-                VerticalOptions="Center" />
+                HorizontalOptions="Center"
+                Spacing="6"
+                VerticalOptions="Center">
+                <Button
+                    BackgroundColor="{StaticResource RecordSoft}"
+                    BorderColor="{StaticResource Record}"
+                    BorderWidth="1.5"
+                    Command="{Binding StopListeningCommand}"
+                    CornerRadius="30"
+                    HeightRequest="60"
+                    IsEnabled="{Binding CanStop}"
+                    MinimumHeightRequest="0"
+                    MinimumWidthRequest="0"
+                    Padding="0"
+                    WidthRequest="60">
+                    <Button.ImageSource>
+                        <FileImageSource File="stop.png" />
+                    </Button.ImageSource>
+                    <Button.Triggers>
+                        <DataTrigger
+                            Binding="{Binding CanStop}"
+                            TargetType="Button"
+                            Value="False">
+                            <Setter Property="Opacity" Value="0.35" />
+                        </DataTrigger>
+                    </Button.Triggers>
+                </Button>
+                <Label
+                    FontAttributes="Bold"
+                    FontSize="11"
+                    HorizontalTextAlignment="Center"
+                    Text="Stop"
+                    TextColor="{StaticResource TextMuted}" />
+            </VerticalStackLayout>
 
-            <Button
+            <!-- Primary action with state-colored halo -->
+            <VerticalStackLayout
                 Grid.Column="1"
-                Margin="24,0,0,0"
-                Command="{Binding StartListeningCommand}"
-                Style="{StaticResource RoundActionButton}">
-                <Button.ImageSource>
-                    <FileImageSource File="play.png" />
-                </Button.ImageSource>
-                <Button.Triggers>
-                    <DataTrigger
-                        Binding="{Binding IsRecording}"
-                        TargetType="Button"
-                        Value="True">
-                        <Setter Property="ImageSource" Value="pause.png" />
-                        <Setter Property="BackgroundColor" Value="{StaticResource Record}" />
-                        <Setter Property="Shadow">
-                            <Setter.Value>
-                                <Shadow
-                                    Brush="{StaticResource Record}"
-                                    Offset="0,6"
-                                    Opacity="0.35"
-                                    Radius="24" />
-                            </Setter.Value>
-                        </Setter>
-                    </DataTrigger>
-                </Button.Triggers>
-            </Button>
+                Spacing="8"
+                VerticalOptions="Center">
+                <Border
+                    Background="Transparent"
+                    HeightRequest="104"
+                    Padding="8"
+                    Stroke="{StaticResource AccentDim}"
+                    StrokeThickness="2"
+                    WidthRequest="104">
+                    <Border.StrokeShape>
+                        <RoundRectangle CornerRadius="52" />
+                    </Border.StrokeShape>
+                    <Button Command="{Binding StartListeningCommand}" Style="{StaticResource RoundActionButton}">
+                        <Button.ImageSource>
+                            <FileImageSource File="play.png" />
+                        </Button.ImageSource>
+                        <Button.Triggers>
+                            <DataTrigger
+                                Binding="{Binding IsRecording}"
+                                TargetType="Button"
+                                Value="True">
+                                <Setter Property="ImageSource" Value="pause.png" />
+                                <Setter Property="BackgroundColor" Value="{StaticResource Record}" />
+                                <Setter Property="Shadow">
+                                    <Setter.Value>
+                                        <Shadow
+                                            Brush="{StaticResource Record}"
+                                            Offset="0,6"
+                                            Opacity="0.35"
+                                            Radius="24" />
+                                    </Setter.Value>
+                                </Setter>
+                            </DataTrigger>
+                            <DataTrigger
+                                Binding="{Binding IsPaused}"
+                                TargetType="Button"
+                                Value="True">
+                                <Setter Property="BackgroundColor" Value="{StaticResource Warning}" />
+                                <Setter Property="Shadow">
+                                    <Setter.Value>
+                                        <Shadow
+                                            Brush="{StaticResource Warning}"
+                                            Offset="0,6"
+                                            Opacity="0.35"
+                                            Radius="24" />
+                                    </Setter.Value>
+                                </Setter>
+                            </DataTrigger>
+                        </Button.Triggers>
+                    </Button>
+                    <Border.Triggers>
+                        <DataTrigger
+                            Binding="{Binding IsRecording}"
+                            TargetType="Border"
+                            Value="True">
+                            <Setter Property="Stroke" Value="{StaticResource Record}" />
+                        </DataTrigger>
+                        <DataTrigger
+                            Binding="{Binding IsPaused}"
+                            TargetType="Border"
+                            Value="True">
+                            <Setter Property="Stroke" Value="{StaticResource Warning}" />
+                        </DataTrigger>
+                    </Border.Triggers>
+                </Border>
+                <Label
+                    FontAttributes="Bold"
+                    FontSize="12"
+                    HorizontalTextAlignment="Center"
+                    Text="Start"
+                    TextColor="{StaticResource Accent}">
+                    <Label.Triggers>
+                        <DataTrigger
+                            Binding="{Binding IsRecording}"
+                            TargetType="Label"
+                            Value="True">
+                            <Setter Property="Text" Value="Pause" />
+                            <Setter Property="TextColor" Value="{StaticResource Record}" />
+                        </DataTrigger>
+                        <DataTrigger
+                            Binding="{Binding IsPaused}"
+                            TargetType="Label"
+                            Value="True">
+                            <Setter Property="Text" Value="Weiter" />
+                            <Setter Property="TextColor" Value="{StaticResource Warning}" />
+                        </DataTrigger>
+                    </Label.Triggers>
+                </Label>
+            </VerticalStackLayout>
 
             <BoxView Grid.Column="2" />
         </Grid>

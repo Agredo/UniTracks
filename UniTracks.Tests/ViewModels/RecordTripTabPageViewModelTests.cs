@@ -409,6 +409,26 @@ public sealed class RecordTripTabPageViewModelTests
     }
 
     [Fact]
+    public async Task CanStop_IsOnlyTrueWhileATripIsOpen()
+    {
+        var fixture = new Fixture();
+        fixture.Permissions.Status = PermissionStatus.Granted;
+
+        Assert.False(fixture.ViewModel.CanStop);
+
+        await fixture.ViewModel.StartListeningCommand.ExecuteAsync(null);
+        Assert.True(fixture.ViewModel.CanStop);
+
+        // A paused trip is still open and must stay stoppable.
+        await fixture.ViewModel.StartListeningCommand.ExecuteAsync(null);
+        Assert.True(fixture.ViewModel.IsPaused);
+        Assert.True(fixture.ViewModel.CanStop);
+
+        await fixture.ViewModel.StopListeningCommand.ExecuteAsync(null);
+        Assert.False(fixture.ViewModel.CanStop);
+    }
+
+    [Fact]
     public async Task IsRecording_TogglesTripTypeSelectionAndRaisesPropertyChanged()
     {
         var fixture = new Fixture();

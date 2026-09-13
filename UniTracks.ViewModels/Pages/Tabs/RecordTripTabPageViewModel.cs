@@ -140,6 +140,9 @@ public partial class RecordTripTabPageViewModel : ObservableObject
     /// <summary>The activity chip selector is only editable while not recording.</summary>
     public bool IsTripTypeSelectionVisible => !IsRecording;
 
+    /// <summary>Stop is only meaningful while a trip is open (recording or paused).</summary>
+    public bool CanStop => IsRecording || IsPaused;
+
     /// <summary>How often the watchdog checks whether the platform still delivers locations.</summary>
     private const int WatchdogIntervalSeconds = 5;
 
@@ -255,6 +258,12 @@ public partial class RecordTripTabPageViewModel : ObservableObject
     partial void OnIsRecordingChanged(bool value)
     {
         OnPropertyChanged(nameof(IsTripTypeSelectionVisible));
+        OnPropertyChanged(nameof(CanStop));
+    }
+
+    partial void OnIsPausedChanged(bool value)
+    {
+        OnPropertyChanged(nameof(CanStop));
     }
 
     [RelayCommand]
