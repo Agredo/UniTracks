@@ -184,31 +184,27 @@
                 </Border>
             </VerticalStackLayout>
 
-            <!-- Profile and the pages around the app -->
+            <!-- Help and information about the app -->
             <VerticalStackLayout Spacing="8">
                 <Label Style="{StaticResource SectionHeader}" Text="APP" />
                 <Border Style="{StaticResource CardBorder}">
                     <VerticalStackLayout Spacing="10">
                         <Button
-                            Command="{Binding OpenProfileCommand}"
-                            Style="{StaticResource SecondaryButton}"
-                            Text="Profil bearbeiten" />
-                        <Label
-                            FontSize="11"
-                            Text="Name, E-Mail, Größe und Gewicht – dieselbe Seite wie im Profil-Tab."
-                            TextColor="{StaticResource TextMuted}" />
-                        <Button
                             Command="{Binding OpenHelpCommand}"
                             Style="{StaticResource SecondaryButton}"
-                            Text="Hilfe" />
+                            Text="Hilfe &amp; Anleitung" />
+                        <Label
+                            FontSize="11"
+                            Text="Münzen, Spiele und Bedienung erklärt"
+                            TextColor="{StaticResource TextMuted}" />
                         <Button
                             Command="{Binding OpenAboutCommand}"
                             Style="{StaticResource SecondaryButton}"
-                            Text="Über UniTracks" />
-                        <Button
-                            Command="{Binding OpenFeedbackCommand}"
-                            Style="{StaticResource SecondaryButton}"
-                            Text="Feedback senden" />
+                            Text="Über die App" />
+                        <Label
+                            FontSize="11"
+                            Text="Agredo Application · Aus Bremen mit Liebe"
+                            TextColor="{StaticResource TextMuted}" />
                     </VerticalStackLayout>
                 </Border>
             </VerticalStackLayout>

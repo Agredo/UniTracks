@@ -92,8 +92,6 @@ public sealed class UserPagevViewModelTests
     [InlineData("ProfilePage")]
     [InlineData("StatisticsPage")]
     [InlineData("SettingsPage")]
-    [InlineData("AboutPage")]
-    [InlineData("HelpPage")]
     [InlineData("FeedbackPage")]
     public async Task Cards_NavigateToTheirPage(string route)
     {
@@ -105,8 +103,6 @@ public sealed class UserPagevViewModelTests
             "ProfilePage" => viewModel.OpenProfileCommand,
             "StatisticsPage" => viewModel.OpenStatisticsCommand,
             "SettingsPage" => viewModel.OpenSettingsCommand,
-            "AboutPage" => viewModel.OpenAboutCommand,
-            "HelpPage" => viewModel.OpenHelpCommand,
             _ => viewModel.OpenFeedbackCommand
         };
 
