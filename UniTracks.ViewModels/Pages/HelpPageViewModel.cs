@@ -64,7 +64,7 @@ public partial class HelpPageViewModel : ObservableObject
             {
                 Title = "Einen Trip aufzeichnen",
                 Icon = "▶️",
-                Body = "Im Tab »Record« eine Sportart wählen und den Aufnahme-Knopf drücken. Beim ersten Mal fragt die App nach Standortberechtigungen. Während der Aufnahme läuft ein Timer; mit dem Stopp-Knopf beendest du den Trip, der danach im Tab »Trips« erscheint.",
+                Body = "Im Tab »Record« wählst du oben die Sportart: Der aktive Sport steht groß über der Steuerung, die meistgenutzten liegen als Chips darunter — der zuletzt genutzte rutscht nach vorne, die ganze Liste mit Suche steckt hinter »Alle«. Der große Knopf in der Mitte startet und pausiert die Aufnahme, der runde Knopf daneben beendet sie und ist nur aktiv, solange ein Trip offen ist. Die Farben zeigen den Zustand: grün bereit, rot während der Aufnahme, amber pausiert. Beim ersten Mal fragt die App nach Standortberechtigungen; der fertige Trip erscheint im Tab »Trips«.",
             },
             new HelpItem
             {
@@ -77,6 +77,12 @@ public partial class HelpPageViewModel : ObservableObject
                 Title = "Laufrichtung auf der Strecke",
                 Icon = "➡️",
                 Body = "Auf der Strecke wandern animierte Pfeile vom Start bis zum Ziel, damit sofort klar ist, in welche Richtung gelaufen wurde. Das Ende markiert eine karierte Zielflagge.",
+            },
+            new HelpItem
+            {
+                Title = "Trip nachträglich bearbeiten",
+                Icon = "✏️",
+                Body = "In der Trip-Übersicht öffnet der Bearbeiten-Dialog Name, Sportart und Notiz zum Ändern. Wechselst du die Sportart, gilt der Trip ab sofort als dieser Lauftyp: Vorschläge für ähnliche Strecken, Vergleich und Bestzeiten richten sich danach neu aus, weil der Streckenabdruck mit der neuen Sportart neu berechnet wird.",
             },
             new HelpItem
             {
@@ -137,6 +143,12 @@ public partial class HelpPageViewModel : ObservableObject
             },
             new HelpItem
             {
+                Title = "Kompakte Trip-Karten",
+                Icon = "📇",
+                Body = "Unter »Trips« in den Einstellungen entscheidest du, wie viel die Trip-Liste je Eintrag zeigt. Die ausführliche Karte trägt Symbol und Farbe der Sportart, das Datum relativ (»Heute«, »Gestern«, »vor 3 Tagen«), die wichtigsten Werte und — sofern vorhanden — Wetter, Puls und Höhe. Kompakt schrumpft jeder Trip auf eine Zeile mit Strecke, Dauer und Tempo, damit deutlich mehr Trips aufs Display passen.",
+            },
+            new HelpItem
+            {
                 Title = "GPS-Glättung der Karte",
                 Icon = "〰️",
                 Body = "Der Schalter in den Einstellungen entscheidet, was die Karte zeichnet: aus zeigt sie die rohen GPS-Punkte inklusive Zickzack und Ausreißern, an die gefilterte und gemittelte Strecke. Distanzen und Statistiken werden immer aus der geglätteten Strecke berechnet — Rekorde und Vergleiche bleiben also stabil.",
@@ -149,9 +161,9 @@ public partial class HelpPageViewModel : ObservableObject
             },
             new HelpItem
             {
-                Title = "Datenbank teilen, importieren, löschen",
+                Title = "Datenbank sichern, teilen, importieren, löschen",
                 Icon = "💾",
-                Body = "»Datenbank teilen« gibt eine Kopie deiner Daten zum Sichern oder Weitergeben; die laufende Datei bleibt unangetastet. Ein Import wird geprüft und erst beim nächsten Start der App übernommen, ebenso das Löschen aller Daten — deine jetzige Datenbank bleibt als Kopie im App-Ordner. Beende die App dafür im App-Umschalter vollständig und starte sie neu.",
+                Body = "»In Dateien speichern« legt eine Kopie deiner Daten über den Systemdialog dorthin, wo du sie haben willst — in den Ordner Documents, auf die SD-Karte oder in einen Cloud-Ordner; von dort holst du sie mit der Dateien-App, auf den PC oder per Messenger weiter. »Datenbank teilen« schickt die Kopie direkt an eine andere App. Die laufende Datei bleibt in beiden Fällen unangetastet. Ein Import wird geprüft und erst beim nächsten Start der App übernommen, ebenso das Löschen aller Daten — deine jetzige Datenbank bleibt als Kopie im App-Ordner. Beende die App dafür im App-Umschalter vollständig und starte sie neu.",
             },
             new HelpItem
             {

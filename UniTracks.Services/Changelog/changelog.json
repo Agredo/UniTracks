@@ -3,15 +3,31 @@
     {
       "version": "0.4.1",
       "date": "2026-09-14",
-      "title": "Backup in Dateien speichern",
+      "title": "Backup, neue Record-Seite & Trip-Karten",
       "changes": [
         {
           "kind": "feature",
           "text": "Datenbank-Backup in Dateien speichern: In den Einstellungen gibt es jetzt \"In Dateien speichern\". Der Knopf öffnet den Systemdialog \"Speichern unter\", und du wählst selbst, wo die Kopie landet - im Ordner Documents, auf der SD-Karte oder in einem Cloud-Ordner. Von dort lässt sie sich mit der Dateien-App sichern, auf den PC kopieren oder per Messenger weitergeben."
         },
         {
+          "kind": "feature",
+          "text": "Die Record-Seite ist übersichtlicher: Der gewählte Sport steht dauerhaft und groß über der Steuerung, darunter liegen die meistgenutzten Sportarten als Chips - der zuletzt gewählte rutscht nach vorne, die komplette Liste samt Suche bleibt hinter \"Alle\". In der Mitte startet und pausiert ein großer Knopf, daneben steht der runde Stopp-Knopf, der nur aktiv ist, solange ein Trip offen ist. Die Farben zeigen den Zustand: grün bereit, rot während der Aufnahme, amber pausiert."
+        },
+        {
+          "kind": "feature",
+          "text": "Die Trip-Liste zeigt mehr: Jede Sportart bekommt ihr eigenes Symbol und ihre Farbe, das Datum steht relativ da (\"Heute\", \"Gestern\", \"vor 3 Tagen\") und wenn Daten vorliegen, siehst du Wetter, Puls und Höhe direkt auf der Karte. Der Trip-Name hat jetzt die volle Zeile, Typ und Datum stehen darunter. Wer mehr Trips aufs Display bekommen will, schaltet in den Einstellungen unter \"Trips\" die kompakten Trip-Karten ein: dann bleibt eine Zeile je Trip mit Strecke, Dauer und Tempo."
+        },
+        {
+          "kind": "feature",
+          "text": "Trips lassen sich nachträglich bearbeiten: Auf der Trip-Übersicht öffnet der Bearbeiten-Dialog Name, Sportart und Notiz zum Ändern. Wird die Sportart gewechselt, rechnen Vorschläge für ähnliche Strecken und der Vergleich sofort mit der neuen Sportart."
+        },
+        {
           "kind": "fix",
           "text": "Der Knopf \"Datenbank teilen\" reicht die Kopie auf Android nur an andere Apps weiter und legt sie im App-Cache ab - dort tauchte sie in der Dateien-App nicht auf. Für ein richtiges Backup ist der neue Speichern-Dialog der Weg, deshalb stehen jetzt beide Möglichkeiten nebeneinander."
+        },
+        {
+          "kind": "fix",
+          "text": "Das Scrollen in Popups mit langen Listen (\"Was ist neu?\", Sportarten-Suche, Kilometer-Splits) ruckelte auf manchen Android-Geräten. Die Karten in diesen Popups werden jetzt einfacher gezeichnet, dadurch läuft das Scrollen flüssig."
         }
       ]
     },

@@ -18,9 +18,10 @@ Cross-Plattform Sport-Tracking-App mit **.NET 11** und **.NET MAUI** — Fokus a
 - 🎮 **Spiel-Tab** — Erfolge werden zur Währung: Coins verdienen durch Aktivität (10 🪙/km + 5 🪙/Trip + 25 🪙/Erfolg + 500 🪙 Startguthaben)
 - 🏙️ **Cozy City Builder** — isometrische Stadt bauen, gerendert mit SkiaSharp: 11 Gebäude, Pan/Pinch-Zoom, Ghost-Preview, Drop-in-Animationen, Coin-Sparkles, Wolken, Vögel und Tag/Nacht-Zyklus
 - 🌑 **Dark 2026 Sports UI** — modernes dunkles Design mit Mint-Akzenten (#4DE790)
-- 📊 **Trip-Statistiken** — Distanz, Dauer, Ø- und Max-Geschwindigkeit pro Trip
+- 📊 **Trip-Statistiken** — Distanz, Dauer, Ø- und Max-Geschwindigkeit pro Trip; die Trip-Karten zeigen Symbol und Farbe der Sportart, das Datum relativ („Heute", „Gestern") sowie — sofern vorhanden — Wetter, Puls und Höhe, wahlweise kompakt als eine Zeile
+- ✏️ **Trips bearbeiten** — Name, Sportart und Notiz lassen sich nachträglich ändern; ein Wechsel der Sportart berechnet den Streckenabdruck für Vorschläge und Vergleich neu
 - 👤 **Lokale Profile** — Nutzer-Verwaltung komplett offline
-- 💾 **Datenbank-Export** — Trips als Datei teilen
+- 💾 **Backup & Export** — die Datenbank per Systemdialog in Dateien speichern (Documents, SD-Karte, Cloud) oder direkt teilen, dazu Import und Löschen
 - 🪟 **Adaptive UI** — 1-Spalten-Liste auf Mobile, 2 Spalten auf breiten Fenstern
 
 Weitere geplante Features siehe [FEATURE_IDEAS.md](FEATURE_IDEAS.md) und den Citybuilder-Plan in [GAME_CITYBUILDER_PLAN.md](GAME_CITYBUILDER_PLAN.md).
