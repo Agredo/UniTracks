@@ -261,6 +261,32 @@ public sealed class TrackSmootherTests
         Assert.True(smoothed.Max(NorthMeters) < 97);
     }
 
+    /// <summary>
+    /// Guards the standing complaint behind the switch: a real 1 Hz trip has 900+ fixes and none of
+    /// them may disappear from the map when smoothing is off. The raw path hands back every point as
+    /// its own vertex, so the drawn line runs through all of them.
+    /// </summary>
+    [Fact]
+    public void Smooth_WithSmoothingDisabled_KeepsEveryPointOfNineHundredPlusFixes()
+    {
+        // 15 minutes of 1 Hz fixes: a 100 m out-and-back leg with the usual GPS scatter around it.
+        var track = new List<LocationModel>(920);
+        for (int second = 0; second < 920; second++)
+        {
+            var north = second <= 460 ? second * 0.22 : (920 - second) * 0.22;
+            track.Add(Point(second, north, Math.Sin(second / 7.0) * 3, accuracy: 14.246, speed: 0.45));
+        }
+
+        var raw = TrackSmoother.Smooth(track, smoothingEnabled: false);
+
+        Assert.Equal(track.Count, raw.Count);
+        Assert.All(track, point => Assert.Contains(point, raw));
+        Assert.Equal(track.OrderBy(p => p.Timestamp).Select(p => p.ID), raw.Select(p => p.ID));
+
+        // Sanity check that this fixture really is a case the filter would thin out.
+        Assert.True(TrackSmoother.Smooth(track).Count < track.Count);
+    }
+
     /// <summary>An evenly spaced straight line: <paramref name="steps"/> points, 10 m apart, 1 s apart.</summary>
     private static List<LocationModel> StraightTrack(int steps)
     {
