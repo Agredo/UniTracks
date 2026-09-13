@@ -15,6 +15,7 @@ using UniTracks.Services.Dispatching;
 using UniTracks.Services.Location;
 using UniTracks.ViewModels.Controls.Popups;
 using UniTracks.ViewModels.PermissionUtils;
+using UniTracks.ViewModels.Recording;
 
 namespace UniTracks.ViewModels.Pages.Tabs;
 
@@ -36,6 +37,12 @@ public partial class RecordTripTabPageViewModel : ObservableObject
     public IRecordingRemoteControls RemoteControls { get; }
 
     public string DatabasePath { get; private set; }
+
+    /// <summary>
+    /// What the next recording will be tagged with. Rendered as the context bar on the page; new
+    /// recording attributes (shoes, heart rate, ...) are added here and show up alongside the type.
+    /// </summary>
+    public RecordingContext Context { get; } = new();
 
     private const string RedColor = "#FF0000";
     private const string WhiteColor = "#FFFFFF";
@@ -72,11 +79,13 @@ public partial class RecordTripTabPageViewModel : ObservableObject
         {
             MainThread.BeginInvokeOnMainThread(() =>
             {
-                StopWatchTime = stopWatch.Elapsed.ToString(@"hh\:mm\:ss\.fff");
+                StopWatchTime = FormatElapsed(stopWatch.Elapsed);
             });
         };
 
-        Dispatcher.CreateTimer(TimeSpan.FromMilliseconds(100));
+        // The clock shows whole seconds only, so a quarter-second tick keeps it fresh without ten
+        // main-thread hops per second.
+        Dispatcher.CreateTimer(TimeSpan.FromMilliseconds(250));
         Dispatcher.AddEventHandler(stopWatchEventHandler);
 
         // The lock screen raises its commands from its own thread and while the page is off screen, so
@@ -95,7 +104,7 @@ public partial class RecordTripTabPageViewModel : ObservableObject
     private string recordIconColor = string.Empty;
 
     [ObservableProperty]
-    private string stopWatchTime = "00:00:000";
+    private string stopWatchTime = "00:00";
 
     [ObservableProperty]
     private bool isRecording;
@@ -114,10 +123,25 @@ public partial class RecordTripTabPageViewModel : ObservableObject
     [ObservableProperty]
     private TripType? selectedTripType;
 
+    /// <summary>Shown large in the context bar, so the active type cannot be overlooked.</summary>
+    public string SelectedTripTypeName => SelectedTripType?.Name ?? "Aktivität wählen";
+
     public ObservableCollection<TripType> TripTypes { get; } = new();
+
+    /// <summary>
+    /// The types offered as one-tap chips: the most relevant ones by usage, with a freshly picked
+    /// type floating to the front. The full list stays reachable through the search popup.
+    /// </summary>
+    public ObservableCollection<TripType> FavoriteTripTypes { get; } = new();
+
+    /// <summary>How many quick-pick chips fit the context bar.</summary>
+    private const int MaxFavoriteTripTypes = 4;
 
     /// <summary>The activity chip selector is only editable while not recording.</summary>
     public bool IsTripTypeSelectionVisible => !IsRecording;
+
+    /// <summary>Stop is only meaningful while a trip is open (recording or paused).</summary>
+    public bool CanStop => IsRecording || IsPaused;
 
     /// <summary>How often the watchdog checks whether the platform still delivers locations.</summary>
     private const int WatchdogIntervalSeconds = 5;
@@ -234,6 +258,18 @@ public partial class RecordTripTabPageViewModel : ObservableObject
     partial void OnIsRecordingChanged(bool value)
     {
         OnPropertyChanged(nameof(IsTripTypeSelectionVisible));
+        OnPropertyChanged(nameof(CanStop));
+    }
+
+    partial void OnIsPausedChanged(bool value)
+    {
+        OnPropertyChanged(nameof(CanStop));
+    }
+
+    [RelayCommand]
+    private void SelectTripType(TripType tripType)
+    {
+        SelectedTripType = tripType;
     }
 
     [RelayCommand]
@@ -248,12 +284,31 @@ public partial class RecordTripTabPageViewModel : ObservableObject
 
     partial void OnSelectedTripTypeChanged(TripType? value)
     {
+        Context.TripType = value;
         GpsDataStorageService.CurrentTripTypeId = value?.ID;
+        OnPropertyChanged(nameof(SelectedTripTypeName));
 
-        // Move the freshly picked type to the front so frequently used types stay on top.
-        if (value is not null && TripTypes.IndexOf(value) > 0)
+        if (value is null)
         {
-            TripTypes.Move(TripTypes.IndexOf(value), 0);
+            return;
+        }
+
+        // The full list keeps its stable usage order; only the quick-pick chips float the freshly
+        // picked type to the front so frequent types stay one tap away.
+        int favoriteIndex = FavoriteTripTypes.IndexOf(value);
+
+        if (favoriteIndex > 0)
+        {
+            FavoriteTripTypes.Move(favoriteIndex, 0);
+        }
+        else if (favoriteIndex < 0)
+        {
+            FavoriteTripTypes.Insert(0, value);
+
+            while (FavoriteTripTypes.Count > MaxFavoriteTripTypes)
+            {
+                FavoriteTripTypes.RemoveAt(FavoriteTripTypes.Count - 1);
+            }
         }
     }
 
@@ -276,9 +331,15 @@ public partial class RecordTripTabPageViewModel : ObservableObject
             .ToList();
 
         TripTypes.Clear();
+        FavoriteTripTypes.Clear();
         foreach (var type in ordered)
         {
             TripTypes.Add(type);
+
+            if (FavoriteTripTypes.Count < MaxFavoriteTripTypes)
+            {
+                FavoriteTripTypes.Add(type);
+            }
         }
 
         SelectedTripType ??= TripTypes.FirstOrDefault();
@@ -396,6 +457,12 @@ public partial class RecordTripTabPageViewModel : ObservableObject
         RemoteControls.Update(RecordingRemoteState.Recording, stopWatch.Elapsed);
     }
 
+    /// <summary>Stopwatch label: compact "mm:ss", expanding to "h:mm:ss" past one hour.</summary>
+    public static string FormatElapsed(TimeSpan elapsed) =>
+        elapsed.TotalHours >= 1
+            ? elapsed.ToString(@"h\:mm\:ss")
+            : elapsed.ToString(@"mm\:ss");
+
     private static string DescribeRecordingStatus(bool backgroundLocationMissing, bool notificationsMissing)
     {
         List<string> missing = new();
@@ -439,7 +506,7 @@ public partial class RecordTripTabPageViewModel : ObservableObject
         // A full stop ends the recording, so the next one has to begin at 00:00 again; Stop()
         // alone keeps the elapsed time and would let a new recording continue the previous clock.
         stopWatch.Reset();
-        StopWatchTime = "00:00:000";
+        StopWatchTime = "00:00";
 
         IsPaused = false;
         IsRecording = false;

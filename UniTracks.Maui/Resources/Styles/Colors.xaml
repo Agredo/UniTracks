@@ -43,6 +43,8 @@
     <Color x:Key="OnAccent">#06130B</Color>
     <Color x:Key="Record">#FF4D5E</Color>
     <Color x:Key="RecordSoft">#3A1B20</Color>
+    <Color x:Key="Warning">#FFB04D</Color>
+    <Color x:Key="WarningSoft">#3A2E1B</Color>
     <Color x:Key="LavenderSoft">#26203A</Color>
 
     <SolidColorBrush x:Key="SurfaceBrush" Color="{StaticResource Surface}" />
@@ -58,6 +60,8 @@
     <SolidColorBrush x:Key="OnAccentBrush" Color="{StaticResource OnAccent}" />
     <SolidColorBrush x:Key="RecordBrush" Color="{StaticResource Record}" />
     <SolidColorBrush x:Key="RecordSoftBrush" Color="{StaticResource RecordSoft}" />
+    <SolidColorBrush x:Key="WarningBrush" Color="{StaticResource Warning}" />
+    <SolidColorBrush x:Key="WarningSoftBrush" Color="{StaticResource WarningSoft}" />
 
     <LinearGradientBrush x:Key="AccentGradientBrush" StartPoint="0,0" EndPoint="1,1">
         <GradientStop Offset="0.0" Color="#4DE790" />
