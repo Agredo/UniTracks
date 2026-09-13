@@ -202,6 +202,19 @@ public partial class TripOverviewViewModel : ObservableObject
         }
     }
 
+    /// <summary>
+    /// Opens the comparison entry page: how often this route was run and which other trips are worth
+    /// comparing. Kept separate from the charts page so the analysis stays one tap away.
+    /// </summary>
+    [RelayCommand]
+    private async Task Compare()
+    {
+        if (Trip is not null)
+        {
+            await Navigation.ShellNavigationTo("TripComparePage", new Dictionary<string, object> { { "parameter", Trip } });
+        }
+    }
+
     private static string GetTripName(DateTimeOffset startTime)
     {
         return startTime.Hour switch

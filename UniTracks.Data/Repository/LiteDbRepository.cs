@@ -1,5 +1,7 @@
 using System.Collections.Concurrent;
+using System.ComponentModel.DataAnnotations;
 using System.Linq.Expressions;
+using System.Reflection;
 using LiteDB;
 using UniTracks.Data.LiteDB;
 using ILiteDatabase = UniTracks.Data.LiteDB.ILiteDatabase;
@@ -78,8 +80,16 @@ public class LiteDbRepository : IRepository
 
     private void DeleteCore<TEntity>(TEntity entity) where TEntity : class
     {
-        var id = typeof(TEntity).GetProperty("ID")?.GetValue(entity)
+        // The key is either the conventional "ID" property or the one the model declares with
+        // [Key] - TripFingerprint uses "TripID", and requiring the literal name here made deleting
+        // a trip's fingerprint throw on iOS.
+        var property = typeof(TEntity).GetProperty("ID")
+            ?? typeof(TEntity).GetProperties().FirstOrDefault(member => member.GetCustomAttribute<KeyAttribute>() is not null)
             ?? throw new InvalidOperationException($"Entity {typeof(TEntity).Name} has no ID property.");
+
+        var id = property.GetValue(entity)
+            ?? throw new InvalidOperationException($"Entity {typeof(TEntity).Name} has no ID value.");
+
         _liteDatabase.Database.GetCollection<TEntity>().Delete(new BsonValue(id));
     }
 

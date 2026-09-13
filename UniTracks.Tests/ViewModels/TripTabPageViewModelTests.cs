@@ -19,7 +19,14 @@ public sealed class TripTabPageViewModelTests
             // The constructor loads the trips, so the seed has to be in place beforehand.
             seed?.Invoke(Repository);
 
-            ViewModel = new TripTabPageViewModel(Navigation, Popups, Location, FileSystem, Gps, Repository);
+            ViewModel = new TripTabPageViewModel(
+                Navigation,
+                Popups,
+                Location,
+                FileSystem,
+                Gps,
+                Repository,
+                Fingerprints);
         }
 
         public FakeNavigationService Navigation { get; } = new();
@@ -33,6 +40,8 @@ public sealed class TripTabPageViewModelTests
         public FakeGpsDataStorageService Gps { get; } = new();
 
         public InMemoryRepository Repository { get; } = new();
+
+        public FakeTripFingerprintService Fingerprints { get; } = new();
 
         public TripTabPageViewModel ViewModel { get; }
     }
@@ -145,6 +154,27 @@ public sealed class TripTabPageViewModelTests
 
         Assert.DoesNotContain(fixture.ViewModel.Trips, trip => trip.ID == doomed.ID);
         Assert.Contains(fixture.ViewModel.Trips, trip => trip.ID == survivor.ID);
+    }
+
+    /// <summary>
+    /// The fingerprint is derived data owned by the trip. Left behind, it would keep a deleted trip
+    /// listed as a comparison candidate for the same route.
+    /// </summary>
+    [Fact]
+    public async Task DeleteTripAsync_DropsTheFingerprint()
+    {
+        var now = DateTimeOffset.UtcNow;
+        var doomed = NewTrip("Zu loeschen", now, locationCount: 2);
+        var survivor = NewTrip("Bleibt", now.AddDays(-1), locationCount: 1);
+
+        var fixture = new Fixture(repository => SeedTrips(repository, doomed, survivor));
+        fixture.Fingerprints.Stored.Add(new() { TripID = doomed.ID });
+        fixture.Fingerprints.Stored.Add(new() { TripID = survivor.ID });
+
+        await fixture.ViewModel.DeleteTripAsync(doomed);
+
+        Assert.Equal(new[] { doomed.ID }, fixture.Fingerprints.Removed);
+        Assert.Equal(survivor.ID, Assert.Single(fixture.Fingerprints.Stored).TripID);
     }
 
     [Fact]

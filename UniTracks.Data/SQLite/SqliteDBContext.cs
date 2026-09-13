@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using UniTracks.Data.Seeding;
 using UniTracks.Games.CityBuilder.Persistence;
 using UniTracks.Games.TowerDefense.Persistence;
+using UniTracks.Models.Comparison;
 using UniTracks.Models.Constants;
 using UniTracks.Models.Environment;
 using UniTracks.Models.Health;
@@ -23,6 +24,7 @@ public class SqliteDBContext : DbContext
     public DbSet<Weight> Weights { get; set; }
     public DbSet<TripType> TripTypes { get; set; }
     public DbSet<User> Users { get; set; }
+    public DbSet<TripFingerprint> TripFingerprints { get; set; }
     public DbSet<PlacedBuilding> PlacedBuildings { get; set; }
     public DbSet<CityExpansion> CityExpansions { get; set; }
     public DbSet<TowerUnlock> TowerUnlocks { get; set; }
@@ -71,6 +73,16 @@ public class SqliteDBContext : DbContext
             e.HasMany(t => t.Locations)
                 .WithOne()
                 .HasForeignKey(l => l.TripID);
+        });
+
+        modelBuilder.Entity<TripFingerprint>(e =>
+        {
+            // One fingerprint per trip, and it is worthless without the trip: deleting a trip
+            // takes its fingerprint with it.
+            e.HasOne<Trip>()
+                .WithOne()
+                .HasForeignKey<TripFingerprint>(f => f.TripID)
+                .OnDelete(DeleteBehavior.Cascade);
         });
 
         // TripType seed catalog is read from the embedded triptypes.json at

@@ -11,6 +11,8 @@ Cross-Plattform Sport-Tracking-App mit **.NET 11** und **.NET MAUI** — Fokus a
 - 🏷️ **85+ Trip-Typen** — von Run über Gassi gehen 🐕 bis Kayak, aus einem JSON-Seed-Katalog
 - 🗺️ **Geschwindigkeits-Gradient-Route** — die Strecke färbt sich je nach Tempo: Lavender (langsam) → Mint (mittel) → Rot (schnell)
 - 🧭 **Laufrichtung & Zielflagge** — animierte Richtungspfeile wandern die Strecke entlang, das Ende markiert eine schwarz-weiß karierte Zielflagge
+- 🔀 **Trip-Vergleich** — ein Trip lässt sich mit gleichen oder ähnlichen Strecken vergleichen: einzeln oder mit bis zu acht Läufen gleichzeitig, mit Rangliste, Kilometer-Splits, Karte und Pace-Verlauf (Erkennung über Streckenabdruck und Schwerpunkt)
+- 🔒 **Sperrbildschirm-Steuerung** — Pausieren, Fortsetzen und Stoppen direkt vom Sperrbildschirm: auf Android über die Benachrichtigung, auf iOS als Live Activity mit Karte und Dynamic Island
 - 🆕 **Versionshinweise** — nach einem Update zeigt ein Popup, was neu ist und was sich geändert hat (gepflegt in [`changelog.json`](UniTracks.Services/Changelog/changelog.json))
 - 🏆 **Gamification** — Erfolge-Tab mit Level, XP, Streaks und Badges (Erster Trip, 10/25 Trips, Distanz-Meilensteine u. v. m.)
 - 🎮 **Spiel-Tab** — Erfolge werden zur Währung: Coins verdienen durch Aktivität (10 🪙/km + 5 🪙/Trip + 25 🪙/Erfolg + 500 🪙 Startguthaben)
@@ -104,6 +106,7 @@ UniTracks.Data            → Persistenz: Entity Framework Core (SQLite) + LiteD
 UniTracks.Models          → Domänen-Modelle (Trip, Location, User, Weather)
 UniTracks.Core            → Basis-Abstraktionen
 UniTracks.Common          → Geteilte Konstanten/Utilities
+native/                   → Swift-Brücke (LiveActivityBridge) + Widget-Extension (UniTracksActivityHost)
 ```
 
 Zentrale Versionsverwaltung aller Pakete in `Directory.Build.props` / `projects.props`.
@@ -136,6 +139,24 @@ dotnet build UniTracks.Maui/UniTracks.Maui.csproj -f net11.0-ios -t:Run
 ```
 
 > ⚠️ Klassenbibliotheken sind `net11.0`-only — das `-f`-Flag nur auf dem App-Head (`UniTracks.Maui`) verwenden, nicht auf der Solution.
+
+### iOS Live Activity (Sperrbildschirm)
+
+Die Karte auf dem Sperrbildschirm und in der Dynamic Island zeichnet eine Widget-Extension
+([`native/UniTracksActivityHost`](native/UniTracksActivityHost)); die Knöpfe sind `LiveActivityIntent`s und
+laufen dort. Weil die Extension in einem eigenen Prozess lebt, reicht die Swift-Brücke
+([`native/LiveActivityBridge`](native/LiveActivityBridge)) den Tipp per Darwin-Notification an die App weiter —
+nur die App kennt die laufende Aufzeichnung.
+
+Vor jedem iOS-Build einmal bauen:
+
+```bash
+./scripts/build-liveactivity.sh device      # oder: simulator | all
+```
+
+Das Skript baut die Brücke für alle Architekturen, erzeugt das `xcframework` und legt die `.appex` unter
+`UniTracks.Maui/Platforms/iOS/PlugIns/` ab; der MAUI-Build bindet beides ein. Die `Info.plist` trägt dafür
+`NSSupportsLiveActivities`.
 
 ## Datenschutz
 

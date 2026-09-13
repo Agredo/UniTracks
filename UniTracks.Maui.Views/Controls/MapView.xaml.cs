@@ -14,6 +14,7 @@ using Mapsui.Tiling.Layers;
 using Mapsui.UI;
 using Microsoft.Maui.ApplicationModel;
 using Microsoft.Maui.Dispatching;
+using UniTracks.Models.Comparison;
 using UniTracks.Services.Settings;
 using Coordinate = NetTopologySuite.Geometries.Coordinate;
 using GeometryFeature = Mapsui.Nts.GeometryFeature;
@@ -122,6 +123,34 @@ public partial class MapView : ContentView
     [BindableProperty(PropertyChangedMethodName = nameof(OnLocationsPropertyChanged))]
     public partial IReadOnlyList<Location>? Locations { get; set; }
 
+    // Classic BindableProperty.Create so the default stays null without the generator emitting a
+    // non-nullable default for a list type.
+    public static readonly BindableProperty ComparisonRoutesProperty = BindableProperty.Create(
+        nameof(ComparisonRoutes), typeof(IReadOnlyList<ComparisonTrack>), typeof(MapView), null,
+        propertyChanged: OnComparisonRoutesPropertyChanged);
+
+    /// <summary>
+    /// Additional tracks drawn on top of <see cref="Locations"/>, one plain line each in its own
+    /// colour, with no speed colouring and no direction arrows so the routes stay tellable apart.
+    /// Used by the comparison to show several runs of the same route at once.
+    /// </summary>
+    public IReadOnlyList<ComparisonTrack>? ComparisonRoutes
+    {
+        get => (IReadOnlyList<ComparisonTrack>?)GetValue(ComparisonRoutesProperty);
+        set => SetValue(ComparisonRoutesProperty, value);
+    }
+
+    private static void OnComparisonRoutesPropertyChanged(BindableObject bindable, object oldValue, object newValue)
+    {
+        if (bindable is MapView mapView)
+        {
+            mapView.DrawComparisonRoutes();
+        }
+    }
+
+    /// <summary>The layers currently holding the comparison tracks, so a redraw can replace them.</summary>
+    private readonly List<MemoryLayer> comparisonRouteLayers = new();
+
     /// <summary>Last drawn point set, kept so a settings change can redraw without new data.</summary>
     private IReadOnlyList<Location>? drawnLocations;
 
@@ -153,6 +182,10 @@ public partial class MapView : ContentView
         if (bindable is MapView mapView && mapView.drawnLocations is { Count: > 0 } locations)
         {
             mapView.DrawRoute(locations);
+
+            // The comparison tracks have to follow the same switching, otherwise the routes would be
+            // drawn from tracks that were processed differently.
+            mapView.DrawComparisonRoutes();
         }
     }
 
@@ -310,7 +343,60 @@ public partial class MapView : ContentView
         // plus a checkered finish flag on the last point.
         CreateDirectionLayer(projected, speeds, TotalMetres(smoothed));
 
+        // Drawn last and always from the current property value, so it does not matter in which order
+        // the tracks were assigned: the comparison routes end up on top.
+        DrawComparisonRoutes();
+
         CenterOnRoute(projected);
+    }
+
+    /// <summary>
+    /// Draws every comparison track as one plain line, in the order they were handed over. No speed
+    /// colouring and no direction arrows — these are the reference tracks, and they must not compete
+    /// with the main route for attention.
+    /// </summary>
+    private void DrawComparisonRoutes()
+    {
+        foreach (var layer in comparisonRouteLayers)
+        {
+            ControlMapView.Map.Layers.Remove(layer);
+        }
+
+        comparisonRouteLayers.Clear();
+
+        foreach (var track in ComparisonRoutes ?? Array.Empty<ComparisonTrack>())
+        {
+            if (track.Locations is not { Count: > 1 })
+            {
+                continue;
+            }
+
+            var smoothed = UniTracks.Services.Location.TrackSmoother.Smooth(track.Locations, SmoothingEnabled);
+            if (smoothed.Count < 2)
+            {
+                continue;
+            }
+
+            var line = new LineString(smoothed
+                .Select(location => SphericalMercator.FromLonLat(location.Longitude, location.Latitude))
+                .Select(point => new Coordinate(point.x, point.y))
+                .ToArray());
+
+            var feature = new GeometryFeature(line);
+            feature.Styles.Add(new Mapsui.Styles.VectorStyle
+            {
+                Line = new Mapsui.Styles.Pen(ToMapsuiColor(Color.FromArgb(track.ColorHex)), 4)
+                {
+                    PenStrokeCap = Mapsui.Styles.PenStrokeCap.Round
+                }
+            });
+
+            var layer = new MemoryLayer($"ComparisonRoute-{track.Name}") { Features = new[] { feature } };
+            ControlMapView.Map.Layers.Add(layer);
+            comparisonRouteLayers.Add(layer);
+        }
+
+        ControlMapView.Map.RefreshGraphics();
     }
 
     private static double[] ComputeSegmentSpeeds(IReadOnlyList<Location> locations)
@@ -397,6 +483,13 @@ public partial class MapView : ContentView
             (int)Math.Round(from.b + (to.b - from.b) * t));
     }
 
+    /// <summary>
+    /// Mapsui keeps its own colour type, so the bindable MAUI colour has to be converted. Mapsui's
+    /// byte constructor saturates, which is what the (int) rounding relies on.
+    /// </summary>
+    private static Mapsui.Styles.Color ToMapsuiColor(Color color) =>
+        new((int)Math.Round(color.Red * 255), (int)Math.Round(color.Green * 255), (int)Math.Round(color.Blue * 255));
+
     private void RemoveRouteLayers()
     {
         StopDirectionAnimation();
@@ -412,6 +505,13 @@ public partial class MapView : ContentView
             ControlMapView.Map.Layers.Remove(routeLayer);
             routeLayer = null;
         }
+
+        foreach (var layer in comparisonRouteLayers)
+        {
+            ControlMapView.Map.Layers.Remove(layer);
+        }
+
+        comparisonRouteLayers.Clear();
 
         directionPath = [];
         directionCumulativeDistances = [];

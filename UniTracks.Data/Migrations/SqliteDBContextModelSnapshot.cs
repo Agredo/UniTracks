@@ -15,7 +15,7 @@ partial class SqliteDBContextModelSnapshot : ModelSnapshot
     // If you encounter a merge conflict in the line below, it means you need to
     // discard one of the migration branches and recreate its migrations on top of
     // the other branch. See https://aka.ms/efcore-docs-migrations-conflicts for more info.
-    public override string LastMigrationId => "20260907203231_AddEnergyPurchasesAndRunEnergy";
+    public override string LastMigrationId => "20260913142900_AddTripFingerprints";
 
     protected override void BuildModel(ModelBuilder modelBuilder)
     {
@@ -159,6 +159,112 @@ partial class SqliteDBContextModelSnapshot : ModelSnapshot
                 b.HasKey("ID");
 
                 b.ToTable("TowerUnlocks");
+            });
+
+        modelBuilder.Entity("UniTracks.Models.Comparison.TripFingerprint", b =>
+            {
+                b.Property<Guid>("TripID")
+                    .HasColumnType("TEXT");
+
+                b.Property<double>("AverageSpeedMetersPerSecond")
+                    .HasColumnType("REAL");
+
+                b.Property<double>("CenterLatitude")
+                    .HasColumnType("REAL");
+
+                b.Property<double>("CenterLongitude")
+                    .HasColumnType("REAL");
+
+                b.Property<double>("DistanceMeters")
+                    .HasColumnType("REAL");
+
+                b.Property<double>("EffortScore")
+                    .HasColumnType("REAL");
+
+                b.Property<double>("ElapsedSeconds")
+                    .HasColumnType("REAL");
+
+                b.Property<double>("ElevationGainMeters")
+                    .HasColumnType("REAL");
+
+                b.Property<string>("EndArea")
+                    .IsRequired()
+                    .HasColumnType("TEXT");
+
+                b.Property<string>("EndCell")
+                    .IsRequired()
+                    .HasColumnType("TEXT");
+
+                b.Property<double>("EquivalentDistanceMeters")
+                    .HasColumnType("REAL");
+
+                b.Property<double>("MaxAltitude")
+                    .HasColumnType("REAL");
+
+                b.Property<double>("MaxLatitude")
+                    .HasColumnType("REAL");
+
+                b.Property<double>("MaxLongitude")
+                    .HasColumnType("REAL");
+
+                b.Property<double>("MaxSpeedMetersPerSecond")
+                    .HasColumnType("REAL");
+
+                b.Property<double>("MinAltitude")
+                    .HasColumnType("REAL");
+
+                b.Property<double>("MinLatitude")
+                    .HasColumnType("REAL");
+
+                b.Property<double>("MinLongitude")
+                    .HasColumnType("REAL");
+
+                b.Property<double>("MovingSeconds")
+                    .HasColumnType("REAL");
+
+                b.Property<int>("PointCount")
+                    .HasColumnType("INTEGER");
+
+                b.PrimitiveCollection<string>("PolylineLatitudes")
+                    .IsRequired()
+                    .HasColumnType("TEXT");
+
+                b.PrimitiveCollection<string>("PolylineLongitudes")
+                    .IsRequired()
+                    .HasColumnType("TEXT");
+
+                b.PrimitiveCollection<string>("RouteCells")
+                    .IsRequired()
+                    .HasColumnType("TEXT");
+
+                b.Property<string>("StartArea")
+                    .IsRequired()
+                    .HasColumnType("TEXT");
+
+                b.Property<string>("StartCell")
+                    .IsRequired()
+                    .HasColumnType("TEXT");
+
+                b.Property<DateTimeOffset>("StartTime")
+                    .HasColumnType("TEXT");
+
+                b.Property<string>("TripCategory")
+                    .IsRequired()
+                    .HasColumnType("TEXT");
+
+                b.Property<string>("TripIdentifier")
+                    .IsRequired()
+                    .HasColumnType("TEXT");
+
+                b.Property<Guid?>("TripTypeId")
+                    .HasColumnType("TEXT");
+
+                b.Property<int>("Version")
+                    .HasColumnType("INTEGER");
+
+                b.HasKey("TripID");
+
+                b.ToTable("TripFingerprints");
             });
 
         modelBuilder.Entity("UniTracks.Models.Environment.Weather", b =>
@@ -1136,6 +1242,15 @@ partial class SqliteDBContextModelSnapshot : ModelSnapshot
                 b.HasKey("ID");
 
                 b.ToTable("Users");
+            });
+
+        modelBuilder.Entity("UniTracks.Models.Comparison.TripFingerprint", b =>
+            {
+                b.HasOne("UniTracks.Models.Trip.Trip", null)
+                    .WithOne()
+                    .HasForeignKey("UniTracks.Models.Comparison.TripFingerprint", "TripID")
+                    .OnDelete(DeleteBehavior.Cascade)
+                    .IsRequired();
             });
 
         modelBuilder.Entity("UniTracks.Models.Environment.Weather", b =>

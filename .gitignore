@@ -22,3 +22,10 @@
 
 # Build-Ausgaben der Publish-Skripte
 /dist/
+
+# Build-Ausgaben der nativen iOS-Live-Activity (siehe scripts/build-liveactivity.sh)
+/native/build/
+/native/LiveActivityBridge/.build/
+/native/LiveActivityBridge/.swiftpm/
+/UniTracks.Maui/Platforms/iOS/LiveActivityBridge.xcframework/
+/UniTracks.Maui/Platforms/iOS/PlugIns/

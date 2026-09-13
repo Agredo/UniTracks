@@ -134,6 +134,24 @@ internal sealed class FakePopupNavigationService : IPopupNavigationService
     }
 }
 
+/// <summary>Counts how often the notes were shown, so the settings button can be checked.</summary>
+internal sealed class FakeChangelogPresenter : UniTracks.ViewModels.Changelog.IChangelogPresenter
+{
+    public int Shown { get; private set; }
+
+    public Task ShowIfUnseenAsync()
+    {
+        Shown++;
+        return Task.CompletedTask;
+    }
+
+    public Task ShowAsync()
+    {
+        Shown++;
+        return Task.CompletedTask;
+    }
+}
+
 internal sealed class FakeLocationService : ILocationService
 {
     public int StartListeningCalls { get; private set; }
@@ -142,6 +160,9 @@ internal sealed class FakeLocationService : ILocationService
 
     /// <summary>Full stops, which wait for platform drain delivery before returning.</summary>
     public int StopListeningAndDrainCalls { get; private set; }
+
+    /// <summary>Suspensions that keep the platform session (and the trip) alive.</summary>
+    public int PauseListeningCalls { get; private set; }
 
     /// <summary>What <see cref="Health"/> reports; tests set this to drive the capture watchdog.</summary>
     public LocationCaptureHealth Health { get; set; } = LocationCaptureHealth.Unknown;
@@ -163,11 +184,38 @@ internal sealed class FakeLocationService : ILocationService
 
     public void StopListening() => StopListeningCalls++;
 
+    public void PauseListening() => PauseListeningCalls++;
+
     public Task StopListeningAndDrainAsync()
     {
         StopListeningAndDrainCalls++;
         return Task.CompletedTask;
     }
+}
+
+/// <summary>
+/// Lock-screen fake: records what the ViewModel publishes to the platform, and lets a test raise a
+/// button tap the way the platform would (from another thread, while the page is off screen).
+/// </summary>
+internal sealed class FakeRecordingRemoteControls : IRecordingRemoteControls
+{
+    public event EventHandler? PauseRequested;
+
+    public event EventHandler? ResumeRequested;
+
+    public event EventHandler? StopRequested;
+
+    public List<(RecordingRemoteState State, TimeSpan Elapsed)> Updates { get; } = new();
+
+    public RecordingRemoteState? LastState => Updates.Count == 0 ? null : Updates[^1].State;
+
+    public void Update(RecordingRemoteState state, TimeSpan elapsed) => Updates.Add((state, elapsed));
+
+    public void TapPause() => PauseRequested?.Invoke(this, EventArgs.Empty);
+
+    public void TapResume() => ResumeRequested?.Invoke(this, EventArgs.Empty);
+
+    public void TapStop() => StopRequested?.Invoke(this, EventArgs.Empty);
 }
 
 /// <summary>
@@ -567,4 +615,35 @@ internal sealed class FakeDatabaseMaintenance : IDatabaseMaintenance
     }
 
     public DatabaseOperationResult ApplyPending() => new(false, null);
+}
+
+/// <summary>
+/// Fingerprint store that keeps everything in memory. The ViewModel layer only needs
+/// <see cref="RemoveAsync"/> (a deleted trip must not leave a fingerprint behind), so the read side
+/// just returns what was seeded.
+/// </summary>
+internal sealed class FakeTripFingerprintService : UniTracks.Services.Comparison.ITripFingerprintService
+{
+    public List<UniTracks.Models.Comparison.TripFingerprint> Stored { get; } = new();
+
+    /// <summary>Trip ids passed to <see cref="RemoveAsync"/>, in call order.</summary>
+    public List<Guid> Removed { get; } = new();
+
+    public Task<IReadOnlyList<UniTracks.Models.Comparison.TripFingerprint>> GetAllAsync()
+        => Task.FromResult<IReadOnlyList<UniTracks.Models.Comparison.TripFingerprint>>(Stored);
+
+    public Task<UniTracks.Models.Comparison.TripFingerprint?> GetAsync(Guid tripId)
+        => Task.FromResult(Stored.FirstOrDefault(fingerprint => fingerprint.TripID == tripId));
+
+    public Task<UniTracks.Models.Comparison.TripFingerprint?> EnsureAsync(UniTracks.Models.Trip.Trip trip)
+        => Task.FromResult(Stored.FirstOrDefault(fingerprint => fingerprint.TripID == trip.ID));
+
+    public Task<int> BackfillAsync(CancellationToken cancellationToken = default) => Task.FromResult(0);
+
+    public Task RemoveAsync(Guid tripId)
+    {
+        Removed.Add(tripId);
+        Stored.RemoveAll(fingerprint => fingerprint.TripID == tripId);
+        return Task.CompletedTask;
+    }
 }

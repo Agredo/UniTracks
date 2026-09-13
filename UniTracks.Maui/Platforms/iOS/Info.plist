@@ -44,5 +44,10 @@
             <string>location</string>
             
         </array>
+
+        <!-- Die Aufnahme zeigt eine Live Activity auf dem Sperrbildschirm. Ohne diesen Schluessel
+             lehnt ActivityKit die Karte ab und die App faellt auf die Mitteilung zurueck. -->
+        <key>NSSupportsLiveActivities</key>
+        <true/>
 </dict>
 </plist>

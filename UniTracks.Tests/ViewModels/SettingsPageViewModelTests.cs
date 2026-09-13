@@ -328,6 +328,21 @@ public sealed class SettingsPageViewModelTests
         Assert.Equal(route, Assert.Single(navigation.Navigations).Route);
     }
 
+    /// <summary>
+    /// "Was ist neu" shows the notes again even though the app already marked them as seen on this
+    /// version - the button exists exactly to read them a second time.
+    /// </summary>
+    [Fact]
+    public async Task WhatsNewButton_ShowsTheReleaseNotesAgain()
+    {
+        var changelog = new FakeChangelogPresenter();
+        var viewModel = Create(changelogPresenter: changelog);
+
+        await viewModel.ShowWhatsNewCommand.ExecuteAsync(null);
+
+        Assert.Equal(1, changelog.Shown);
+    }
+
     private static SettingsPageViewModel Create(
         FakeTrackSmoothingSettings? settings = null,
         FakePermissions? permissions = null,
@@ -337,7 +352,8 @@ public sealed class SettingsPageViewModelTests
         FakeDatabaseMaintenance? databaseMaintenance = null,
         FakeFileSystem? fileSystem = null,
         FakeDialogService? dialogService = null,
-        FakeNavigationService? navigation = null) =>
+        FakeNavigationService? navigation = null,
+        FakeChangelogPresenter? changelogPresenter = null) =>
         new(
             settings ?? new FakeTrackSmoothingSettings(),
             permissions ?? new FakePermissions(),
@@ -346,7 +362,8 @@ public sealed class SettingsPageViewModelTests
             databaseMaintenance ?? new FakeDatabaseMaintenance(),
             fileSystem ?? new FakeFileSystem(),
             navigation ?? new FakeNavigationService(),
-            dialogService ?? new FakeDialogService())
+            dialogService ?? new FakeDialogService(),
+            changelogPresenter ?? new FakeChangelogPresenter())
         {
             HasSeparateBackgroundLocationGrant = hasSeparateGrant
         };

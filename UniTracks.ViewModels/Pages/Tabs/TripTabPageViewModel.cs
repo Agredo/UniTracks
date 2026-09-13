@@ -5,6 +5,7 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using UniTracks.Data.Repository;
 using UniTracks.Models.Trip;
+using UniTracks.Services.Comparison;
 using UniTracks.Services.Data;
 using UniTracks.Services.Location;
 using LocationModel = UniTracks.Models.Location.Location;
@@ -20,6 +21,8 @@ public partial class TripTabPageViewModel : ObservableObject
     public IGpsDataStorageService GpsDataStorageService { get; }
     public IRepository Repository { get; }
     public string DatabasePath { get; }
+
+    private readonly ITripFingerprintService fingerprints;
 
     [ObservableProperty]
     private ObservableCollection<Trip> trips = new ObservableCollection<Trip>();
@@ -49,7 +52,8 @@ public partial class TripTabPageViewModel : ObservableObject
         ILocationService locationService,
         IFileSystem fileSystem,
         IGpsDataStorageService gpsDataStorageService,
-        IRepository repository)
+        IRepository repository,
+        ITripFingerprintService fingerprints)
     {
         Navigation = navigation;
         PopupNavigation = popupNavigation;
@@ -57,6 +61,7 @@ public partial class TripTabPageViewModel : ObservableObject
         FileSystem = fileSystem;
         GpsDataStorageService = gpsDataStorageService;
         Repository = repository;
+        this.fingerprints = fingerprints;
         DatabasePath = repository.DatabasePath;
 
         _ = GetTrips();
@@ -106,6 +111,11 @@ public partial class TripTabPageViewModel : ObservableObject
         }
 
         await Repository.Delete(trip);
+
+        // The fingerprint is a derived summary of the trip, so it goes with it. Leaving it behind
+        // would keep a deleted trip listed in every other trip's comparison.
+        await fingerprints.RemoveAsync(trip.ID);
+
         await GetTrips();
     }
 }

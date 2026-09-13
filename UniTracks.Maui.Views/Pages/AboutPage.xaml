@@ -44,13 +44,22 @@
 
             <!-- Bremen with love -->
             <Border Style="{StaticResource CardBorder}">
-                <HorizontalStackLayout Spacing="12">
-                    <Label FontSize="34" Text="❤️" VerticalOptions="Center" />
-                    <VerticalStackLayout Spacing="4" VerticalOptions="Center">
+                <!-- A Grid instead of a HorizontalStackLayout: that one hands its children endless
+                     width, so the sentence never wrapped and was cut off at the card's edge. -->
+                <Grid ColumnDefinitions="Auto,*" ColumnSpacing="12">
+                    <Label
+                        Grid.Column="0"
+                        FontSize="34"
+                        Text="❤️"
+                        VerticalOptions="Center" />
+                    <VerticalStackLayout
+                        Grid.Column="1"
+                        Spacing="4"
+                        VerticalOptions="Center">
                         <Label Style="{StaticResource TitleLabel}" FontSize="18" Text="Aus Bremen" />
                         <Label Style="{StaticResource SubtitleLabel}" Text="{Binding BremenText}" />
                     </VerticalStackLayout>
-                </HorizontalStackLayout>
+                </Grid>
             </Border>
 
             <!-- Agredo Application -->

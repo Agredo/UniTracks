@@ -4,9 +4,10 @@ using CommunityToolkit.Mvvm.ComponentModel;
 namespace UniTracks.ViewModels.Pages;
 
 /// <summary>
-/// Inhalte der Hilfe-Seite: Navigation, Münzsystem, die beiden Spiele und die Errungenschaften.
-/// Alle Werte sind statisch aus dem Spiel-/Ökonomie-Code abgeleitet, damit die Hilfe exakt
-/// zum Verhalten der App passt.
+/// Inhalte der Hilfe-Seite: Navigation, der Sport-Teil (Aufzeichnen und Tripvergleich), Profil und
+/// Einstellungen, das Münzsystem, die beiden Spiele und die Errungenschaften. Alle Werte sind
+/// statisch aus dem Spiel-, Ökonomie- und Vergleichs-Code abgeleitet, damit die Hilfe exakt zum
+/// Verhalten der App passt.
 /// </summary>
 public partial class HelpPageViewModel : ObservableObject
 {
@@ -20,6 +21,8 @@ public partial class HelpPageViewModel : ObservableObject
     {
         AppVersion = appVersion;
         Sections.Add(BuildNavigation());
+        Sections.Add(BuildTrips());
+        Sections.Add(BuildProfileAndSettings());
         Sections.Add(BuildCoins());
         Sections.Add(BuildCozyCity());
         Sections.Add(BuildTrailDefense());
@@ -38,15 +41,123 @@ public partial class HelpPageViewModel : ObservableObject
                 Icon = "🛤️",
                 Body = "• Trips (Karte): Deine aufgezeichneten Trips, Karte und Verlauf.\n" +
                        "• Record (Aufnahme): Zeichnet einen neuen Trip per GPS auf.\n" +
-                       "• User (Person): Dein Profil mit Level, Streak und Gesamtkilometern — sowie Statistiken, Datenbank teilen, Über und Feedback.\n" +
+                       "• User (Person): Dein Profil mit Level, Streak und Gesamtkilometern — dazu Statistiken, »Profil bearbeiten«, Einstellungen und Feedback.\n" +
                        "• Erfolge (Pokal): Deine freigeschalteten Errungenschaften.\n" +
                        "• Spiel (Gamepad): Dein Münzkonto und die Minispiele.",
             },
             new HelpItem
             {
+                Title = "Wo die Nebenseiten liegen",
+                Icon = "🧷",
+                Body = "Statistik, Profil und Feedback erreichst du im Tab »User« über die Knöpfe unter deinem Profil. Hilfe & Anleitung, Über die App und »Was ist neu?« liegen in den Einstellungen im Abschnitt »App«.",
+            },
+        },
+    };
+
+    private static HelpSection BuildTrips() => new()
+    {
+        Title = "Trips & Vergleich",
+        Icon = "🏃",
+        Items =
+        {
+            new HelpItem
+            {
                 Title = "Einen Trip aufzeichnen",
                 Icon = "▶️",
                 Body = "Im Tab »Record« eine Sportart wählen und den Aufnahme-Knopf drücken. Beim ersten Mal fragt die App nach Standortberechtigungen. Während der Aufnahme läuft ein Timer; mit dem Stopp-Knopf beendest du den Trip, der danach im Tab »Trips« erscheint.",
+            },
+            new HelpItem
+            {
+                Title = "Aufzeichnung vom Sperrbildschirm steuern",
+                Icon = "🔒",
+                Body = "Läuft ein Run, musst du das Handy nicht entsperren: Auf dem Sperrbildschirm steht eine Anzeige mit den Knöpfen Pausieren, Fortsetzen und Stoppen. Auf dem iPhone ist das die Live Activity — eine Karte mit laufender Uhr und dem Zustand »Aufnahme läuft« bzw. »Aufnahme pausiert«, die zusätzlich in der Dynamic Island erscheint. Wenn dein iPhone keine Live Activities anzeigt (Systemeinstellungen »UniTracks«), übernimmt eine stille Benachrichtigung mit denselben Knöpfen; auf Android liegen sie ebenfalls in der Benachrichtigung. In der App selbst verschwindet die Anzeige, damit sie nicht doppelt erscheint.",
+            },
+            new HelpItem
+            {
+                Title = "Laufrichtung auf der Strecke",
+                Icon = "➡️",
+                Body = "Auf der Strecke wandern animierte Pfeile vom Start bis zum Ziel, damit sofort klar ist, in welche Richtung gelaufen wurde. Das Ende markiert eine karierte Zielflagge.",
+            },
+            new HelpItem
+            {
+                Title = "Vergleichen starten",
+                Icon = "🔀",
+                Body = "Öffne einen Trip und tippe auf »Vergleichen«. Die Seite schlägt die anderen Trips in drei Gruppen vor:\n" +
+                       "• »Gleiche Strecke« — exakt dieselbe Strecke; diese Läufe zählen zur Bestzeit.\n" +
+                       "• »Ähnliche Strecken« — ganz oder teilweise dieselben Wege.\n" +
+                       "• »Vergleichbarer Umfang« — andere Strecken mit ähnlicher Länge und Anstrengung, gedacht für den Leistungsvergleich.",
+            },
+            new HelpItem
+            {
+                Title = "Mehrere Läufe auf einmal vergleichen",
+                Icon = "📊",
+                Body = "Du musst dich nicht auf zwei Läufe beschränken: Tippe in einer der Listen mehrere Läufe an (bis zu acht) und starte mit »Auswahl vergleichen«. Der schnellste Lauf wird dabei automatisch die Basis, gegen die alle anderen gerechnet werden — so siehst du über Monate hinweg, wie du dich auf derselben Runde entwickelt hast.",
+            },
+            new HelpItem
+            {
+                Title = "Wie ähnliche Strecken gefunden werden",
+                Icon = "🧭",
+                Body = "UniTracks legt für jeden Trip einen Streckenabdruck an: Die Strecke wird stark vereinfacht, in grobe Rasterzellen übertragen und über ihren Schwerpunkt verortet. Bei einem Vorschlag vergleicht die App deshalb nicht jede GPS-Spur mit jeder, sondern erst die billigen Merkmale — gemeinsame Rasterzellen und Streckenlänge — und prüft nur die verbleibenden Kandidaten genau auf Form und Richtung. So steht der Vorschlag auch bei vielen Trips sofort da. Warum ein Trip in der Liste steht, sagt die App jeweils in einer Zeile dazu.",
+            },
+            new HelpItem
+            {
+                Title = "Was der Vergleich zeigt",
+                Icon = "📈",
+                Body = "• Die Strecken übereinander auf der Karte — jeder Lauf in eigener Farbe, die Färbung folgt dem Tempo.\n" +
+                       "• Eine Rangliste, sortiert nach steigungsbereinigter Pace, mit Zeit, Pace und der Abweichung Δ zur Basis.\n" +
+                       "• Kennzahlen und den Pace-Verlauf aller Läufe auf einer gemeinsamen Skala.\n" +
+                       "• Kilometer-Splits für die gemeinsam gelaufenen Kilometer — dort siehst du je Kilometer, wer schneller war.",
+            },
+            new HelpItem
+            {
+                Title = "Lauftyp und Fairness",
+                Icon = "⚖️",
+                Body = "Verglichen wird zuerst nur innerhalb desselben Lauftyps: Laufen bleibt unter Laufen. Der Schalter »Alle Lauftypen einbeziehen« nimmt Walk und Trailrun dazu; Bestzeit und Trend bleiben trotzdem auf deinen eigenen Lauftyp bezogen. Wenn Länge, Höhenmeter oder Pausen den Vergleich unfair machen, sagt die App es dir oben im Ergebnis.",
+            },
+        },
+    };
+
+    private static HelpSection BuildProfileAndSettings() => new()
+    {
+        Title = "Profil & Einstellungen",
+        Icon = "⚙️",
+        Items =
+        {
+            new HelpItem
+            {
+                Title = "Profil bearbeiten",
+                Icon = "👤",
+                Body = "Im Tab »User« unter »Profil bearbeiten« änderst du Name, E-Mail, Größe und Gewicht. Jedes gespeicherte Gewicht bleibt als Eintrag im Verlauf erhalten, damit sich die Entwicklung nachvollziehen lässt.",
+            },
+            new HelpItem
+            {
+                Title = "Kartenstil",
+                Icon = "🗺️",
+                Body = "In den Einstellungen wählst du, wie die Karte aussieht: Standard (OpenStreetMap), Hell (Carto) oder Topografisch (OpenTopoMap). Unter der Auswahl steht, von wem die Kartendaten kommen.",
+            },
+            new HelpItem
+            {
+                Title = "GPS-Glättung der Karte",
+                Icon = "〰️",
+                Body = "Der Schalter in den Einstellungen entscheidet, was die Karte zeichnet: aus zeigt sie die rohen GPS-Punkte inklusive Zickzack und Ausreißern, an die gefilterte und gemittelte Strecke. Distanzen und Statistiken werden immer aus der geglätteten Strecke berechnet — Rekorde und Vergleiche bleiben also stabil.",
+            },
+            new HelpItem
+            {
+                Title = "Standort im Hintergrund",
+                Icon = "📍",
+                Body = "Damit eine Aufzeichnung weiterläuft, wenn du die App weglegst, braucht UniTracks die Freigabe »Immer erlauben«. Android 11+ und iOS bieten sie nicht im normalen Dialog an, deshalb führt der Knopf in den Einstellungen notfalls auf die Systemseite der App.",
+            },
+            new HelpItem
+            {
+                Title = "Datenbank teilen, importieren, löschen",
+                Icon = "💾",
+                Body = "»Datenbank teilen« gibt eine Kopie deiner Daten zum Sichern oder Weitergeben; die laufende Datei bleibt unangetastet. Ein Import wird geprüft und erst beim nächsten Start der App übernommen, ebenso das Löschen aller Daten — deine jetzige Datenbank bleibt als Kopie im App-Ordner. Beende die App dafür im App-Umschalter vollständig und starte sie neu.",
+            },
+            new HelpItem
+            {
+                Title = "Hilfe, Über und Was ist neu",
+                Icon = "ℹ️",
+                Body = "Im Abschnitt »App« der Einstellungen findest du diese Anleitung, die Seite über die App und den Knopf »Was ist neu?«: Er zeigt dir die Versionshinweise zu dieser Version jederzeit erneut — nicht nur einmal nach einem Update.",
             },
         },
     };

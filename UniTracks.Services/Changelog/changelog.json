@@ -3,51 +3,39 @@
     {
       "version": "0.4",
       "date": "2026-09-13",
-      "title": "Laufrichtung, Stabilität & gemeinsames Münzkonto",
+      "title": "Trips vergleichen, Laufrichtung & Sperrbildschirm",
       "changes": [
         {
           "kind": "feature",
-          "text": "Die Laufrichtung wird auf der Strecke angezeigt: Pfeile wandern animiert vom Start bis zum Ziel."
-        },
-        {
-          "kind": "improvement",
-          "text": "Die Richtungspfeile sind jetzt so schmal wie die Strecke selbst und nehmen die Farbe des Streckenabschnitts an, auf dem sie liegen."
-        },
-        {
-          "kind": "improvement",
-          "text": "Lange Strecken bekommen mehr Richtungspfeile, die dafür gleichmäßig ruhig wandern statt davonzurasen."
+          "text": "Trips vergleichen: Jeder Trip lässt sich mit der gleichen oder einer ähnlichen Strecke vergleichen - einzeln oder mit mehreren Läufen gleichzeitig (zum Beispiel alle Läufe der letzten Monate). Der Vergleich zeigt Rangliste, Zeiten und Kilometerabschnitte, die Strecken übereinander auf der Karte und die Tempoverläufe als Diagramm - jeder Lauf in eigener Farbe. Der Lauftyp zählt automatisch mit, \"Alle Lauftypen einbeziehen\" lässt auch Walk oder Trailrun zu, und wenn Länge, Höhenmeter oder Pausen den Vergleich unfair machen, sagt er das dazu. Die Hilfe erklärt den Vergleich Schritt für Schritt."
         },
         {
           "kind": "feature",
-          "text": "Das Streckenende ist mit einer schwarz-weiß karierten Zielflagge markiert."
+          "text": "Die Laufrichtung ist auf der Strecke zu sehen: animierte Pfeile wandern vom Start bis zum Ziel, das Ende markiert eine karierte Zielflagge."
         },
         {
           "kind": "feature",
-          "text": "Nach einem Update zeigt die App, welche Features neu sind und was sich geändert hat."
+          "text": "Aufzeichnung vom Sperrbildschirm steuern: Läuft ein Run, legt UniTracks eine stille Benachrichtigung mit drei Knöpfen an - Pausieren, Fortsetzen und Stoppen. Damit hältst du die Aufzeichnung an, ohne das Handy zu entsperren oder die App zu öffnen, und die Ortung läuft hinter der Anzeige weiter. Sobald du in die App zurückkommst, verschwindet die Anzeige wieder."
         },
         {
-          "kind": "fix",
-          "text": "Die App stürzt nicht mehr ab, wenn ein Profil angelegt oder eine Aufzeichnung gestartet wird."
+          "kind": "feature",
+          "text": "Auf dem iPhone zusätzlich als Live Activity: Der laufende Run steht als Karte auf dem Sperrbildschirm und in der Dynamic Island, mit laufender Uhr, dem Zustand \"Aufnahme läuft\" bzw. \"Aufnahme pausiert\" und denselben drei Knöpfen. Solange die Karte sichtbar ist, ersetzt sie die Benachrichtigung."
         },
         {
-          "kind": "fix",
-          "text": "Die Karte zeigt auf Android wieder Straßen statt \"Access blocked\"-Kacheln von OpenStreetMap."
-        },
-        {
-          "kind": "fix",
-          "text": "Tippen auf die Karte blendet die Statistik-Overlays auch auf Android aus, sodass die Strecke frei sichtbar ist."
-        },
-        {
-          "kind": "fix",
-          "text": "Popups haben keinen weißen Rand mehr und halten Abstand zum Bildschirmrand."
+          "kind": "feature",
+          "text": "Neu sind Profil und Einstellungen: im Profil lassen sich Name, E-Mail, Größe und Gewicht bearbeiten (jedes Gewicht wird als Verlaufseintrag gespeichert). In den Einstellungen stehen Kartenstil, Hintergrund-Ortung, Datenimport und der Schalter für die GPS-Glättung der Karte, um die roh aufgezeichnete Strecke zu sehen - dazu ein Knopf \"Was ist neu?\", der diese Liste jederzeit wieder zeigt."
         },
         {
           "kind": "improvement",
-          "text": "Cozy City und Trail Defense teilen sich ein gemeinsames Münzkonto: Ausgaben wirken sich auf beide Spiele aus."
+          "text": "Cozy City und Trail Defense teilen sich ein Münzkonto: Ausgaben wirken sich auf beide Spiele aus."
         },
         {
-          "kind": "feature",
-          "text": "Neue Einstellungen-Seite über das Profil: Die GPS-Glättung der Karte lässt sich ausschalten, um die rohe aufgezeichnete Strecke zu sehen."
+          "kind": "fix",
+          "text": "Der Absturz beim Anlegen eines Profils und beim Start einer Aufzeichnung ist behoben."
+        },
+        {
+          "kind": "fix",
+          "text": "Auf Android zeigt die Karte wieder Straßen statt blockierter Kacheln, und Popups haben keinen weißen Rand mehr."
         }
       ]
     },

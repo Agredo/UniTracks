@@ -206,6 +206,10 @@ public static class MauiProgram
         services.AddSingleton<IBackgroundLocationController, BackgroundLocationController>();
 #endif
 
+        // Lock-screen controls of a running recording (Android: the foreground notification's
+        // actions, iOS: the notification's category actions, desktop: none).
+        services.AddSingleton<IRecordingRemoteControls, RecordingRemoteControls>();
+
         // Games: coin economy + city builder. CoinService doubles as the games-layer
         // activity-stats port; the city store adapts the games persistence port to IRepository.
         services.AddSingleton<ICoinService, CoinService>();
@@ -219,6 +223,15 @@ public static class MauiProgram
         services.AddSingleton<UniTracks.Services.ApplicationModel.IPermissions, UniTracks.Maui.Services.ApplicationModel.Permissions>();
         services.AddSingleton<UniTracks.Services.ApplicationModel.IAppSettings, UniTracks.Maui.Services.ApplicationModel.AppSettings>();
         services.AddSingleton<UniTracks.Services.Dispatching.IDispatcher, UniTracks.Maui.Services.Dispatching.Dispatcher>();
+
+        // Trip comparison: the trip-type catalog resolves the type ids, the fingerprint service keeps
+        // one route summary per trip, and the similarity service is the entry point the compare pages
+        // call. The backfill indexes trips recorded before the feature existed; it is a singleton so
+        // the app starts it once and every page sees the same indexing state.
+        services.AddSingleton<UniTracks.Services.Comparison.ITripTypeCatalog, UniTracks.Services.Comparison.TripTypeCatalog>();
+        services.AddSingleton<UniTracks.Services.Comparison.ITripFingerprintService, UniTracks.Services.Comparison.TripFingerprintService>();
+        services.AddSingleton<UniTracks.Services.Comparison.ITripFingerprintBackfill, UniTracks.Services.Comparison.TripFingerprintBackfill>();
+        services.AddSingleton<UniTracks.Services.Comparison.ITripSimilarityService, UniTracks.Services.Comparison.TripSimilarityService>();
 
         // Release notes: the JSON catalog is read once, the last shown version is persisted, and the
         // presenter decides whether the "what's new" popup has to appear.
@@ -272,6 +285,8 @@ public static class MauiProgram
         services.AddTransient<AchievementsPage, AchievementsPageViewModel>();
         services.AddTransient<TripOverviewPage, TripOverviewViewModel>();
         services.AddTransient<TripChartsPage, TripChartsPageViewModel>();
+        services.AddTransient<TripComparePage, TripComparePageViewModel>();
+        services.AddTransient<TripComparisonPage, TripComparisonPageViewModel>();
         services.AddTransient<GameTabPage, GameTabPageViewModel>();
         services.AddTransient<CityBuilderPage, CityBuilderPageViewModel>();
         services.AddTransient<TowerDefensePage, TowerDefensePageViewModel>();

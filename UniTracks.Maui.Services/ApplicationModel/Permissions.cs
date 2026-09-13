@@ -87,6 +87,7 @@ public class Permissions : UniTracks.Services.ApplicationModel.IPermissions
             case Permission.Phone: return await MauiPermissions.CheckStatusAsync<MauiPermissions.Phone>();
             case Permission.Photos: return await MauiPermissions.CheckStatusAsync<MauiPermissions.Photos>();
             case Permission.PhotosAddOnly: return await MauiPermissions.CheckStatusAsync<MauiPermissions.PhotosAddOnly>();
+            case Permission.PostNotifications: return await MauiPermissions.CheckStatusAsync<MauiPermissions.PostNotifications>();
             case Permission.Reminders: return await MauiPermissions.CheckStatusAsync<MauiPermissions.Reminders>();
             case Permission.Sensors: return await MauiPermissions.CheckStatusAsync<MauiPermissions.Sensors>();
             case Permission.Sms: return await MauiPermissions.CheckStatusAsync<MauiPermissions.Sms>();
@@ -119,6 +120,7 @@ public class Permissions : UniTracks.Services.ApplicationModel.IPermissions
             case Permission.Phone: return await MauiPermissions.RequestAsync<MauiPermissions.Phone>();
             case Permission.Photos: return await MauiPermissions.RequestAsync<MauiPermissions.Photos>();
             case Permission.PhotosAddOnly: return await MauiPermissions.RequestAsync<MauiPermissions.PhotosAddOnly>();
+            case Permission.PostNotifications: return await MauiPermissions.RequestAsync<MauiPermissions.PostNotifications>();
             case Permission.Reminders: return await MauiPermissions.RequestAsync<MauiPermissions.Reminders>();
             case Permission.Sensors: return await MauiPermissions.RequestAsync<MauiPermissions.Sensors>();
             case Permission.Sms: return await MauiPermissions.RequestAsync<MauiPermissions.Sms>();
@@ -151,6 +153,7 @@ public class Permissions : UniTracks.Services.ApplicationModel.IPermissions
             case Permission.Phone: return MauiPermissions.ShouldShowRationale<MauiPermissions.Phone>();
             case Permission.Photos: return MauiPermissions.ShouldShowRationale<MauiPermissions.Photos>();
             case Permission.PhotosAddOnly: return MauiPermissions.ShouldShowRationale<MauiPermissions.PhotosAddOnly>();
+            case Permission.PostNotifications: return MauiPermissions.ShouldShowRationale<MauiPermissions.PostNotifications>();
             case Permission.Reminders: return MauiPermissions.ShouldShowRationale<MauiPermissions.Reminders>();
             case Permission.Sensors: return MauiPermissions.ShouldShowRationale<MauiPermissions.Sensors>();
             case Permission.Sms: return MauiPermissions.ShouldShowRationale<MauiPermissions.Sms>();

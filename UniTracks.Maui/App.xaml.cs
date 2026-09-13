@@ -1,6 +1,7 @@
 using UniTracks.Data.Seeding;
 using UniTracks.Maui.Views;
 using UniTracks.Maui.Views.Pages;
+using UniTracks.Services.Comparison;
 using UniTracks.Services.Data;
 using UniTracks.ViewModels.Changelog;
 
@@ -15,6 +16,7 @@ namespace UniTracks.Maui
         public App(
             DatabaseInitializer databaseInitializer,
             UniTracks.Services.Data.TripDistanceRecalculator distanceRecalculator,
+            ITripFingerprintBackfill fingerprintBackfill,
             IChangelogPresenter changelogPresenter,
             StartupDatabaseReport startupDatabaseReport,
             AgredoApplication.MVVM.Services.Abstractions.UI.IDialogService dialogService)
@@ -40,6 +42,11 @@ namespace UniTracks.Maui
             // blocked; already-recalculated trips are skipped, so later runs are cheap.
             _ = distanceRecalculator.RecalculateAsync();
 
+            // Indexes every trip that predates the comparison feature. Also fire-and-forget, because
+            // it only has to finish before the user opens the compare page - the page reports that
+            // indexing is still running and shows whatever is already there.
+            fingerprintBackfill.EnsureStarted();
+
             var shell = new AppShell();
 
             // Subscribed before the shell becomes the main page: Loaded can fire as soon as the
@@ -49,6 +56,8 @@ namespace UniTracks.Maui
 
             Routing.RegisterRoute(nameof(TripOverviewPage), typeof(TripOverviewPage));
             Routing.RegisterRoute(nameof(TripChartsPage), typeof(TripChartsPage));
+            Routing.RegisterRoute(nameof(TripComparePage), typeof(TripComparePage));
+            Routing.RegisterRoute(nameof(TripComparisonPage), typeof(TripComparisonPage));
             Routing.RegisterRoute(nameof(CityBuilderPage), typeof(CityBuilderPage));
             Routing.RegisterRoute(nameof(TowerDefensePage), typeof(TowerDefensePage));
             Routing.RegisterRoute(nameof(AboutPage), typeof(AboutPage));

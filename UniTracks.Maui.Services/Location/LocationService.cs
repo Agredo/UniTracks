@@ -33,6 +33,11 @@ public class LocationService : ILocationService
         controller.Stop();
     }
 
+    public void PauseListening()
+    {
+        controller.Pause();
+    }
+
     /// <summary>
     /// Stops capture and waits for the drain window before returning. The platform controller keeps
     /// its delegate attached for the same window, so locations that iOS still holds - typically the

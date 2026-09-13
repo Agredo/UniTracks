@@ -9,6 +9,12 @@ public interface ILocationService
     public void StopListening();
 
     /// <summary>
+    /// Suspends capture but keeps the platform session, so a paused recording can be continued with
+    /// <see cref="StartListening()"/> without the platform tearing its session down.
+    /// </summary>
+    public void PauseListening();
+
+    /// <summary>
     /// Stops capture and waits for the platform's drain window, so locations that iOS queued while
     /// the app was suspended are still stored before the trip is finalised.
     /// </summary>

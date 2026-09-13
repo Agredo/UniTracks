@@ -154,6 +154,18 @@ public class BackgroundLocationController : IBackgroundLocationController
         ScheduleDetach(token);
     }
 
+    /// <summary>
+    /// Suspends capture for a pause: the delegate stays attached (no detach window) and the trip stays
+    /// open, so continuing the recording picks up the same session instead of starting a new one.
+    /// </summary>
+    public void Pause()
+    {
+        StopRunningFlag();
+        locationManager.StopUpdatingLocation();
+        LocationDiagnostics.Write(
+            "iOS PAUSE: StopUpdatingLocation(), Delegate bleibt aktiv, damit die Aufnahme fortgesetzt werden kann.");
+    }
+
     private void StopRunningFlag()
     {
         lock (gate)

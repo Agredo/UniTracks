@@ -106,4 +106,27 @@ public sealed class ChangelogPresenterTests
         Assert.Single(popups.ShownPopups);
         Assert.Equal("9.9", state.LastSeenVersion);
     }
+
+    [Fact]
+    public async Task Show_AlwaysPresentsTheNotesEvenWhenTheyWereSeen()
+    {
+        state.LastSeenVersion = CurrentVersion;
+
+        await CreatePresenter().ShowAsync();
+
+        Assert.Equal(["WhatsNewPopupViewModel"], popups.ShownPopups);
+        Assert.Equal(CurrentVersion, state.LastSeenVersion);
+    }
+
+    [Fact]
+    public async Task Show_DoesNothingWithoutReleaseNotes()
+    {
+        changelog.Items.Clear();
+        state.LastSeenVersion = null;
+
+        await CreatePresenter().ShowAsync();
+
+        Assert.Empty(popups.ShownPopups);
+        Assert.Null(state.LastSeenVersion);
+    }
 }

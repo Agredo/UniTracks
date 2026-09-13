@@ -36,6 +36,12 @@ public class BackgroundLocationController : IBackgroundLocationController
         listeningCts = null;
     }
 
+    /// <summary>
+    /// Desktop has no lock screen to drive a pause, and the polling loop has no session to keep, so a
+    /// pause simply ends the loop; <see cref="Start"/> continues the recording.
+    /// </summary>
+    public void Pause() => Stop();
+
     private async Task StartListeningCoreAsync(Action<GPSInformatoion>? onUpdate)
     {
         Stop();

@@ -205,6 +205,14 @@
                             FontSize="11"
                             Text="Agredo Application · Aus Bremen mit Liebe"
                             TextColor="{StaticResource TextMuted}" />
+                        <Button
+                            Command="{Binding ShowWhatsNewCommand}"
+                            Style="{StaticResource SecondaryButton}"
+                            Text="Was ist neu?" />
+                        <Label
+                            FontSize="11"
+                            Text="Die Versionshinweise zu dieser Version erneut anzeigen"
+                            TextColor="{StaticResource TextMuted}" />
                     </VerticalStackLayout>
                 </Border>
             </VerticalStackLayout>

@@ -7,17 +7,22 @@ using UniTracks.Services.ApplicationModel;
 using UniTracks.Services.ApplicationModel.Permissions;
 using UniTracks.Services.Data;
 using UniTracks.Services.Settings;
+using UniTracks.ViewModels.Changelog;
 
 namespace UniTracks.ViewModels.Pages;
 
 /// <summary>
 /// Alle Einstellungen der App an einer Stelle: Karte (GPS-Glättung und Kartenstil), Standort im
-/// Hintergrund, die Datenbank (teilen, importieren, zurücksetzen) und mit Hilfe und Über die beiden
-/// Seiten zur App. „Profil bearbeiten“ liegt nur im Profil-Tab, damit nichts doppelt auftaucht.
+/// Hintergrund, die Datenbank (teilen, importieren, zurücksetzen) und mit Hilfe, Über und den
+/// Versionshinweisen die Seiten zur App. „Profil bearbeiten“ liegt nur im Profil-Tab, damit nichts
+/// doppelt auftaucht.
 ///
 /// Die Glättung wirkt ausschließlich auf die auf der Karte gezeichnete Strecke — Distanzen und
 /// Statistiken bleiben immer geglättet. Android 11+ und iOS bieten "Immer erlauben" nicht mehr im
 /// normalen Dialog an, deshalb führt der Knopf notfalls auf die Systemseite der App.
+///
+/// „Was ist neu“ öffnet denselben Dialog, den die App nach einem Update von selbst zeigt — so lässt
+/// sich die Liste jederzeit nachlesen statt nur einmal beim Start.
 /// </summary>
 public partial class SettingsPageViewModel : ObservableObject
 {
@@ -89,6 +94,7 @@ public partial class SettingsPageViewModel : ObservableObject
     private readonly IDatabaseMaintenance databaseMaintenance;
     private readonly IFileSystem fileSystem;
     private readonly IDialogService dialogService;
+    private readonly IChangelogPresenter changelogPresenter;
 
     private PermissionStatus backgroundLocationStatus = PermissionStatus.Unknown;
 
@@ -119,7 +125,8 @@ public partial class SettingsPageViewModel : ObservableObject
         IDatabaseMaintenance databaseMaintenance,
         IFileSystem fileSystem,
         INavigationService navigation,
-        IDialogService dialogService)
+        IDialogService dialogService,
+        IChangelogPresenter changelogPresenter)
     {
         this.smoothingSettings = smoothingSettings;
         this.permissions = permissions;
@@ -128,6 +135,7 @@ public partial class SettingsPageViewModel : ObservableObject
         this.databaseMaintenance = databaseMaintenance;
         this.fileSystem = fileSystem;
         this.dialogService = dialogService;
+        this.changelogPresenter = changelogPresenter;
 
         Navigation = navigation;
 
@@ -313,6 +321,10 @@ public partial class SettingsPageViewModel : ObservableObject
     {
         await Navigation.ShellNavigationTo("AboutPage", new Dictionary<string, object>());
     }
+
+    /// <summary>Zeigt die Versionshinweise der laufenden Version erneut an.</summary>
+    [RelayCommand]
+    private Task ShowWhatsNewAsync() => changelogPresenter.ShowAsync();
 
     /// <summary>Persists every flip of the switch; the map picks it up on its next appearance.</summary>
     partial void OnTrackSmoothingEnabledChanged(bool value)

@@ -19,6 +19,7 @@ public enum Permission
     Phone,
     Photos,
     PhotosAddOnly,
+    PostNotifications,
     Reminders,
     Sensors,
     Sms,

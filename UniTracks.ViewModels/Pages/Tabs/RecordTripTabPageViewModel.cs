@@ -28,6 +28,13 @@ public partial class RecordTripTabPageViewModel : ObservableObject
     public IDispatcher Dispatcher { get; }
     public IRepository Repository { get; }
     public IGpsDataStorageService GpsDataStorageService { get; }
+
+    /// <summary>
+    /// Lock-screen controls of the running recording. Tapping one of them here is the same as tapping
+    /// the button on the page, so the runner can pause and stop without unlocking the phone.
+    /// </summary>
+    public IRecordingRemoteControls RemoteControls { get; }
+
     public string DatabasePath { get; private set; }
 
     private const string RedColor = "#FF0000";
@@ -45,7 +52,8 @@ public partial class RecordTripTabPageViewModel : ObservableObject
         IMainThread mainThread,
         IDispatcher dispatcher,
         IRepository repository,
-        IGpsDataStorageService gpsDataStorageService)
+        IGpsDataStorageService gpsDataStorageService,
+        IRecordingRemoteControls remoteControls)
     {
         Navigation = navigation;
         PopupNavigation = popupNavigation;
@@ -55,6 +63,7 @@ public partial class RecordTripTabPageViewModel : ObservableObject
         Dispatcher = dispatcher;
         Repository = repository;
         GpsDataStorageService = gpsDataStorageService;
+        RemoteControls = remoteControls;
         DatabasePath = string.Empty;
         RecordIconSourceString = $"{ApplicationConstants.RawIconBasePath}{ApplicationIconConstants.PlayIcon}";
         RecordIconColor = WhiteColor;
@@ -70,6 +79,12 @@ public partial class RecordTripTabPageViewModel : ObservableObject
         Dispatcher.CreateTimer(TimeSpan.FromMilliseconds(100));
         Dispatcher.AddEventHandler(stopWatchEventHandler);
 
+        // The lock screen raises its commands from its own thread and while the page is off screen, so
+        // every command is marshalled to the main thread and applied against the current state.
+        RemoteControls.PauseRequested += (_, _) => RunRemoteCommand(RemoteCommand.Pause);
+        RemoteControls.ResumeRequested += (_, _) => RunRemoteCommand(RemoteCommand.Resume);
+        RemoteControls.StopRequested += (_, _) => RunRemoteCommand(RemoteCommand.Stop);
+
         _ = LoadTripTypesAsync();
     }
 
@@ -84,6 +99,14 @@ public partial class RecordTripTabPageViewModel : ObservableObject
 
     [ObservableProperty]
     private bool isRecording;
+
+    /// <summary>
+    /// True while a recording is suspended but the trip is still open. Separate from
+    /// <see cref="IsRecording"/> so a pause can no longer be mistaken for an end of the recording -
+    /// neither on the page nor on the lock screen.
+    /// </summary>
+    [ObservableProperty]
+    private bool isPaused;
 
     [ObservableProperty]
     private string statusText = "Bereit";
@@ -271,19 +294,41 @@ public partial class RecordTripTabPageViewModel : ObservableObject
 
         if (IsRecording)
         {
-            RecordIconColor = WhiteColor;
-            RecordIconSourceString = $"{ApplicationConstants.RawIconBasePath}{ApplicationIconConstants.PlayIcon}";
-            IsRecording = false;
-            StatusText = "Pausiert";
-
-            StopHealthWatchdog();
-            LocationService.StopListening();
-
-            Dispatcher.StopTimer();
-            stopWatch.Stop();
+            PauseRecording();
             return;
         }
 
+        await StartOrResumeAsync();
+    }
+
+    /// <summary>
+    /// Pauses the recording: the capture is suspended, but the trip stays open and the platform session
+    /// is kept alive so continuing can reuse it. The clock keeps its elapsed time - a pause is not the
+    /// end of the recording.
+    /// </summary>
+    private void PauseRecording()
+    {
+        RecordIconColor = WhiteColor;
+        RecordIconSourceString = $"{ApplicationConstants.RawIconBasePath}{ApplicationIconConstants.PlayIcon}";
+        IsRecording = false;
+        IsPaused = true;
+        StatusText = "Pausiert";
+
+        StopHealthWatchdog();
+        LocationService.PauseListening();
+
+        Dispatcher.StopTimer();
+        stopWatch.Stop();
+
+        RemoteControls.Update(RecordingRemoteState.Paused, stopWatch.Elapsed);
+    }
+
+    /// <summary>
+    /// Starts a new recording or continues a paused one. Both are the same operation for the platform:
+    /// it is asked to listen again, and the clock keeps counting from where it was.
+    /// </summary>
+    private async Task StartOrResumeAsync()
+    {
         // Ask for the permission before the UI claims that a recording is running. The status was
         // switched first and the result only used to decide whether to start listening, so a denied
         // permission left the page showing "Aufnahme läuft" with a running timer while nothing was
@@ -318,12 +363,24 @@ public partial class RecordTripTabPageViewModel : ObservableObject
                 $"Android Hintergrund-Freigabe (ACCESS_BACKGROUND_LOCATION): {backgroundStatus}.");
         }
 
+        bool notificationsMissing = false;
+
+        if (isAndroid)
+        {
+            // Android 13+ hides the whole foreground notification without this permission - and with it
+            // the lock-screen buttons for pause and stop, which is why it is asked for here.
+            PermissionStatus notificationStatus =
+                await PermissionHelper.CheckAndRequestPermission(Permissions, Permission.PostNotifications);
+            notificationsMissing = notificationStatus is not PermissionStatus.Granted;
+
+            LocationDiagnostics.Write($"Android Mitteilungs-Freigabe (POST_NOTIFICATIONS): {notificationStatus}.");
+        }
+
         GpsDataStorageService.CurrentTripTypeId = SelectedTripType?.ID;
 
+        IsPaused = false;
         IsRecording = true;
-        StatusText = backgroundLocationMissing
-            ? "Aufnahme läuft – Immer-Freigabe offen"
-            : "Aufnahme läuft";
+        StatusText = DescribeRecordingStatus(backgroundLocationMissing, notificationsMissing);
         RecordIconColor = RedColor;
         RecordIconSourceString = $"{ApplicationConstants.RawIconBasePath}{ApplicationIconConstants.StopIcon}";
 
@@ -334,6 +391,28 @@ public partial class RecordTripTabPageViewModel : ObservableObject
         StartHealthWatchdog();
 
         await LocationService.StartListening();
+
+        // Tell the lock screen what is running and how long, so its buttons match the app.
+        RemoteControls.Update(RecordingRemoteState.Recording, stopWatch.Elapsed);
+    }
+
+    private static string DescribeRecordingStatus(bool backgroundLocationMissing, bool notificationsMissing)
+    {
+        List<string> missing = new();
+
+        if (backgroundLocationMissing)
+        {
+            missing.Add("Immer-Freigabe offen");
+        }
+
+        if (notificationsMissing)
+        {
+            missing.Add("Mitteilungen aus");
+        }
+
+        return missing.Count == 0
+            ? "Aufnahme läuft"
+            : $"Aufnahme läuft – {string.Join(", ", missing)}";
     }
 
     [RelayCommand]
@@ -342,6 +421,9 @@ public partial class RecordTripTabPageViewModel : ObservableObject
         // Stop capture and wait for the drain window first: iOS may still hold locations of the
         // trip, and finalising before they arrive drops them from the finished trip.
         await LocationService.StopListeningAndDrainAsync();
+
+        // No recording is left, so the lock screen must not keep offering its buttons.
+        RemoteControls.Update(RecordingRemoteState.Stopped, TimeSpan.Zero);
 
         // Only close a trip that is actually running. Finalising unconditionally used to end a
         // recording whenever this command ran while a trip was in progress.
@@ -359,8 +441,53 @@ public partial class RecordTripTabPageViewModel : ObservableObject
         stopWatch.Reset();
         StopWatchTime = "00:00:000";
 
+        IsPaused = false;
         IsRecording = false;
         StatusText = "Bereit";
         RecordIconColor = WhiteColor;
+    }
+
+    /// <summary>Command a lock-screen button sent (see <see cref="IRecordingRemoteControls"/>).</summary>
+    private enum RemoteCommand
+    {
+        Pause,
+        Resume,
+        Stop,
+    }
+
+    private void RunRemoteCommand(RemoteCommand command)
+    {
+        MainThread.BeginInvokeOnMainThread(() => _ = ApplyRemoteCommandAsync(command));
+    }
+
+    /// <summary>
+    /// Runs a command that came from the lock screen. A command that does not fit the current state (a
+    /// second tap, a button of a surface that is already gone) is ignored instead of stopping or
+    /// starting the wrong thing.
+    /// </summary>
+    private async Task ApplyRemoteCommandAsync(RemoteCommand command)
+    {
+        try
+        {
+            switch (command)
+            {
+                case RemoteCommand.Pause when IsRecording:
+                    PauseRecording();
+                    break;
+
+                case RemoteCommand.Resume when IsPaused:
+                    await StartOrResumeAsync();
+                    break;
+
+                case RemoteCommand.Stop when IsRecording || IsPaused:
+                    await StopListening();
+                    break;
+            }
+        }
+        catch (Exception ex)
+        {
+            // A remote command has no caller to report to, so it must never tear the app down.
+            Debug.WriteLine($"[UniTracks] Sperrbildschirm-Befehl {command} fehlgeschlagen: {ex}");
+        }
     }
 }

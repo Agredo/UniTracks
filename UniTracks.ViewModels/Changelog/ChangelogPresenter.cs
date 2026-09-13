@@ -12,6 +12,12 @@ public interface IChangelogPresenter
     /// otherwise, so it is safe to call on every start.
     /// </summary>
     Task ShowIfUnseenAsync();
+
+    /// <summary>
+    /// Shows the release notes of the running version again, whether they were seen before or not.
+    /// Used by the button in the settings that opens "Was ist neu".
+    /// </summary>
+    Task ShowAsync();
 }
 
 /// <inheritdoc />
@@ -42,6 +48,16 @@ public sealed class ChangelogPresenter : IChangelogPresenter
         }
 
         if (ChangelogVersion.IsSame(state.LastSeenVersion, currentVersion))
+        {
+            return;
+        }
+
+        await ShowAsync();
+    }
+
+    public async Task ShowAsync()
+    {
+        if (changelog.Releases.Count == 0)
         {
             return;
         }

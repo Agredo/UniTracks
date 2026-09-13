@@ -16,6 +16,13 @@ public interface IBackgroundLocationController
     void Stop();
 
     /// <summary>
+    /// Suspends capture without ending the recording: the platform session stays alive (Android keeps
+    /// its foreground service, iOS keeps the location delegate attached) so the app can continue the
+    /// same trip later. <see cref="Start"/> continues a paused session.
+    /// </summary>
+    void Pause();
+
+    /// <summary>
     /// Current capture health. Platforms that can capture in the background without a known silent
     /// stop keep the default; iOS reports the real authorization and detected gaps here.
     /// </summary>

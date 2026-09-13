@@ -1,0 +1,355 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage
+    x:Class="UniTracks.Maui.Views.Pages.TripComparePage"
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    xmlns:vm="clr-namespace:UniTracks.ViewModels.Pages;assembly=UniTracks.ViewModels"
+    Title="Vergleich"
+    x:DataType="vm:TripComparePageViewModel">
+
+    <ScrollView>
+        <VerticalStackLayout Padding="20" Spacing="18">
+
+            <!-- Header -->
+            <VerticalStackLayout Spacing="2">
+                <Label Style="{StaticResource TitleLabel}" Text="{Binding TripName}" />
+                <Label Style="{StaticResource SubtitleLabel}" Text="{Binding DateText}" />
+            </VerticalStackLayout>
+
+            <!-- Filter: the trip type gate. The hint below explains what it currently means,
+                 because a filter nobody can see looks like a bug when the list comes back empty. -->
+            <Border Style="{StaticResource CardBorder}">
+                <VerticalStackLayout Spacing="8">
+                    <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
+                        <VerticalStackLayout Grid.Column="0" Spacing="2">
+                            <Label
+                                FontFamily="OpenSansSemibold"
+                                FontSize="14"
+                                Text="Alle Lauftypen einbeziehen"
+                                TextColor="{StaticResource TextPrimary}" />
+                            <Label
+                                FontSize="12"
+                                Text="Bestzeit und Trend bleiben trotzdem auf deinen Lauftyp bezogen."
+                                TextColor="{StaticResource TextMuted}" />
+                        </VerticalStackLayout>
+                        <Switch
+                            Grid.Column="1"
+                            IsToggled="{Binding IncludeAllTripTypes}"
+                            OnColor="{StaticResource Accent}"
+                            VerticalOptions="Center" />
+                    </Grid>
+                    <Label
+                        FontSize="12"
+                        IsVisible="{Binding HasTypeNotice}"
+                        LineHeight="1.3"
+                        Text="{Binding TypeNotice}"
+                        TextColor="{StaticResource TextSecondary}" />
+                </VerticalStackLayout>
+            </Border>
+
+            <!-- Loading / indexing -->
+            <VerticalStackLayout IsVisible="{Binding IsIndexing}" Spacing="6">
+                <ActivityIndicator HorizontalOptions="Center" IsRunning="{Binding IsIndexing}" />
+                <Label
+                    FontSize="12"
+                    HorizontalTextAlignment="Center"
+                    Text="Die Trips werden noch ausgewertet — die Liste kann noch wachsen."
+                    TextColor="{StaticResource TextMuted}" />
+            </VerticalStackLayout>
+
+            <!-- Same route: the route history -->
+            <VerticalStackLayout IsVisible="{Binding HasSameRoute}" Spacing="10">
+                <Grid ColumnDefinitions="*,Auto" ColumnSpacing="10">
+                    <Label
+                        Grid.Column="0"
+                        Style="{StaticResource SectionHeader}"
+                        Text="GLEICHE STRECKE"
+                        VerticalOptions="Center" />
+                    <Button
+                        Grid.Column="1"
+                        Command="{Binding ToggleSelectingCommand}"
+                        FontSize="12"
+                        MinimumHeightRequest="32"
+                        Padding="12,4"
+                        Style="{StaticResource SecondaryButton}"
+                        Text="Auswählen"
+                        VerticalOptions="Center">
+                        <Button.Triggers>
+                            <DataTrigger
+                                Binding="{Binding IsSelecting}"
+                                TargetType="Button"
+                                Value="True">
+                                <Setter Property="Text" Value="Fertig" />
+                            </DataTrigger>
+                        </Button.Triggers>
+                    </Button>
+                </Grid>
+
+                <Border Style="{StaticResource AccentChipBorder}">
+                    <VerticalStackLayout Spacing="4">
+                        <Label
+                            FontFamily="OpenSansSemibold"
+                            FontSize="15"
+                            Text="{Binding Headline}"
+                            TextColor="{StaticResource TextPrimary}" />
+                        <Label
+                            FontSize="13"
+                            IsVisible="{Binding HasTrend}"
+                            Text="{Binding TrendText}"
+                            TextColor="{StaticResource Accent}" />
+                    </VerticalStackLayout>
+                </Border>
+
+                <VerticalStackLayout BindableLayout.ItemsSource="{Binding Attempts}" Spacing="8">
+                    <BindableLayout.ItemTemplate>
+                        <DataTemplate x:DataType="vm:RouteAttemptItem">
+                            <Border Style="{StaticResource ChipBorder}">
+                                <Grid ColumnDefinitions="Auto,Auto,*,Auto" ColumnSpacing="10">
+                                    <Border
+                                        Grid.Column="0"
+                                        BackgroundColor="Transparent"
+                                        HeightRequest="20"
+                                        IsVisible="{Binding IsSelecting}"
+                                        Stroke="{StaticResource CardStroke}"
+                                        StrokeThickness="1"
+                                        VerticalOptions="Center"
+                                        WidthRequest="20">
+                                        <Border.StrokeShape>
+                                            <RoundRectangle CornerRadius="10" />
+                                        </Border.StrokeShape>
+                                        <Border.Triggers>
+                                            <DataTrigger
+                                                Binding="{Binding IsSelected}"
+                                                TargetType="Border"
+                                                Value="True">
+                                                <Setter Property="BackgroundColor" Value="{StaticResource Accent}" />
+                                                <Setter Property="Stroke" Value="{StaticResource Accent}" />
+                                            </DataTrigger>
+                                        </Border.Triggers>
+                                        <Label
+                                            FontSize="11"
+                                            HorizontalOptions="Center"
+                                            IsVisible="{Binding IsSelected}"
+                                            Text="✓"
+                                            TextColor="#0E120F"
+                                            VerticalOptions="Center" />
+                                    </Border>
+                                    <Label
+                                        Grid.Column="1"
+                                        FontSize="12"
+                                        Text="{Binding Number}"
+                                        TextColor="{StaticResource TextMuted}"
+                                        VerticalOptions="Center"
+                                        WidthRequest="16" />
+                                    <VerticalStackLayout Grid.Column="2" Spacing="1">
+                                        <HorizontalStackLayout Spacing="6">
+                                            <Label
+                                                FontFamily="OpenSansSemibold"
+                                                FontSize="14"
+                                                Text="{Binding Name}"
+                                                TextColor="{StaticResource TextPrimary}" />
+                                            <Label
+                                                FontSize="11"
+                                                IsVisible="{Binding IsBest}"
+                                                Text="BESTZEIT"
+                                                TextColor="{StaticResource Record}"
+                                                VerticalOptions="Center" />
+                                            <Label
+                                                FontSize="11"
+                                                IsVisible="{Binding IsForeignType}"
+                                                Text="{Binding ForeignTypeName}"
+                                                TextColor="{StaticResource TextMuted}"
+                                                VerticalOptions="Center" />
+                                        </HorizontalStackLayout>
+                                        <Label
+                                            FontSize="12"
+                                            Text="{Binding DateText}"
+                                            TextColor="{StaticResource TextMuted}" />
+                                    </VerticalStackLayout>
+                                    <VerticalStackLayout
+                                        Grid.Column="3"
+                                        HorizontalOptions="End"
+                                        Spacing="1">
+                                        <Label
+                                            FontFamily="OpenSansSemibold"
+                                            FontSize="14"
+                                            HorizontalTextAlignment="End"
+                                            Text="{Binding PaceText}"
+                                            TextColor="{StaticResource TextPrimary}" />
+                                        <Label
+                                            FontSize="12"
+                                            HorizontalTextAlignment="End"
+                                            Text="{Binding DeltaText}"
+                                            TextColor="{StaticResource Record}" />
+                                    </VerticalStackLayout>
+                                    <Grid.GestureRecognizers>
+                                        <TapGestureRecognizer
+                                            Command="{Binding Source={RelativeSource AncestorType={x:Type vm:TripComparePageViewModel}}, Path=OpenAttemptCommand}"
+                                            CommandParameter="{Binding .}" />
+                                    </Grid.GestureRecognizers>
+                                </Grid>
+                            </Border>
+                        </DataTemplate>
+                    </BindableLayout.ItemTemplate>
+                </VerticalStackLayout>
+
+                <VerticalStackLayout IsVisible="{Binding IsSelecting}" Spacing="6">
+                    <Button
+                        Command="{Binding CompareSelectedCommand}"
+                        IsEnabled="{Binding CanCompareSelected}"
+                        Text="Auswahl vergleichen" />
+                    <Label
+                        FontSize="11"
+                        HorizontalTextAlignment="Center"
+                        IsVisible="{Binding IsSelectionFull}"
+                        Text="Mehr als 8 Läufe passen nicht in einen Vergleich."
+                        TextColor="{StaticResource Record}" />
+                    <Label
+                        FontSize="11"
+                        HorizontalTextAlignment="Center"
+                        Text="{Binding SelectedCount, StringFormat='{0} ausgewählt · der schnellste Lauf wird die Basis'}"
+                        TextColor="{StaticResource TextMuted}" />
+                </VerticalStackLayout>
+            </VerticalStackLayout>
+
+            <!-- Similar routes: candidates that share ground without being the same route. A section of
+                 their own, because they are not repeats and must not be read as attempts. -->
+            <VerticalStackLayout IsVisible="{Binding HasSimilarRoutes}" Spacing="10">
+                <Grid ColumnDefinitions="*,Auto" ColumnSpacing="10">
+                    <Label
+                        Grid.Column="0"
+                        Style="{StaticResource SectionHeader}"
+                        Text="ÄHNLICHE STRECKEN"
+                        VerticalOptions="Center" />
+                    <Button
+                        Grid.Column="1"
+                        Command="{Binding CompareSimilarCommand}"
+                        FontSize="12"
+                        MinimumHeightRequest="32"
+                        Padding="12,4"
+                        Style="{StaticResource SecondaryButton}"
+                        Text="Alle vergleichen"
+                        VerticalOptions="Center" />
+                </Grid>
+                <Label
+                    FontSize="12"
+                    Text="Diese Trips verlaufen ganz oder teilweise auf denselben Wegen. Sie zählen nicht zur Bestzeit — tippe sie an, um sie direkt zu vergleichen."
+                    TextColor="{StaticResource TextMuted}" />
+
+                <VerticalStackLayout BindableLayout.ItemsSource="{Binding SimilarTrips}" Spacing="8">
+                    <BindableLayout.ItemTemplate>
+                        <DataTemplate x:DataType="vm:RelatedTripItem">
+                            <Border Style="{StaticResource ChipBorder}">
+                                <Grid ColumnDefinitions="*,Auto" ColumnSpacing="10">
+                                    <VerticalStackLayout Grid.Column="0" Spacing="1">
+                                        <Label
+                                            FontFamily="OpenSansSemibold"
+                                            FontSize="14"
+                                            Text="{Binding Name}"
+                                            TextColor="{StaticResource TextPrimary}" />
+                                        <Label
+                                            FontSize="12"
+                                            Text="{Binding DateText}"
+                                            TextColor="{StaticResource TextMuted}" />
+                                        <Label
+                                            FontSize="11"
+                                            Text="{Binding ReasonText}"
+                                            TextColor="{StaticResource TextSecondary}" />
+                                    </VerticalStackLayout>
+                                    <VerticalStackLayout Grid.Column="1" Spacing="1" HorizontalOptions="End">
+                                        <Label
+                                            FontFamily="OpenSansSemibold"
+                                            FontSize="14"
+                                            HorizontalTextAlignment="End"
+                                            Text="{Binding DistanceText}"
+                                            TextColor="{StaticResource TextPrimary}" />
+                                        <Label
+                                            FontSize="12"
+                                            HorizontalTextAlignment="End"
+                                            Text="{Binding PaceText}"
+                                            TextColor="{StaticResource TextMuted}" />
+                                    </VerticalStackLayout>
+                                    <Grid.GestureRecognizers>
+                                        <TapGestureRecognizer
+                                            Command="{Binding Source={RelativeSource AncestorType={x:Type vm:TripComparePageViewModel}}, Path=CompareCommand}"
+                                            CommandParameter="{Binding .}" />
+                                    </Grid.GestureRecognizers>
+                                </Grid>
+                            </Border>
+                        </DataTemplate>
+                    </BindableLayout.ItemTemplate>
+                </VerticalStackLayout>
+            </VerticalStackLayout>
+
+            <!-- Comparable effort: other routes that asked for a similar performance -->
+            <VerticalStackLayout IsVisible="{Binding HasComparableEffort}" Spacing="10">
+                <Label Style="{StaticResource SectionHeader}" Text="VERGLEICHBARER UMFANG" />
+                <Label
+                    FontSize="12"
+                    Text="Andere Strecken mit ähnlicher Länge und Anstrengung — zum Vergleichen der Leistung."
+                    TextColor="{StaticResource TextMuted}" />
+
+                <VerticalStackLayout BindableLayout.ItemsSource="{Binding ComparableTrips}" Spacing="8">
+                    <BindableLayout.ItemTemplate>
+                        <DataTemplate x:DataType="vm:RelatedTripItem">
+                            <Border Style="{StaticResource ChipBorder}">
+                                <Grid ColumnDefinitions="*,Auto" ColumnSpacing="10">
+                                    <VerticalStackLayout Grid.Column="0" Spacing="1">
+                                        <Label
+                                            FontFamily="OpenSansSemibold"
+                                            FontSize="14"
+                                            Text="{Binding Name}"
+                                            TextColor="{StaticResource TextPrimary}" />
+                                        <Label
+                                            FontSize="12"
+                                            Text="{Binding DateText}"
+                                            TextColor="{StaticResource TextMuted}" />
+                                        <Label
+                                            FontSize="11"
+                                            Text="{Binding ReasonText}"
+                                            TextColor="{StaticResource TextSecondary}" />
+                                    </VerticalStackLayout>
+                                    <VerticalStackLayout Grid.Column="1" Spacing="1" HorizontalOptions="End">
+                                        <Label
+                                            FontFamily="OpenSansSemibold"
+                                            FontSize="14"
+                                            HorizontalTextAlignment="End"
+                                            Text="{Binding DistanceText}"
+                                            TextColor="{StaticResource TextPrimary}" />
+                                        <Label
+                                            FontSize="12"
+                                            HorizontalTextAlignment="End"
+                                            Text="{Binding PaceText}"
+                                            TextColor="{StaticResource TextMuted}" />
+                                    </VerticalStackLayout>
+                                    <Grid.GestureRecognizers>
+                                        <TapGestureRecognizer
+                                            Command="{Binding Source={RelativeSource AncestorType={x:Type vm:TripComparePageViewModel}}, Path=CompareCommand}"
+                                            CommandParameter="{Binding .}" />
+                                    </Grid.GestureRecognizers>
+                                </Grid>
+                            </Border>
+                        </DataTemplate>
+                    </BindableLayout.ItemTemplate>
+                </VerticalStackLayout>
+            </VerticalStackLayout>
+
+            <!-- Empty state -->
+            <Border IsVisible="{Binding HasNothing}" Style="{StaticResource CardBorder}">
+                <VerticalStackLayout Spacing="6">
+                    <Label
+                        FontFamily="OpenSansSemibold"
+                        FontSize="14"
+                        Text="Noch nichts zu vergleichen"
+                        TextColor="{StaticResource TextPrimary}" />
+                    <Label
+                        FontSize="13"
+                        LineHeight="1.3"
+                        Text="{Binding EmptyText}"
+                        TextColor="{StaticResource TextSecondary}" />
+                </VerticalStackLayout>
+            </Border>
+
+        </VerticalStackLayout>
+    </ScrollView>
+</ContentPage>

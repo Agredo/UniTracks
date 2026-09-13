@@ -45,7 +45,8 @@ public sealed class RecordTripTabPageViewModelTests
                 MainThread,
                 Dispatcher,
                 Repository,
-                Gps);
+                Gps,
+                Remote);
         }
 
         public FakeNavigationService Navigation { get; } = new();
@@ -63,6 +64,8 @@ public sealed class RecordTripTabPageViewModelTests
         public InMemoryRepository Repository { get; } = new();
 
         public FakeGpsDataStorageService Gps { get; } = new();
+
+        public FakeRecordingRemoteControls Remote { get; } = new();
 
         public RecordTripTabPageViewModel ViewModel { get; }
     }
@@ -189,11 +192,16 @@ public sealed class RecordTripTabPageViewModelTests
         var beforePause = TimeSpan.Parse(fixture.ViewModel.StopWatchTime);
         Assert.True(beforePause >= TimeSpan.FromMilliseconds(100), $"Uhr lief nicht: {beforePause}.");
 
-        // Pause: the capture is stopped but the trip stays open.
+        // Pause: the capture is suspended but the trip stays open.
         await fixture.ViewModel.StartListeningCommand.ExecuteAsync(null);
         Assert.False(fixture.ViewModel.IsRecording);
+        Assert.True(fixture.ViewModel.IsPaused);
         Assert.Equal("Pausiert", fixture.ViewModel.StatusText);
-        Assert.Equal(1, fixture.Location.StopListeningCalls);
+
+        // A pause keeps the platform session (and with it the trip and the lock-screen controls), so
+        // it must not go through the full stop path.
+        Assert.Equal(1, fixture.Location.PauseListeningCalls);
+        Assert.Equal(0, fixture.Location.StopListeningCalls);
         Assert.Equal(0, fixture.Location.StopListeningAndDrainCalls);
 
         // A pause must not finalise the trip, otherwise the recorded points would be written out.
@@ -206,6 +214,7 @@ public sealed class RecordTripTabPageViewModelTests
         fixture.Dispatcher.RaiseTimerTick();
 
         Assert.True(fixture.ViewModel.IsRecording);
+        Assert.False(fixture.ViewModel.IsPaused);
         Assert.Equal(2, fixture.Dispatcher.StartTimerCalls);
 
         var afterResume = TimeSpan.Parse(fixture.ViewModel.StopWatchTime);
@@ -375,5 +384,138 @@ public sealed class RecordTripTabPageViewModelTests
         Assert.False(fixture.ViewModel.IsTripTypeSelectionVisible);
         Assert.Contains(nameof(RecordTripTabPageViewModel.IsTripTypeSelectionVisible), changed);
         Assert.Contains(nameof(RecordTripTabPageViewModel.IsRecording), changed);
+    }
+
+    /// <summary>
+    /// Starting and pausing have to be told to the platform, otherwise the lock screen would keep
+    /// offering "Pausieren" for a recording that is already paused (and the other way round).
+    /// </summary>
+    [Fact]
+    public async Task StartAndPause_PublishTheStateToTheLockScreen()
+    {
+        var fixture = new Fixture();
+        fixture.Permissions.Status = PermissionStatus.Granted;
+
+        await fixture.ViewModel.StartListeningCommand.ExecuteAsync(null);
+        Assert.Equal(RecordingRemoteState.Recording, fixture.Remote.LastState);
+
+        await fixture.ViewModel.StartListeningCommand.ExecuteAsync(null);
+        Assert.Equal(RecordingRemoteState.Paused, fixture.Remote.LastState);
+
+        await fixture.ViewModel.StartListeningCommand.ExecuteAsync(null);
+        Assert.Equal(RecordingRemoteState.Recording, fixture.Remote.LastState);
+
+        await fixture.ViewModel.StopListeningCommand.ExecuteAsync(null);
+        Assert.Equal(RecordingRemoteState.Stopped, fixture.Remote.LastState);
+    }
+
+    /// <summary>A tap on the lock screen's "Pausieren" button is the button on the page.</summary>
+    [Fact]
+    public async Task RemotePause_SuspendsTheRecording()
+    {
+        var fixture = new Fixture();
+        fixture.Permissions.Status = PermissionStatus.Granted;
+
+        await fixture.ViewModel.StartListeningCommand.ExecuteAsync(null);
+        await Task.Delay(120, TestContext.Current.CancellationToken);
+        fixture.Dispatcher.RaiseTimerTick();
+
+        var beforePause = TimeSpan.Parse(fixture.ViewModel.StopWatchTime);
+
+        fixture.Remote.TapPause();
+
+        Assert.False(fixture.ViewModel.IsRecording);
+        Assert.True(fixture.ViewModel.IsPaused);
+        Assert.Equal("Pausiert", fixture.ViewModel.StatusText);
+        Assert.Equal(PlayIcon, fixture.ViewModel.RecordIconSourceString);
+        Assert.Equal(1, fixture.Location.PauseListeningCalls);
+
+        // The pause reports its own elapsed time (the stopwatch reading, slightly ahead of the
+        // rounded label), which is what the lock screen keeps showing.
+        Assert.True(
+            fixture.Remote.Updates[^1].Elapsed >= beforePause,
+            $"Sperrbildschirm-Zeit {fixture.Remote.Updates[^1].Elapsed} < {beforePause}.");
+    }
+
+    [Fact]
+    public async Task RemoteResume_ContinuesThePausedRecordingWithItsElapsedTime()
+    {
+        var fixture = new Fixture();
+        fixture.Permissions.Status = PermissionStatus.Granted;
+
+        await fixture.ViewModel.StartListeningCommand.ExecuteAsync(null);
+        await Task.Delay(120, TestContext.Current.CancellationToken);
+        fixture.Dispatcher.RaiseTimerTick();
+        var beforePause = TimeSpan.Parse(fixture.ViewModel.StopWatchTime);
+
+        fixture.Remote.TapPause();
+        await Task.Delay(60, TestContext.Current.CancellationToken);
+        fixture.Remote.TapResume();
+        fixture.Dispatcher.RaiseTimerTick();
+
+        Assert.True(fixture.ViewModel.IsRecording);
+        Assert.False(fixture.ViewModel.IsPaused);
+        Assert.Equal(2, fixture.Location.StartListeningCalls);
+        Assert.True(TimeSpan.Parse(fixture.ViewModel.StopWatchTime) >= beforePause);
+    }
+
+    /// <summary>A stop from the lock screen ends the trip and clears the clock like the page does.</summary>
+    [Fact]
+    public async Task RemoteStop_FinalizesTheTripAndResetsTheClock()
+    {
+        var fixture = new Fixture();
+        fixture.Permissions.Status = PermissionStatus.Granted;
+
+        await fixture.ViewModel.StartListeningCommand.ExecuteAsync(null);
+        await Task.Delay(60, TestContext.Current.CancellationToken);
+        fixture.Dispatcher.RaiseTimerTick();
+
+        fixture.Remote.TapStop();
+
+        Assert.False(fixture.ViewModel.IsRecording);
+        Assert.False(fixture.ViewModel.IsPaused);
+        Assert.Equal("Bereit", fixture.ViewModel.StatusText);
+        Assert.Equal("00:00:000", fixture.ViewModel.StopWatchTime);
+        Assert.Equal(1, fixture.Location.StopListeningAndDrainCalls);
+        Assert.Equal(1, fixture.Gps.FinalizeTripCalls);
+    }
+
+    /// <summary>Stopping a paused recording from the lock screen is the only way out of a pause away from the app.</summary>
+    [Fact]
+    public async Task RemoteStop_WhilePaused_FinalizesTheTrip()
+    {
+        var fixture = new Fixture();
+        fixture.Permissions.Status = PermissionStatus.Granted;
+
+        await fixture.ViewModel.StartListeningCommand.ExecuteAsync(null);
+        fixture.Remote.TapPause();
+        fixture.Remote.TapStop();
+
+        Assert.False(fixture.ViewModel.IsRecording);
+        Assert.False(fixture.ViewModel.IsPaused);
+        Assert.Equal(1, fixture.Gps.FinalizeTripCalls);
+    }
+
+    /// <summary>
+    /// Buttons can arrive when they no longer fit: a second tap, or a notification that was still on
+    /// screen when the recording started somewhere else. They must not start or stop the wrong thing.
+    /// </summary>
+    [Fact]
+    public void RemoteCommands_WithoutMatchingState_DoNothing()
+    {
+        var fixture = new Fixture();
+        fixture.Permissions.Status = PermissionStatus.Granted;
+
+        fixture.Remote.TapPause();
+        fixture.Remote.TapResume();
+        fixture.Remote.TapStop();
+
+        Assert.False(fixture.ViewModel.IsRecording);
+        Assert.False(fixture.ViewModel.IsPaused);
+        Assert.Equal("Bereit", fixture.ViewModel.StatusText);
+        Assert.Equal(0, fixture.Location.StartListeningCalls);
+        Assert.Equal(0, fixture.Location.PauseListeningCalls);
+        Assert.Equal(0, fixture.Location.StopListeningAndDrainCalls);
+        Assert.Empty(fixture.Remote.Updates);
     }
 }

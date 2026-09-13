@@ -55,6 +55,11 @@
 		<CodesignProvision>VS: WildCard Development</CodesignProvision>
 	</PropertyGroup>
 
+	<!-- iOS: Die Live-Activity-Bruecke wird per Zeiger angesprochen (Rueckruf aus Swift nach C#). -->
+	<PropertyGroup Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'ios'">
+		<AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+	</PropertyGroup>
+
 	<!-- iOS: Release-Signierung fuer IPA (Build nur auf einem Mac moeglich). Distribution-
 	     Zertifikat + App-Store-Profil fuer com.agredoapplication.unitracks im Apple Developer
 	     Portal anlegen und die beiden Werte unten eintragen, dann Kommentar entfernen:
@@ -103,5 +108,34 @@
 	<ItemGroup>
 		<Folder Include="Resources\Raw\Icons\SVG\" />
 	</ItemGroup>
+
+	<!-- iOS: Live Activity. Ein Widget laesst sich nur aus einem Xcode-Projekt bauen, deshalb liegen
+	     die Extension (Sperrbildschirm-Karte) und die Swift-Bruecke (ActivityKit fuer C#) fertig
+	     gebaut unter Platforms/iOS. Beides entsteht mit scripts/build-liveactivity.sh und ist per
+	     .gitignore ausgeschlossen. -->
+	<ItemGroup Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'ios'">
+		<!-- Karte im Bundle abliefern; der Simulator bekommt die eigene Variante. -->
+		<BundleResource Include="Platforms/iOS/PlugIns/iphonesimulator/**" Condition="$([System.String]::Copy('$(RuntimeIdentifier)').StartsWith('iossimulator'))" LogicalName="PlugIns/%(RecursiveDir)%(Filename)%(Extension)" />
+		<BundleResource Include="Platforms/iOS/PlugIns/**" Exclude="Platforms/iOS/PlugIns/iphonesimulator/**" Condition="!$([System.String]::Copy('$(RuntimeIdentifier)').StartsWith('iossimulator'))" LogicalName="PlugIns/%(RecursiveDir)%(Filename)%(Extension)" />
+		<!-- Der Inhalt der Info.plist ist kein Input des Manifest-Targets; ohne diesen Eintrag bleibt
+		     eine geaenderte Info.plist unbemerkt im Zwischenstand liegen (z. B. NSSupportsLiveActivities). -->
+		<_CompileAppManifestInputFile Include="Platforms/iOS/Info.plist" />
+	</ItemGroup>
+
+	<ItemGroup Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'ios' And Exists('Platforms/iOS/LiveActivityBridge.xcframework')">
+		<NativeReference Include="Platforms/iOS/LiveActivityBridge.xcframework">
+			<Kind>Static</Kind>
+			<!-- Ohne ForceLoad wuerde der Native-Linker die Bruecke wegoptimieren: die LA_*-Funktionen
+			     werden erst zur Laufzeit ueber DllImport("__Internal") aufgeloest. -->
+			<ForceLoad>true</ForceLoad>
+		</NativeReference>
+	</ItemGroup>
+
+	<!-- Ein iOS-Build ohne die gebauten Native-Teile scheitert sonst erst im Linker mit
+	     "undefined symbol _LA_Publish". Der Hinweis kommt vorher und erklaert den Ausweg. -->
+	<Target Name="CheckLiveActivityArtifacts" BeforeTargets="BeforeBuild" Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'ios'">
+		<Error Condition="!Exists('Platforms/iOS/LiveActivityBridge.xcframework') Or !Exists('Platforms/iOS/PlugIns/UniTracksWidget.appex')"
+		       Text="Die native Live-Activity fehlt (Platforms/iOS/LiveActivityBridge.xcframework bzw. PlugIns/UniTracksWidget.appex). Bitte zuerst 'scripts/build-liveactivity.sh' ausfuehren." />
+	</Target>
 
 </Project>

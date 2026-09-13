@@ -1,0 +1,444 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage
+    x:Class="UniTracks.Maui.Views.Pages.TripComparisonPage"
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    xmlns:charts="clr-namespace:UniTracks.Maui.Views.Controls.Charts"
+    xmlns:controls="clr-namespace:UniTracks.Maui.Views.Controls"
+    xmlns:Models="clr-namespace:UniTracks.Models.Comparison;assembly=UniTracks.Models"
+    xmlns:vm="clr-namespace:UniTracks.ViewModels.Pages;assembly=UniTracks.ViewModels"
+    Title="Vergleich"
+    x:DataType="vm:TripComparisonPageViewModel">
+
+    <ScrollView>
+        <VerticalStackLayout Padding="20" Spacing="18">
+
+            <!-- Verdict -->
+            <Border IsVisible="{Binding HasComparison}" Style="{StaticResource AccentChipBorder}">
+                <VerticalStackLayout Spacing="5">
+                    <Label
+                        FontSize="11"
+                        IsVisible="{Binding IsMulti}"
+                        Text="{Binding Subtitle}"
+                        TextColor="{StaticResource TextMuted}" />
+                    <Label
+                        FontFamily="OpenSansSemibold"
+                        FontSize="17"
+                        Text="{Binding Verdict}"
+                        TextColor="{StaticResource TextPrimary}" />
+                    <Label
+                        FontSize="13"
+                        IsVisible="{Binding HasComparison}"
+                        LineHeight="1.3"
+                        Text="{Binding VerdictDetail}"
+                        TextColor="{StaticResource TextSecondary}" />
+                    <Label
+                        FontSize="12"
+                        IsVisible="{Binding HasFairnessNote}"
+                        LineHeight="1.3"
+                        Text="{Binding FairnessNote}"
+                        TextColor="{StaticResource Record}" />
+                </VerticalStackLayout>
+            </Border>
+
+            <ActivityIndicator
+                HorizontalOptions="Center"
+                IsRunning="{Binding IsLoading}"
+                IsVisible="{Binding IsLoading}" />
+
+            <Border IsVisible="{Binding HasError}" Style="{StaticResource CardBorder}">
+                <Label
+                    FontSize="13"
+                    LineHeight="1.3"
+                    Text="{Binding ErrorText}"
+                    TextColor="{StaticResource TextSecondary}" />
+            </Border>
+
+            <!-- Route -->
+            <VerticalStackLayout IsVisible="{Binding HasComparison}" Spacing="8">
+                <Label Style="{StaticResource SectionHeader}" Text="STRECKE" />
+                <Border Padding="0" Style="{StaticResource CardBorder}">
+                    <controls:MapView
+                        HeightRequest="260"
+                        ComparisonRoutes="{Binding OtherTracks}"
+                        Locations="{Binding TrackA}" />
+                </Border>
+                <HorizontalStackLayout HorizontalOptions="Center" Spacing="16">
+                    <Label
+                        FontSize="12"
+                        Text="{Binding NameA, StringFormat='{0} (farbig nach Tempo)'}"
+                        TextColor="{StaticResource TextSecondary}" />
+                    <HorizontalStackLayout BindableLayout.ItemsSource="{Binding OtherTracks}" Spacing="16">
+                        <BindableLayout.ItemTemplate>
+                            <DataTemplate x:DataType="Models:ComparisonTrack">
+                                <HorizontalStackLayout Spacing="6">
+                                    <controls:ColorDot ColorHex="{Binding ColorHex}" VerticalOptions="Center" />
+                                    <Label
+                                        FontSize="12"
+                                        Text="{Binding Name}"
+                                        TextColor="{StaticResource TextSecondary}" />
+                                </HorizontalStackLayout>
+                            </DataTemplate>
+                        </BindableLayout.ItemTemplate>
+                    </HorizontalStackLayout>
+                </HorizontalStackLayout>
+            </VerticalStackLayout>
+
+            <!-- Ranking of all runs (more than two trips) -->
+            <VerticalStackLayout IsVisible="{Binding IsMulti}" Spacing="8">
+                <Label Style="{StaticResource SectionHeader}" Text="RANGLISTE" />
+                <Border Padding="14" Style="{StaticResource CardBorder}">
+                    <VerticalStackLayout BindableLayout.ItemsSource="{Binding Leaderboard}" Spacing="13">
+                        <BindableLayout.ItemTemplate>
+                            <DataTemplate x:DataType="vm:LeaderboardRow">
+                                <Grid ColumnDefinitions="20,Auto,*,Auto" ColumnSpacing="8">
+                                    <Label
+                                        Grid.Column="0"
+                                        FontFamily="OpenSansSemibold"
+                                        FontSize="15"
+                                        HorizontalTextAlignment="Center"
+                                        Text="{Binding Rank}"
+                                        TextColor="{StaticResource TextMuted}"
+                                        VerticalOptions="Start">
+                                        <Label.Triggers>
+                                            <DataTrigger
+                                                Binding="{Binding IsFastest}"
+                                                TargetType="Label"
+                                                Value="True">
+                                                <Setter Property="TextColor" Value="{StaticResource Record}" />
+                                            </DataTrigger>
+                                        </Label.Triggers>
+                                    </Label>
+                                    <controls:ColorDot
+                                        Grid.Column="1"
+                                        Margin="0,5,0,0"
+                                        ColorHex="{Binding ColorHex}"
+                                        VerticalOptions="Start" />
+                                    <VerticalStackLayout Grid.Column="2" Spacing="2">
+                                        <HorizontalStackLayout Spacing="6">
+                                            <Label
+                                                FontSize="14"
+                                                LineBreakMode="TailTruncation"
+                                                Text="{Binding Name}"
+                                                TextColor="{StaticResource TextPrimary}" />
+                                            <Label
+                                                FontSize="10"
+                                                IsVisible="{Binding IsBaseline}"
+                                                Text="BASIS"
+                                                TextColor="{StaticResource Accent}"
+                                                VerticalOptions="Center" />
+                                        </HorizontalStackLayout>
+                                        <Label
+                                            FontSize="11"
+                                            Text="{Binding MetaText}"
+                                            TextColor="{StaticResource TextMuted}" />
+                                    </VerticalStackLayout>
+                                    <VerticalStackLayout
+                                        Grid.Column="3"
+                                        HorizontalOptions="End"
+                                        Spacing="2">
+                                        <Label
+                                            FontFamily="OpenSansSemibold"
+                                            FontSize="15"
+                                            HorizontalTextAlignment="End"
+                                            Text="{Binding TimeText}"
+                                            TextColor="{StaticResource TextPrimary}" />
+                                        <Label
+                                            FontSize="11"
+                                            HorizontalTextAlignment="End"
+                                            Text="{Binding PaceText}"
+                                            TextColor="{StaticResource TextSecondary}" />
+                                        <Label
+                                            FontSize="11"
+                                            HorizontalTextAlignment="End"
+                                            Text="{Binding DeltaText}"
+                                            TextColor="{StaticResource TextMuted}">
+                                            <Label.Triggers>
+                                                <DataTrigger
+                                                    Binding="{Binding DeltaIsFaster}"
+                                                    TargetType="Label"
+                                                    Value="True">
+                                                    <Setter Property="TextColor" Value="{StaticResource Record}" />
+                                                </DataTrigger>
+                                            </Label.Triggers>
+                                        </Label>
+                                    </VerticalStackLayout>
+                                </Grid>
+                            </DataTemplate>
+                        </BindableLayout.ItemTemplate>
+                    </VerticalStackLayout>
+                </Border>
+                <Label
+                    FontSize="11"
+                    HorizontalTextAlignment="Center"
+                    Text="Sortiert nach steigungsbereinigter Pace. Δ = gegen die Basis, in der Farbe des Punktes."
+                    TextColor="{StaticResource TextMuted}" />
+            </VerticalStackLayout>
+
+            <!-- Key figures (exactly two trips) -->
+            <VerticalStackLayout IsVisible="{Binding IsPair}" Spacing="8">
+                <Label Style="{StaticResource SectionHeader}" Text="KENNZAHLEN" />
+                <Border Padding="14" Style="{StaticResource CardBorder}">
+                    <VerticalStackLayout Spacing="10">
+                        <Grid ColumnDefinitions="*,62,62,74" ColumnSpacing="8">
+                            <Label
+                                Grid.Column="0"
+                                Style="{StaticResource StatLabel}"
+                                Text="KENNZAHL" />
+                            <Label
+                                Grid.Column="1"
+                                HorizontalTextAlignment="End"
+                                Style="{StaticResource StatLabel}"
+                                Text="{Binding NameA}" />
+                            <Label
+                                Grid.Column="2"
+                                HorizontalTextAlignment="End"
+                                Style="{StaticResource StatLabel}"
+                                Text="{Binding NameB}" />
+                            <Label
+                                Grid.Column="3"
+                                HorizontalTextAlignment="End"
+                                Style="{StaticResource StatLabel}"
+                                Text="Δ B−A" />
+                        </Grid>
+                        <BoxView Color="{StaticResource CardStroke}" HeightRequest="1" />
+                        <VerticalStackLayout
+                            BindableLayout.ItemsSource="{Binding Metrics}"
+                            Spacing="9">
+                            <BindableLayout.ItemTemplate>
+                                <DataTemplate x:DataType="vm:MetricRow">
+                                    <Grid ColumnDefinitions="*,62,62,74" ColumnSpacing="8">
+                                        <Label
+                                            Grid.Column="0"
+                                            FontSize="13"
+                                            LineBreakMode="TailTruncation"
+                                            Text="{Binding Label}"
+                                            TextColor="{StaticResource TextSecondary}"
+                                            VerticalOptions="Center" />
+                                        <Label
+                                            Grid.Column="1"
+                                            FontSize="13"
+                                            HorizontalTextAlignment="End"
+                                            Text="{Binding ValueA}"
+                                            TextColor="{StaticResource TextPrimary}"
+                                            VerticalOptions="Center" />
+                                        <Label
+                                            Grid.Column="2"
+                                            FontSize="13"
+                                            HorizontalTextAlignment="End"
+                                            Text="{Binding ValueB}"
+                                            TextColor="{StaticResource TextPrimary}"
+                                            VerticalOptions="Center" />
+                                        <Label
+                                            Grid.Column="3"
+                                            FontSize="13"
+                                            HorizontalTextAlignment="End"
+                                            Text="{Binding DeltaText}"
+                                            TextColor="{StaticResource TextMuted}"
+                                            VerticalOptions="Center">
+                                            <Label.Triggers>
+                                                <DataTrigger
+                                                    Binding="{Binding DeltaIsMeaningful}"
+                                                    TargetType="Label"
+                                                    Value="True">
+                                                    <Setter Property="TextColor" Value="{StaticResource Record}" />
+                                                </DataTrigger>
+                                            </Label.Triggers>
+                                        </Label>
+                                    </Grid>
+                                </DataTemplate>
+                            </BindableLayout.ItemTemplate>
+                        </VerticalStackLayout>
+                    </VerticalStackLayout>
+                </Border>
+                <Label
+                    FontSize="11"
+                    HorizontalTextAlignment="Center"
+                    Text="Δ = B gegen A. „gleich“ heißt innerhalb der Messgenauigkeit."
+                    TextColor="{StaticResource TextMuted}" />
+            </VerticalStackLayout>
+
+            <!-- Pace profile -->
+            <VerticalStackLayout IsVisible="{Binding HasComparison}" Spacing="8">
+                <Label Style="{StaticResource SectionHeader}" Text="PACE-VERLAUF" />
+                <Border Padding="14,14,10,10" Style="{StaticResource CardBorder}">
+                    <charts:LineChartView
+                        HeightRequest="200"
+                        InvertY="True"
+                        LineColor="#4D9FE7"
+                        PrimaryValues="{Binding PaceSeriesA}"
+                        SecondaryColor="#FF6B3D"
+                        SecondaryValues="{Binding PaceSeriesB}"
+                        Series="{Binding Curves}"
+                        SharedScale="True" />
+                </Border>
+                <Label
+                    FontSize="11"
+                    HorizontalTextAlignment="Center"
+                    IsVisible="{Binding IsPair}"
+                    Text="Beide Kurven auf derselben Skala — weiter oben ist schneller."
+                    TextColor="{StaticResource TextMuted}" />
+                <Label
+                    FontSize="11"
+                    HorizontalTextAlignment="Center"
+                    IsVisible="{Binding IsMulti}"
+                    Text="Alle Läufe auf derselben Skala — weiter oben ist schneller."
+                    TextColor="{StaticResource TextMuted}" />
+            </VerticalStackLayout>
+
+            <!-- Kilometre splits: A/B table for exactly two trips -->
+            <VerticalStackLayout IsVisible="{Binding ShowPairSplits}" Spacing="8">
+                <Label Style="{StaticResource SectionHeader}" Text="KILOMETER-SPLITS" />
+                <Border Padding="14" Style="{StaticResource CardBorder}">
+                    <VerticalStackLayout Spacing="10">
+                        <Grid ColumnDefinitions="Auto,*,*" ColumnSpacing="12">
+                            <Label Grid.Column="0" Style="{StaticResource StatLabel}" Text="KM" />
+                            <Label
+                                Grid.Column="1"
+                                HorizontalTextAlignment="End"
+                                Style="{StaticResource StatLabel}"
+                                Text="{Binding NameA}" />
+                            <Label
+                                Grid.Column="2"
+                                HorizontalTextAlignment="End"
+                                Style="{StaticResource StatLabel}"
+                                Text="{Binding NameB}" />
+                        </Grid>
+                        <BoxView Color="{StaticResource CardStroke}" HeightRequest="1" />
+                        <VerticalStackLayout
+                            BindableLayout.ItemsSource="{Binding Splits}"
+                            Spacing="9">
+                            <BindableLayout.ItemTemplate>
+                                <DataTemplate x:DataType="vm:SplitRow">
+                                    <Grid ColumnDefinitions="Auto,*,*" ColumnSpacing="12">
+                                        <Label
+                                            Grid.Column="0"
+                                            FontSize="13"
+                                            Text="{Binding Kilometer}"
+                                            TextColor="{StaticResource TextMuted}"
+                                            VerticalOptions="Center"
+                                            WidthRequest="72" />
+                                        <Label
+                                            Grid.Column="1"
+                                            FontSize="13"
+                                            HorizontalTextAlignment="End"
+                                            Text="{Binding ValueA}"
+                                            TextColor="{StaticResource TextPrimary}"
+                                            VerticalOptions="Center" />
+                                        <Label
+                                            Grid.Column="2"
+                                            FontSize="13"
+                                            HorizontalTextAlignment="End"
+                                            Text="{Binding ValueB}"
+                                            TextColor="{StaticResource TextPrimary}"
+                                            VerticalOptions="Center">
+                                            <Label.Triggers>
+                                                <DataTrigger
+                                                    Binding="{Binding BIsFaster}"
+                                                    TargetType="Label"
+                                                    Value="True">
+                                                    <Setter Property="TextColor" Value="{StaticResource Record}" />
+                                                </DataTrigger>
+                                            </Label.Triggers>
+                                        </Label>
+                                    </Grid>
+                                </DataTemplate>
+                            </BindableLayout.ItemTemplate>
+                        </VerticalStackLayout>
+                    </VerticalStackLayout>
+                </Border>
+            </VerticalStackLayout>
+
+            <!-- Kilometre splits: one column per run when more than two trips are compared -->
+            <VerticalStackLayout IsVisible="{Binding ShowMultiSplits}" Spacing="8">
+                <Label Style="{StaticResource SectionHeader}" Text="KILOMETER-SPLITS" />
+                <Border Padding="14" Style="{StaticResource CardBorder}">
+                    <ScrollView Orientation="Horizontal">
+                        <VerticalStackLayout Spacing="10">
+                            <HorizontalStackLayout Spacing="12">
+                                <Label
+                                    Style="{StaticResource StatLabel}"
+                                    Text="KM"
+                                    VerticalOptions="Center"
+                                    WidthRequest="72" />
+                                <HorizontalStackLayout BindableLayout.ItemsSource="{Binding MatrixColumns}" Spacing="12">
+                                    <BindableLayout.ItemTemplate>
+                                        <DataTemplate x:DataType="vm:SplitColumn">
+                                            <VerticalStackLayout Spacing="3" WidthRequest="64">
+                                                <controls:ColorDot ColorHex="{Binding ColorHex}" />
+                                                <Label
+                                                    FontSize="10"
+                                                    LineBreakMode="TailTruncation"
+                                                    Text="{Binding Name}"
+                                                    TextColor="{StaticResource TextSecondary}" />
+                                                <Label
+                                                    FontSize="10"
+                                                    Text="{Binding RankText}"
+                                                    TextColor="{StaticResource TextMuted}" />
+                                            </VerticalStackLayout>
+                                        </DataTemplate>
+                                    </BindableLayout.ItemTemplate>
+                                </HorizontalStackLayout>
+                            </HorizontalStackLayout>
+                            <BoxView Color="{StaticResource CardStroke}" HeightRequest="1" />
+                            <VerticalStackLayout BindableLayout.ItemsSource="{Binding SplitMatrix}" Spacing="9">
+                                <BindableLayout.ItemTemplate>
+                                    <DataTemplate x:DataType="vm:SplitMatrixRow">
+                                        <HorizontalStackLayout Spacing="12">
+                                            <Label
+                                                FontSize="13"
+                                                Text="{Binding Kilometer}"
+                                                TextColor="{StaticResource TextMuted}"
+                                                VerticalOptions="Center"
+                                                WidthRequest="72" />
+                                            <HorizontalStackLayout BindableLayout.ItemsSource="{Binding Cells}" Spacing="12">
+                                                <BindableLayout.ItemTemplate>
+                                                    <DataTemplate x:DataType="vm:SplitCellRow">
+                                                        <VerticalStackLayout Spacing="1" WidthRequest="64">
+                                                            <Label
+                                                                FontSize="13"
+                                                                Text="{Binding PaceText}"
+                                                                TextColor="{StaticResource TextPrimary}">
+                                                                <Label.Triggers>
+                                                                    <DataTrigger
+                                                                        Binding="{Binding IsFastest}"
+                                                                        TargetType="Label"
+                                                                        Value="True">
+                                                                        <Setter Property="TextColor" Value="{StaticResource Record}" />
+                                                                    </DataTrigger>
+                                                                </Label.Triggers>
+                                                            </Label>
+                                                            <Label
+                                                                FontSize="10"
+                                                                Text="{Binding DeltaText}"
+                                                                TextColor="{StaticResource TextMuted}">
+                                                                <Label.Triggers>
+                                                                    <DataTrigger
+                                                                        Binding="{Binding DeltaIsFaster}"
+                                                                        TargetType="Label"
+                                                                        Value="True">
+                                                                        <Setter Property="TextColor" Value="{StaticResource Accent}" />
+                                                                    </DataTrigger>
+                                                                </Label.Triggers>
+                                                            </Label>
+                                                        </VerticalStackLayout>
+                                                    </DataTemplate>
+                                                </BindableLayout.ItemTemplate>
+                                            </HorizontalStackLayout>
+                                        </HorizontalStackLayout>
+                                    </DataTemplate>
+                                </BindableLayout.ItemTemplate>
+                            </VerticalStackLayout>
+                        </VerticalStackLayout>
+                    </ScrollView>
+                </Border>
+                <Label
+                    FontSize="11"
+                    HorizontalTextAlignment="Center"
+                    Text="Nur die gemeinsam gelaufenen Kilometer. Δ = gegen die Basis, rot ist der schnellste Lauf."
+                    TextColor="{StaticResource TextMuted}" />
+            </VerticalStackLayout>
+
+        </VerticalStackLayout>
+    </ScrollView>
+</ContentPage>

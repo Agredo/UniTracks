@@ -1,7 +1,11 @@
+using BsonDocument = LiteDB.BsonDocument;
+using ObjectId = LiteDB.ObjectId;
 using UniTracks.Data.LiteDB;
 using UniTracks.Data.Repository;
 using UniTracks.Games.TowerDefense.Persistence;
+using UniTracks.Models.Comparison;
 using UniTracks.Models.Trip;
+using UniTracks.Services.Comparison;
 using UniTracks.Tests.TestSupport;
 // The model type lives in the namespace UniTracks.Models.Location, which would otherwise be
 // shadowed by the sibling test namespace UniTracks.Tests.Location.
@@ -291,6 +295,143 @@ public sealed class RepositoryContractTests
     public async Task LiteDb_CachedReads_ReturnIndependentLists()
     {
         await WithLiteDb(AssertCachedReadsReturnIndependentLists);
+    }
+
+    [Fact]
+    public async Task LiteDb_UsesTheDeclaredKeyInsteadOfGeneratingOne()
+    {
+        // Regression: LiteDB keys an entity on the field named "_id", and only a property called "ID"
+        // was mapped onto it. The [Key] on TripFingerprint.TripID was therefore ignored, LiteDB invented
+        // an "_id" per insert, FindById never found anything and the trip library collected two
+        // fingerprints per trip until the backfill crashed on the duplicates.
+        await WithLiteDb(async repository =>
+        {
+            var fingerprint = new TripFingerprint
+            {
+                TripID = Guid.NewGuid(),
+                DistanceMeters = 1000,
+                Version = TripFingerprintBuilder.Version,
+            };
+
+            await repository.Add(fingerprint);
+
+            var stored = Assert.Single(await repository.GetAllAsync<TripFingerprint>());
+            Assert.Equal(fingerprint.TripID, stored.TripID);
+
+            Assert.NotNull(await repository.GetByIdAsync<TripFingerprint>(fingerprint.TripID));
+
+            // The second insert of the same key must fail loudly instead of quietly duplicating.
+            await Assert.ThrowsAnyAsync<Exception>(() => repository.Add(fingerprint));
+            Assert.Single(await repository.GetAllAsync<TripFingerprint>());
+
+            // Delete resolves the key by attribute too; it used to throw for this entity.
+            await repository.Delete(stored);
+            Assert.Empty(await repository.GetAllAsync<TripFingerprint>());
+        });
+    }
+
+    [Fact]
+    public async Task LiteDb_RewritesFingerprintsStoredWithAnInventedKey()
+    {
+        // Regression: every fingerprint written before the [Key] mapping existed carries an
+        // auto-generated ObjectId in "_id" with the real key left in the payload. Reading such a
+        // collection threw InvalidCastException ("Unable to cast ObjectId to Guid"), so the whole
+        // compare page failed on a library that had ever been indexed by the old build.
+        await WithLegacyFingerprint(async (path, tripId) =>
+        {
+            var database = new LiteDatabase(path);
+            try
+            {
+                var fingerprint = Assert.Single(await new LiteDbRepository(database).GetAllAsync<TripFingerprint>());
+
+                Assert.Equal(tripId, fingerprint.TripID);
+                Assert.Equal(1234d, fingerprint.DistanceMeters);
+                Assert.Equal(TripFingerprintBuilder.Version, fingerprint.Version);
+
+                // Rewritten onto the real key: addressable now, and no duplicate left behind.
+                Assert.NotNull(await new LiteDbRepository(database).GetByIdAsync<TripFingerprint>(tripId));
+                Assert.Single(database.Database.GetCollection("TripFingerprint").FindAll());
+            }
+            finally
+            {
+                database.Database.Dispose();
+            }
+        });
+    }
+
+    [Fact]
+    public async Task LiteDb_KeepsTheKeyedRowWhenALegacyDuplicateExists()
+    {
+        // A trip indexed by the old build and again by the new one holds two rows for the same trip.
+        // The keyed row is the current one, so the legacy duplicate is the one that has to go.
+        await WithLegacyFingerprint(async (path, tripId) =>
+        {
+            using (var seeding = new global::LiteDB.LiteDatabase(path))
+            {
+                seeding.GetCollection("TripFingerprint").Insert(new BsonDocument
+                {
+                    ["_id"] = tripId,
+                    ["DistanceMeters"] = 4321d,
+                    ["Version"] = TripFingerprintBuilder.Version,
+                });
+            }
+
+            var database = new LiteDatabase(path);
+            try
+            {
+                var fingerprint = Assert.Single(await new LiteDbRepository(database).GetAllAsync<TripFingerprint>());
+
+                Assert.Equal(4321d, fingerprint.DistanceMeters);
+                Assert.Single(database.Database.GetCollection("TripFingerprint").FindAll());
+            }
+            finally
+            {
+                database.Database.Dispose();
+            }
+        });
+    }
+
+    /// <summary>
+    /// Writes one fingerprint the way the pre-mapping build did — auto-generated ObjectId in "_id",
+    /// key in the payload — and hands the closed file plus its trip id to <paramref name="assertions"/>.
+    /// </summary>
+    private static async Task WithLegacyFingerprint(Func<string, Guid, Task> assertions)
+    {
+        var path = Path.Combine(Path.GetTempPath(), $"unitracks-tests-{Guid.NewGuid():N}.litedb");
+        var tripId = Guid.NewGuid();
+
+        using (var seeding = new global::LiteDB.LiteDatabase(path))
+        {
+            seeding.GetCollection("TripFingerprint").Insert(new BsonDocument
+            {
+                ["_id"] = ObjectId.NewObjectId(),
+                ["TripID"] = tripId,
+                ["DistanceMeters"] = 1234d,
+                ["Version"] = TripFingerprintBuilder.Version,
+            });
+        }
+
+        try
+        {
+            await assertions(path, tripId);
+        }
+        finally
+        {
+            foreach (var leftover in new[] { path, path + "-log.db" })
+            {
+                try
+                {
+                    if (File.Exists(leftover))
+                    {
+                        File.Delete(leftover);
+                    }
+                }
+                catch (IOException)
+                {
+                    // A leftover temp file must never fail a test run.
+                }
+            }
+        }
     }
 
     private static async Task AssertCachedReadsReturnIndependentLists(IRepository repository)
