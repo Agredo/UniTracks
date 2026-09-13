@@ -12,7 +12,8 @@ namespace UniTracks.ViewModels.Pages;
 
 /// <summary>
 /// Alle Einstellungen der App an einer Stelle: Karte (GPS-Glättung und Kartenstil), Standort im
-/// Hintergrund, die Datenbank (teilen, importieren, zurücksetzen) und die Seiten rund um die App.
+/// Hintergrund, die Datenbank (teilen, importieren, zurücksetzen) und mit Hilfe und Über die beiden
+/// Seiten zur App. „Profil bearbeiten“ liegt nur im Profil-Tab, damit nichts doppelt auftaucht.
 ///
 /// Die Glättung wirkt ausschließlich auf die auf der Karte gezeichnete Strecke — Distanzen und
 /// Statistiken bleiben immer geglättet. Android 11+ und iOS bieten "Immer erlauben" nicht mehr im
@@ -302,27 +303,15 @@ public partial class SettingsPageViewModel : ObservableObject
     }
 
     [RelayCommand]
-    private async Task OpenProfileAsync()
-    {
-        await Navigation.ShellNavigationTo("ProfilePage", new Dictionary<string, object>());
-    }
-
-    [RelayCommand]
-    private async Task OpenAboutAsync()
-    {
-        await Navigation.ShellNavigationTo("AboutPage", new Dictionary<string, object>());
-    }
-
-    [RelayCommand]
     private async Task OpenHelpAsync()
     {
         await Navigation.ShellNavigationTo("HelpPage", new Dictionary<string, object>());
     }
 
     [RelayCommand]
-    private async Task OpenFeedbackAsync()
+    private async Task OpenAboutAsync()
     {
-        await Navigation.ShellNavigationTo("FeedbackPage", new Dictionary<string, object>());
+        await Navigation.ShellNavigationTo("AboutPage", new Dictionary<string, object>());
     }
 
     /// <summary>Persists every flip of the switch; the map picks it up on its next appearance.</summary>

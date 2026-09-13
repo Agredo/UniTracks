@@ -313,15 +313,19 @@ public sealed class SettingsPageViewModelTests
         Assert.Contains(expected, viewModel.DatabaseInfoText);
     }
 
-    [Fact]
-    public async Task ProfileButton_NavigatesToTheProfilePage()
+    [Theory]
+    [InlineData("HelpPage")]
+    [InlineData("AboutPage")]
+    public async Task AppButtons_NavigateToTheirPage(string route)
     {
         var navigation = new FakeNavigationService();
         var viewModel = Create(navigation: navigation);
 
-        await viewModel.OpenProfileCommand.ExecuteAsync(null);
+        var command = route == "HelpPage" ? viewModel.OpenHelpCommand : viewModel.OpenAboutCommand;
 
-        Assert.Equal("ProfilePage", Assert.Single(navigation.Navigations).Route);
+        await command.ExecuteAsync(null);
+
+        Assert.Equal(route, Assert.Single(navigation.Navigations).Route);
     }
 
     private static SettingsPageViewModel Create(

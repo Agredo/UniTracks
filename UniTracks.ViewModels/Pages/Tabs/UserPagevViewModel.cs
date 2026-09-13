@@ -108,21 +108,9 @@ public partial class UserPagevViewModel : ObservableObject
     }
 
     [RelayCommand]
-    private async Task OpenAbout()
-    {
-        await Navigation.ShellNavigationTo("AboutPage", new Dictionary<string, object>());
-    }
-
-    [RelayCommand]
     private async Task OpenFeedback()
     {
         await Navigation.ShellNavigationTo("FeedbackPage", new Dictionary<string, object>());
-    }
-
-    [RelayCommand]
-    private async Task OpenHelp()
-    {
-        await Navigation.ShellNavigationTo("HelpPage", new Dictionary<string, object>());
     }
 
     [RelayCommand]
