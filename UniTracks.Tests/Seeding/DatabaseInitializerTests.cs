@@ -2,6 +2,7 @@ using UniTracks.Data.LiteDB;
 using UniTracks.Data.Repository;
 using UniTracks.Data.Seeding;
 using UniTracks.Models.Trip;
+using UniTracks.Tests.TestSupport;
 
 namespace UniTracks.Tests.Seeding;
 
@@ -118,5 +119,49 @@ public sealed class DatabaseInitializerTests
                 File.Delete(path);
             }
         }
+    }
+
+    [Fact]
+    public async Task EnsureSeededAsync_CarriesRenamedCatalogEntriesIntoAnOlderStore()
+    {
+        // A store that was seeded before the catalog was translated: the same id, the old English name.
+        var repository = new InMemoryRepository();
+        repository.Seed(new TripType
+        {
+            ID = Guid.Parse("00000000-0000-0000-0000-000000000001"),
+            Identifier = "run",
+            Name = "Run",
+            Description = string.Empty,
+            Category = "running",
+        });
+
+        await new DatabaseInitializer(repository).EnsureSeededAsync();
+
+        var types = (await repository.GetAllAsync<TripType>()).ToList();
+
+        // The stale row is updated, not duplicated, and nothing else about it changes.
+        var run = Assert.Single(types, type => type.Identifier == "run");
+        Assert.Equal("Laufen", run.Name);
+        Assert.Equal("running", run.Category);
+        Assert.Equal(Guid.Parse("00000000-0000-0000-0000-000000000001"), run.ID);
+
+        // The remaining catalog entries are still added.
+        Assert.Equal(TripTypeSeeds.Load().Count, types.Count);
+    }
+
+    [Fact]
+    public async Task EnsureSeededAsync_LeavesAnAlreadyCurrentCatalogUntouched()
+    {
+        var repository = new InMemoryRepository();
+        var initializer = new DatabaseInitializer(repository);
+
+        await initializer.EnsureSeededAsync();
+        var versionAfterSeeding = repository.DataVersion;
+
+        // A fresh initializer, as a later app start would create it.
+        await new DatabaseInitializer(repository).EnsureSeededAsync();
+
+        Assert.Equal(versionAfterSeeding, repository.DataVersion);
+        Assert.Equal(TripTypeSeeds.Load().Count, (await repository.GetAllAsync<TripType>()).Count());
     }
 }

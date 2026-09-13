@@ -28,9 +28,13 @@
         {
           "kind": "fix",
           "text": "Das Scrollen in Popups mit langen Listen (\"Was ist neu?\", Sportarten-Suche, Kilometer-Splits) ruckelte auf manchen Android-Geräten. Die Karten in diesen Popups werden jetzt einfacher gezeichnet, dadurch läuft das Scrollen flüssig."
-        }
-      ]
-    },
+                  },
+                  {
+                    "kind": "feature",
+                    "text": "Alle Sportarten heißen jetzt deutsch: Aus \"Cycling\" wird \"Radfahren\", aus \"Run\" wird \"Laufen\", aus \"Soccer\" wird \"Fußball\" und so weiter - die App war schon überall deutsch, nur die Sportarten waren es nicht. Die Suche versteht zusätzlich die Wörter, die man umgangssprachlich tippt: \"Fahrrad\", \"Rennrad\" oder \"MTB\" finden die Rad-Sportarten, \"Joggen\" findet \"Laufen\", \"Hund\" findet \"Gassi gehen\", \"Fussball\" findet \"Fußball\"."
+                  }
+                ]
+              },
     {
       "version": "0.4",
       "date": "2026-09-13",

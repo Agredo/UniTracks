@@ -4,6 +4,7 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using UniTracks.Data.Repository;
 using UniTracks.Models.Trip;
+using UniTracks.Services.Trips;
 
 namespace UniTracks.ViewModels.Controls.Popups;
 
@@ -39,17 +40,13 @@ public partial class TripTypeSearchPopupViewModel : ObservableObject, IPopupResu
     private void ApplyFilter(string value)
     {
         Types.Clear();
-        IEnumerable<TripType> query = allTypes;
-        if (!string.IsNullOrWhiteSpace(value))
-        {
-            query = query.Where(t =>
-                t.Name.Contains(value, StringComparison.OrdinalIgnoreCase) ||
-                t.Identifier.Contains(value, StringComparison.OrdinalIgnoreCase));
-        }
 
-        foreach (var type in query)
+        foreach (var type in allTypes)
         {
-            Types.Add(type);
+            if (TripTypeSearchTerms.Matches(type, value))
+            {
+                Types.Add(type);
+            }
         }
     }
 
