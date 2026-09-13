@@ -65,6 +65,19 @@ public partial class SettingsPageViewModel : ObservableObject
 
     public string MapStyleAttributionHint => MapStyleCatalog.AttributionHint(SelectedMapStyle.Kind);
 
+    /// <summary>Hinweis zum Speichern: warum es den Dialog zusätzlich zum Teilen gibt.</summary>
+    public string SaveDatabaseHint =>
+        "Öffnet den Systemdialog „Speichern unter“. Damit landet die Kopie in der Dateien-App " +
+        "(Windows: Datei-Explorer) und lässt sich dort sichern oder weitergeben.";
+
+    /// <summary>
+    /// Hinweis zum Teilen: die Dateien-App selbst ist auf Android kein Teilen-Ziel, deshalb der
+    /// Verweis auf „In Dateien speichern“.
+    /// </summary>
+    public string ShareDatabaseHint =>
+        "Schickt die Kopie direkt an eine App wie E-Mail oder Drive. " +
+        "Die Dateien-App erscheint hier nicht – sie nimmt auf Android keine geteilten Dateien an.";
+
     /// <summary>Hinweis zum Import: Dateityp der laufenden Plattform und der Ablauf des Tauschs.</summary>
     public string ImportHint =>
         "Wähle die Datenbankdatei einer anderen UniTracks-Installation aus. " +
@@ -93,6 +106,7 @@ public partial class SettingsPageViewModel : ObservableObject
     private readonly IMapStyleSettings mapStyleSettings;
     private readonly IDatabaseMaintenance databaseMaintenance;
     private readonly IFileSystem fileSystem;
+    private readonly IFileExportService fileExportService;
     private readonly IDialogService dialogService;
     private readonly IChangelogPresenter changelogPresenter;
 
@@ -124,6 +138,7 @@ public partial class SettingsPageViewModel : ObservableObject
         IMapStyleSettings mapStyleSettings,
         IDatabaseMaintenance databaseMaintenance,
         IFileSystem fileSystem,
+        IFileExportService fileExportService,
         INavigationService navigation,
         IDialogService dialogService,
         IChangelogPresenter changelogPresenter)
@@ -134,6 +149,7 @@ public partial class SettingsPageViewModel : ObservableObject
         this.mapStyleSettings = mapStyleSettings;
         this.databaseMaintenance = databaseMaintenance;
         this.fileSystem = fileSystem;
+        this.fileExportService = fileExportService;
         this.dialogService = dialogService;
         this.changelogPresenter = changelogPresenter;
 
@@ -220,6 +236,62 @@ public partial class SettingsPageViewModel : ObservableObject
         catch (Exception exception)
         {
             await dialogService.AlertAsync("Datenbank teilen", $"Das Teilen ist fehlgeschlagen: {exception.Message}", "OK");
+        }
+        finally
+        {
+            IsBusy = false;
+            RefreshDatabaseStatus();
+        }
+    }
+
+    /// <summary>
+    /// Legt eine Kopie der Datenbank über den Systemdialog „Speichern unter“ ab, damit sie in der
+    /// Dateien-App bzw. im Datei-Explorer landet. Das Teilen-Blatt kann das auf Android 11+ nicht
+    /// leisten: es legt die Kopie im App-Cache ab, den kein Dateimanager mehr anzeigt.
+    /// </summary>
+    [RelayCommand]
+    private async Task SaveDatabaseCopyAsync()
+    {
+        IsBusy = true;
+
+        try
+        {
+            var copy = await databaseMaintenance.CreateExportCopyAsync();
+
+            if (copy is null)
+            {
+                await dialogService.AlertAsync(
+                    "Datenbank speichern",
+                    "Es gibt noch keine Datenbank zum Speichern. Starte einen ersten Lauf, danach ist die Datei vorhanden.",
+                    "OK");
+                return;
+            }
+
+            var result = await fileExportService.SaveCopyAsync(copy, Path.GetFileName(copy));
+
+            switch (result.Outcome)
+            {
+                case FileExportOutcome.Saved:
+                    await dialogService.AlertAsync(
+                        "Datenbank gespeichert",
+                        $"Die Kopie der Datenbank liegt jetzt hier:\n\n{result.FilePath}\n\n" +
+                        "Über „Datenbank importieren“ holst du sie auf ein anderes Gerät zurück.",
+                        "OK");
+                    break;
+
+                case FileExportOutcome.Failed:
+                    await dialogService.AlertAsync(
+                        "Datenbank speichern",
+                        $"Das Speichern ist fehlgeschlagen: {result.Error}",
+                        "OK");
+                    break;
+
+                // Cancelled: der Nutzer hat den Dialog geschlossen, dazu braucht es keine Meldung.
+            }
+        }
+        catch (Exception exception)
+        {
+            await dialogService.AlertAsync("Datenbank speichern", $"Das Speichern ist fehlgeschlagen: {exception.Message}", "OK");
         }
         finally
         {

@@ -7,6 +7,8 @@
 
 	<ItemGroup>
 		<PackageReference Include="Microsoft.Maui.Controls" Version="$(MauiVersion)" />
+		<!-- FileSaver (Speichern unter) liegt in CommunityToolkit.Maui.Core, nicht im Hauptpaket. -->
+		<PackageReference Include="CommunityToolkit.Maui.Core" Version="$(MauiCommunityToolkitVersion)" />
 		<PackageReference Include="AgredoApplication.MVVM.Services" Version="$(AgredoMvvmServicesVersion)" />
 	</ItemGroup>
 

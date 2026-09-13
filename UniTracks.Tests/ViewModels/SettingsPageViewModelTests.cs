@@ -1,5 +1,6 @@
 using UniTracks.Services.ApplicationModel;
 using UniTracks.Services.ApplicationModel.Permissions;
+using UniTracks.Services.Data;
 using UniTracks.Tests.ViewModels.Fakes;
 using UniTracks.ViewModels.Pages;
 
@@ -205,6 +206,69 @@ public sealed class SettingsPageViewModelTests
     }
 
     [Fact]
+    public async Task SaveDatabaseCopy_WritesTheExportThroughTheSystemSaveDialog()
+    {
+        var maintenance = new FakeDatabaseMaintenance { ExportCopyPath = "test://app-data/UniTracks-2026-09-14-0900.db" };
+        var export = new FakeFileExportService
+        {
+            Result = FileExportResult.Saved("/storage/emulated/0/Documents/UniTracks-2026-09-14-0900.db")
+        };
+        var dialog = new FakeDialogService();
+        var viewModel = Create(databaseMaintenance: maintenance, fileExportService: export, dialogService: dialog);
+
+        await viewModel.SaveDatabaseCopyCommand.ExecuteAsync(null);
+
+        var request = Assert.Single(export.Requests);
+        Assert.Equal("test://app-data/UniTracks-2026-09-14-0900.db", request.SourcePath);
+        Assert.Equal("UniTracks-2026-09-14-0900.db", request.SuggestedFileName);
+
+        Assert.Contains("gespeichert", Assert.Single(dialog.Alerts).Title);
+        Assert.Contains("/storage/emulated/0/Documents", dialog.Alerts[0].Message);
+        Assert.False(viewModel.IsBusy);
+    }
+
+    [Fact]
+    public async Task SaveDatabaseCopy_ExplainsWhenThereIsNoDatabaseYet()
+    {
+        var maintenance = new FakeDatabaseMaintenance { ExportCopyPath = null };
+        var export = new FakeFileExportService();
+        var dialog = new FakeDialogService();
+        var viewModel = Create(databaseMaintenance: maintenance, fileExportService: export, dialogService: dialog);
+
+        await viewModel.SaveDatabaseCopyCommand.ExecuteAsync(null);
+
+        Assert.Empty(export.Requests);
+        Assert.Contains("keine Datenbank", Assert.Single(dialog.Alerts).Message);
+    }
+
+    [Fact]
+    public async Task SaveDatabaseCopy_StaysQuietWhenTheDialogIsClosed()
+    {
+        var maintenance = new FakeDatabaseMaintenance { ExportCopyPath = "test://export.db" };
+        var export = new FakeFileExportService { Result = FileExportResult.Cancelled() };
+        var dialog = new FakeDialogService();
+        var viewModel = Create(databaseMaintenance: maintenance, fileExportService: export, dialogService: dialog);
+
+        await viewModel.SaveDatabaseCopyCommand.ExecuteAsync(null);
+
+        Assert.Empty(dialog.Alerts);
+        Assert.False(viewModel.IsBusy);
+    }
+
+    [Fact]
+    public async Task SaveDatabaseCopy_ReportsAFailedWrite()
+    {
+        var maintenance = new FakeDatabaseMaintenance { ExportCopyPath = "test://export.db" };
+        var export = new FakeFileExportService { Result = FileExportResult.Failed("Kein Speicherplatz.") };
+        var dialog = new FakeDialogService();
+        var viewModel = Create(databaseMaintenance: maintenance, fileExportService: export, dialogService: dialog);
+
+        await viewModel.SaveDatabaseCopyCommand.ExecuteAsync(null);
+
+        Assert.Contains("Kein Speicherplatz.", Assert.Single(dialog.Alerts).Message);
+    }
+
+    [Fact]
     public async Task ImportDatabase_StagesThePickedFileAndTellsTheUserToRestart()
     {
         var maintenance = new FakeDatabaseMaintenance();
@@ -351,6 +415,7 @@ public sealed class SettingsPageViewModelTests
         FakeMapStyleSettings? mapStyleSettings = null,
         FakeDatabaseMaintenance? databaseMaintenance = null,
         FakeFileSystem? fileSystem = null,
+        FakeFileExportService? fileExportService = null,
         FakeDialogService? dialogService = null,
         FakeNavigationService? navigation = null,
         FakeChangelogPresenter? changelogPresenter = null) =>
@@ -361,6 +426,7 @@ public sealed class SettingsPageViewModelTests
             mapStyleSettings ?? new FakeMapStyleSettings(),
             databaseMaintenance ?? new FakeDatabaseMaintenance(),
             fileSystem ?? new FakeFileSystem(),
+            fileExportService ?? new FakeFileExportService(),
             navigation ?? new FakeNavigationService(),
             dialogService ?? new FakeDialogService(),
             changelogPresenter ?? new FakeChangelogPresenter())

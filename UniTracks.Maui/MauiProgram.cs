@@ -10,6 +10,7 @@ using UniTracks.Data.Repository;
 using UniTracks.Data.Seeding;
 using UniTracks.Data.SQLite;
 using UniTracks.Maui.Services.Changelog;
+using UniTracks.Maui.Services.Data;
 using UniTracks.Maui.Services.Location;
 using UniTracks.Maui.Services.Settings;
 using UniTracks.Maui.Views;
@@ -188,6 +189,9 @@ public static class MauiProgram
         services.AddSingleton<IGamificationService, GamificationService>();
         services.AddSingleton<IStatisticsService, StatisticsService>();
         services.AddSingleton<TripDistanceRecalculator>();
+
+        // Kopien der Datenbank in der Dateien-App ablegen ("Speichern unter").
+        services.AddSingleton<IFileExportService, FileExportService>();
 
         // User preference: whether the map draws the smoothed track or the raw GPS points.
         services.AddSingleton<ITrackSmoothingSettings, PreferencesTrackSmoothingSettings>();

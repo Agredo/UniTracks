@@ -162,10 +162,22 @@
                             Text="{Binding LastImportText}"
                             TextColor="{StaticResource TextMuted}" />
                         <Button
+                            Command="{Binding SaveDatabaseCopyCommand}"
+                            IsEnabled="{Binding IsNotBusy}"
+                            Text="In Dateien speichern" />
+                        <Label
+                            FontSize="11"
+                            Text="{Binding SaveDatabaseHint}"
+                            TextColor="{StaticResource TextMuted}" />
+                        <Button
                             Command="{Binding ShareDatabaseCommand}"
                             IsEnabled="{Binding IsNotBusy}"
                             Style="{StaticResource SecondaryButton}"
                             Text="Datenbank teilen" />
+                        <Label
+                            FontSize="11"
+                            Text="{Binding ShareDatabaseHint}"
+                            TextColor="{StaticResource TextMuted}" />
                         <Button
                             Command="{Binding ImportDatabaseCommand}"
                             IsEnabled="{Binding IsNotBusy}"
