@@ -1,6 +1,21 @@
 {
   "releases": [
     {
+      "version": "0.4.1",
+      "date": "2026-09-14",
+      "title": "Backup in Dateien speichern",
+      "changes": [
+        {
+          "kind": "feature",
+          "text": "Datenbank-Backup in Dateien speichern: In den Einstellungen gibt es jetzt \"In Dateien speichern\". Der Knopf öffnet den Systemdialog \"Speichern unter\", und du wählst selbst, wo die Kopie landet - im Ordner Documents, auf der SD-Karte oder in einem Cloud-Ordner. Von dort lässt sie sich mit der Dateien-App sichern, auf den PC kopieren oder per Messenger weitergeben."
+        },
+        {
+          "kind": "fix",
+          "text": "Der Knopf \"Datenbank teilen\" reicht die Kopie auf Android nur an andere Apps weiter und legt sie im App-Cache ab - dort tauchte sie in der Dateien-App nicht auf. Für ein richtiges Backup ist der neue Speichern-Dialog der Weg, deshalb stehen jetzt beide Möglichkeiten nebeneinander."
+        }
+      ]
+    },
+    {
       "version": "0.4",
       "date": "2026-09-13",
       "title": "Trips vergleichen, Laufrichtung & Sperrbildschirm",

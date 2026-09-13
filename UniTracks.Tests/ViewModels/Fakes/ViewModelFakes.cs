@@ -362,6 +362,26 @@ internal sealed class FakeFileSystem : IFileSystem
     public Task SaveFilesAsync(IEnumerable<string> fileNames) => Task.CompletedTask;
 }
 
+/// <summary>
+/// Stub for the "save under" dialog. It records every request and answers with
+/// <see cref="Result"/>, which defaults to a successful save.
+/// </summary>
+internal sealed class FakeFileExportService : IFileExportService
+{
+    public List<(string SourcePath, string SuggestedFileName)> Requests { get; } = new();
+
+    public FileExportResult Result { get; set; } = FileExportResult.Saved("test://saved.db");
+
+    public Task<FileExportResult> SaveCopyAsync(
+        string sourcePath,
+        string suggestedFileName,
+        CancellationToken cancellationToken = default)
+    {
+        Requests.Add((sourcePath, suggestedFileName));
+        return Task.FromResult(Result);
+    }
+}
+
 internal sealed class FakeGpsDataStorageService : IGpsDataStorageService
 {
     public Guid? CurrentTripTypeId { get; set; }
