@@ -96,6 +96,38 @@
                 </Border>
             </VerticalStackLayout>
 
+            <!-- Trip list: card density -->
+            <VerticalStackLayout Spacing="8">
+                <Label Style="{StaticResource SectionHeader}" Text="TRIPS" />
+                <Border Style="{StaticResource CardBorder}">
+                    <VerticalStackLayout Spacing="12">
+                        <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
+                            <VerticalStackLayout
+                                Grid.Column="0"
+                                Spacing="2"
+                                VerticalOptions="Center">
+                                <Label
+                                    FontFamily="OpenSansSemibold"
+                                    FontSize="15"
+                                    Text="Kompakte Trip-Karten" />
+                                <Label
+                                    FontSize="12"
+                                    Text="{Binding TripCardsStateText}"
+                                    TextColor="{StaticResource TextSecondary}" />
+                            </VerticalStackLayout>
+                            <Switch
+                                Grid.Column="1"
+                                IsToggled="{Binding TripCardsCompact}"
+                                VerticalOptions="Center" />
+                        </Grid>
+                        <Label
+                            FontSize="12"
+                            Text="{Binding TripCardsHint}"
+                            TextColor="{StaticResource TextMuted}" />
+                    </VerticalStackLayout>
+                </Border>
+            </VerticalStackLayout>
+
             <!-- Background location: Android 11+ and iOS only grant "always" from the system page. -->
             <VerticalStackLayout IsVisible="{Binding IsBackgroundLocationVisible}" Spacing="8">
                 <Label Style="{StaticResource SectionHeader}" Text="HINTERGRUND-STANDORT" />

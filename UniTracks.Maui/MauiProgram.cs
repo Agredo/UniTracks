@@ -196,6 +196,9 @@ public static class MauiProgram
         // User preference: whether the map draws the smoothed track or the raw GPS points.
         services.AddSingleton<ITrackSmoothingSettings, PreferencesTrackSmoothingSettings>();
 
+        // User preference: compact or full cards in the trip list.
+        services.AddSingleton<ITripCardLayoutSettings, PreferencesTripCardLayoutSettings>();
+
         // User preference: which tile layer the maps use.
         services.AddSingleton<IMapStyleSettings, PreferencesMapStyleSettings>();
 

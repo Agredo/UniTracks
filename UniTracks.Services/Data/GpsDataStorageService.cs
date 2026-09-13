@@ -124,7 +124,7 @@ public class GpsDataStorageService : IGpsDataStorageService
                 location.TripID = currentTrip.ID;
                 currentTrip.Locations.Add(location);
                 // Keep the trip end fresh so the duration (= EndTime - StartTime) is correct.
-                currentTrip.EndTime = DateTimeOffset.Now;
+                currentTrip.EndTime = DateTimeOffset.UtcNow;
                 AccountFor(location);
                 ApplyAggregates(currentTrip);
 
@@ -141,8 +141,8 @@ public class GpsDataStorageService : IGpsDataStorageService
                 var trip = new Trip()
                 {
                     ID = Guid.NewGuid(),
-                    StartTime = DateTimeOffset.Now,
-                    EndTime = DateTimeOffset.Now,
+                    StartTime = DateTimeOffset.UtcNow,
+                    EndTime = DateTimeOffset.UtcNow,
                     TripTypeId = CurrentTripTypeId,
                     Locations = new List<LocationModel>() { location }
                 };

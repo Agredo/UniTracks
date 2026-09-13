@@ -1,5 +1,11 @@
 using CommunityToolkit.Maui;
 using System.Globalization;
+using UniTracks.Services.Comparison;
+using UniTracks.Services.Text;
+using UniTracks.Services.Trips;
+using HeartRateModel = UniTracks.Models.Health.HeartRate;
+using TripTypeModel = UniTracks.Models.Trip.TripType;
+using WeatherModel = UniTracks.Models.Environment.Weather;
 
 namespace UniTracks.Maui.Views.Controls;
 
@@ -10,26 +16,23 @@ public partial class TripCard : Microsoft.Maui.Controls.ContentView
     public TripCard()
     {
         InitializeComponent();
+        ApplyTypeVisual(TripTypeVisuals.For(null));
+        UpdateExtrasVisibility();
     }
 
     [BindableProperty(PropertyChangedMethodName = nameof(OnTripDateTimePropertyChanged))]
     public partial DateTimeOffset TripDateTime { get; set; }
 
     [BindableProperty(PropertyChangedMethodName = nameof(OnNamePropertyChanged))]
-    public partial string Name { get; set; }
+    public partial string? Name { get; set; }
 
-    private static void OnNamePropertyChanged(BindableObject bindable, object oldValue, object newValue)
-    {
-        ((TripCard)bindable).SetNameLabelText();
-    }
-
-    [BindableProperty(PropertyChangedMethodName = nameof(OnTripEndDateTimePropertyChanged))]
+    [BindableProperty]
     public partial DateTimeOffset TripEndDateTime { get; set; }
 
     [BindableProperty(PropertyChangedMethodName = nameof(OnMaxSpeedPropertyChanged))]
     public partial double MaxSpeed { get; set; }
 
-    [BindableProperty(PropertyChangedMethodName = nameof(OnMinSpeedPropertyChanged))]
+    [BindableProperty]
     public partial double MinSpeed { get; set; }
 
     [BindableProperty(PropertyChangedMethodName = nameof(OnAverageSpeedPropertyChanged))]
@@ -41,111 +44,200 @@ public partial class TripCard : Microsoft.Maui.Controls.ContentView
     [BindableProperty(PropertyChangedMethodName = nameof(OnDurationPropertyChanged))]
     public partial TimeSpan Duration { get; set; }
 
+    [BindableProperty(PropertyChangedMethodName = nameof(OnTripTypePropertyChanged))]
+    public partial TripTypeModel? TripType { get; set; }
+
+    [BindableProperty(PropertyChangedMethodName = nameof(OnWeatherPropertyChanged))]
+    public partial List<WeatherModel>? Weather { get; set; }
+
+    [BindableProperty(PropertyChangedMethodName = nameof(OnHeartRatesPropertyChanged))]
+    public partial List<HeartRateModel>? HeartRates { get; set; }
+
+    [BindableProperty(PropertyChangedMethodName = nameof(OnAltitudePropertyChanged))]
+    public partial double? MaxAltitude { get; set; }
+
+    [BindableProperty(PropertyChangedMethodName = nameof(OnAltitudePropertyChanged))]
+    public partial double? MinAltitude { get; set; }
+
+    [BindableProperty(PropertyChangedMethodName = nameof(OnIsCompactPropertyChanged))]
+    public partial bool IsCompact { get; set; }
+
     private static void OnTripDateTimePropertyChanged(BindableObject bindable, object oldValue, object newValue)
     {
         var tripCard = (TripCard)bindable;
-        tripCard.TripDateTimeChanged((DateTimeOffset)newValue);
+        tripCard.TripDateLabel.Text = RelativeDateFormatter.Format((DateTimeOffset)newValue);
+        tripCard.SetNameLabelText();
     }
 
-    private static void OnTripEndDateTimePropertyChanged(BindableObject bindable, object oldValue, object newValue)
+    private static void OnNamePropertyChanged(BindableObject bindable, object oldValue, object newValue)
     {
-        // Reserved for future use.
+        ((TripCard)bindable).SetNameLabelText();
     }
 
     private static void OnMaxSpeedPropertyChanged(BindableObject bindable, object oldValue, object newValue)
     {
         var tripCard = (TripCard)bindable;
-        tripCard.MaxSpeedChanged((double)newValue);
-    }
-
-    private static void OnMinSpeedPropertyChanged(BindableObject bindable, object oldValue, object newValue)
-    {
-        // Reserved for future use.
+        tripCard.MaxSpeedValueLabel.Text = ToKilometersPerHour((double)newValue);
     }
 
     private static void OnAverageSpeedPropertyChanged(BindableObject bindable, object oldValue, object newValue)
     {
         var tripCard = (TripCard)bindable;
-        tripCard.AverageChanged((double)newValue);
+        tripCard.AverageSpeedValueLabel.Text = ToKilometersPerHour((double)newValue);
+        tripCard.UpdateCompactStats();
     }
 
     private static void OnDistancePropertyChanged(BindableObject bindable, object oldValue, object newValue)
     {
         var tripCard = (TripCard)bindable;
-        tripCard.DistanceChanged((double)newValue);
+        var newDistance = (double)newValue;
+
+        if (newDistance >= 1000)
+        {
+            tripCard.DistanceValueLabel.Text = (newDistance / 1000).ToString("0.00", GermanCulture);
+            tripCard.DistanceUnitLabel.Text = "km";
+        }
+        else
+        {
+            tripCard.DistanceValueLabel.Text = Math.Round(newDistance).ToString("0", GermanCulture);
+            tripCard.DistanceUnitLabel.Text = "m";
+        }
     }
 
     private static void OnDurationPropertyChanged(BindableObject bindable, object oldValue, object newValue)
     {
         var tripCard = (TripCard)bindable;
-        tripCard.DurationChanged((TimeSpan)newValue);
+        tripCard.DurationValueLabel.Text = FormatDuration((TimeSpan)newValue);
+        tripCard.UpdateCompactStats();
     }
 
-    private void TripDateTimeChanged(DateTimeOffset newDateTimeOffset)
+    private static void OnTripTypePropertyChanged(BindableObject bindable, object oldValue, object newValue)
     {
-        TripDateLabel.Text = newDateTimeOffset.ToString("ddd, dd. MMM · HH:mm", GermanCulture);
-        SetNameLabelText();
+        var tripCard = (TripCard)bindable;
+        var type = (TripTypeModel?)newValue;
+
+        tripCard.ApplyTypeVisual(TripTypeVisuals.For(type));
+
+        tripCard.TypeBadge.IsVisible = type is not null;
+        tripCard.TypeBadgeLabel.Text = type?.Name.ToUpper(GermanCulture) ?? string.Empty;
     }
 
-    private void MaxSpeedChanged(double newMaxSpeed)
+    private static void OnWeatherPropertyChanged(BindableObject bindable, object oldValue, object newValue)
     {
-        MaxSpeedValueLabel.Text = ToKilometersPerHour(newMaxSpeed);
-    }
+        var tripCard = (TripCard)bindable;
+        var weather = (newValue as List<WeatherModel>)?.FirstOrDefault();
 
-    private void AverageChanged(double newAverageSpeed)
-    {
-        AverageSpeedValueLabel.Text = ToKilometersPerHour(newAverageSpeed);
-    }
-
-    private void DistanceChanged(double newDistance)
-    {
-        if (newDistance >= 1000)
+        if (weather is null)
         {
-            DistanceValueLabel.Text = (newDistance / 1000).ToString("0.00", GermanCulture);
-            DistanceUnitLabel.Text = "km";
+            tripCard.WeatherBlock.IsVisible = false;
         }
         else
         {
-            DistanceValueLabel.Text = Math.Round(newDistance).ToString("0", GermanCulture);
-            DistanceUnitLabel.Text = "m";
+            tripCard.WeatherIconLabel.Text = weather.CloudCover switch
+            {
+                < 25 => "☀️",
+                < 60 => "⛅",
+                _ => "☁️",
+            };
+            tripCard.WeatherTempLabel.Text = $"{Math.Round(weather.Temperature)}°";
+            tripCard.WeatherBlock.IsVisible = true;
         }
+
+        tripCard.UpdateExtrasVisibility();
     }
 
-    private void DurationChanged(TimeSpan newDuration)
+    private static void OnHeartRatesPropertyChanged(BindableObject bindable, object oldValue, object newValue)
     {
-        DurationValueLabel.Text = newDuration.TotalHours >= 1
-            ? newDuration.ToString(@"h\:mm\:ss", GermanCulture)
-            : newDuration.ToString(@"mm\:ss", GermanCulture);
+        var tripCard = (TripCard)bindable;
+        var rates = newValue as List<HeartRateModel>;
+
+        if (rates is null || rates.Count == 0)
+        {
+            tripCard.HeartRateBlock.IsVisible = false;
+        }
+        else
+        {
+            tripCard.HeartRateLabel.Text = $"{Math.Round(rates.Average(rate => rate.Rate))} bpm";
+            tripCard.HeartRateBlock.IsVisible = true;
+        }
+
+        tripCard.UpdateExtrasVisibility();
     }
 
-    private static string ToKilometersPerHour(double metersPerSecond)
+    private static void OnAltitudePropertyChanged(BindableObject bindable, object oldValue, object newValue)
     {
-        return Math.Round(metersPerSecond * 3.6, 1).ToString("0.0", GermanCulture);
+        var tripCard = (TripCard)bindable;
+
+        if (tripCard.MaxAltitude is { } max && tripCard.MinAltitude is { } min && max - min >= 25)
+        {
+            tripCard.ElevationLabel.Text = $"{Math.Round(max - min)} m";
+            tripCard.ElevationBlock.IsVisible = true;
+        }
+        else
+        {
+            tripCard.ElevationBlock.IsVisible = false;
+        }
+
+        tripCard.UpdateExtrasVisibility();
+    }
+
+    private static void OnIsCompactPropertyChanged(BindableObject bindable, object oldValue, object newValue)
+    {
+        var tripCard = (TripCard)bindable;
+        var compact = (bool)newValue;
+
+        tripCard.StatsGrid.IsVisible = !compact;
+        tripCard.CompactStatsLabel.IsVisible = compact;
+        tripCard.IconBadge.HeightRequest = tripCard.IconBadge.WidthRequest = compact ? 44 : 64;
+        tripCard.TypeIconImage.HeightRequest = tripCard.TypeIconImage.WidthRequest = compact ? 24 : 32;
+
+        tripCard.UpdateCompactStats();
+        tripCard.UpdateExtrasVisibility();
+    }
+
+    private void ApplyTypeVisual(TripTypeVisual visual)
+    {
+        TypeIconImage.Source = visual.Icon;
+
+        var accent = Microsoft.Maui.Graphics.Color.FromArgb(visual.Accent);
+        var soft = Microsoft.Maui.Graphics.Color.FromArgb(visual.Soft);
+
+        IconBadge.Background = soft;
+        IconBadge.Stroke = accent.WithAlpha(0.45f);
+        DistanceValueLabel.TextColor = accent;
+        TypeBadge.Background = soft;
+        TypeBadgeLabel.TextColor = accent;
+    }
+
+    private void UpdateExtrasVisibility()
+    {
+        var anyExtra = WeatherBlock.IsVisible || HeartRateBlock.IsVisible || ElevationBlock.IsVisible;
+        ExtrasRow.IsVisible = anyExtra && !IsCompact;
+    }
+
+    private void UpdateCompactStats()
+    {
+        if (!IsCompact)
+        {
+            return;
+        }
+
+        CompactStatsLabel.Text = $"· {FormatDuration(Duration)} · {ToKilometersPerHour(AverageSpeed)} km/h";
     }
 
     private void SetNameLabelText()
     {
-        if (!string.IsNullOrWhiteSpace(Name))
-        {
-            TripNameLabel.Text = Name;
-            return;
-        }
+        TripNameLabel.Text = !string.IsNullOrWhiteSpace(Name)
+            ? Name
+            : TripDisplay.TimeOfDayName(TripDateTime);
+    }
 
-        if (TripDateTime.Hour >= 5 && TripDateTime.Hour < 11)
-        {
-            TripNameLabel.Text = "Morgen Trip";
-        }
-        else if (TripDateTime.Hour >= 11 && TripDateTime.Hour < 14)
-        {
-            TripNameLabel.Text = "Mittags Trip";
-        }
-        else if (TripDateTime.Hour >= 14 && TripDateTime.Hour < 18)
-        {
-            TripNameLabel.Text = "Nachmittags Trip";
-        }
-        else
-        {
-            TripNameLabel.Text = "Abend Trip";
-        }
+    private static string FormatDuration(TimeSpan duration) => duration.TotalHours >= 1
+        ? duration.ToString(@"h\:mm\:ss", GermanCulture)
+        : duration.ToString(@"mm\:ss", GermanCulture);
+
+    private static string ToKilometersPerHour(double metersPerSecond)
+    {
+        return Math.Round(metersPerSecond * 3.6, 1).ToString("0.0", GermanCulture);
     }
 }

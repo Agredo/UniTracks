@@ -18,7 +18,7 @@ public static class TripDisplay
         return TimeOfDayName(trip.StartTime);
     }
 
-    public static string TimeOfDayName(DateTimeOffset startTime) => startTime.Hour switch
+    public static string TimeOfDayName(DateTimeOffset startTime) => startTime.LocalDateTime.Hour switch
     {
         >= 5 and < 11 => "Morgen Trip",
         >= 11 and < 14 => "Mittags Trip",

@@ -7,8 +7,9 @@
     <Border Style="{StaticResource CardBorder}">
         <Grid ColumnDefinitions="Auto,*" ColumnSpacing="14">
 
-            <!-- Activity icon -->
+            <!-- Activity icon, tinted by trip type -->
             <Border
+                x:Name="IconBadge"
                 Grid.Column="0"
                 HeightRequest="64"
                 Style="{StaticResource AccentChipBorder}"
@@ -18,6 +19,7 @@
                     <RoundRectangle CornerRadius="18" />
                 </Border.StrokeShape>
                 <Image
+                    x:Name="TypeIconImage"
                     Aspect="AspectFit"
                     HeightRequest="32"
                     Source="run.png"
@@ -26,23 +28,37 @@
 
             <VerticalStackLayout Grid.Column="1" Spacing="10">
 
-                <!-- Title + date -->
-                <Grid ColumnDefinitions="*,Auto">
+                <!-- Title + type badge + date -->
+                <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="8">
                     <Label
                         x:Name="TripNameLabel"
                         Grid.Column="0"
                         FontFamily="OpenSansSemibold"
                         FontSize="17"
                         VerticalTextAlignment="Center" />
+                    <Border
+                        x:Name="TypeBadge"
+                        Grid.Column="1"
+                        Padding="8,2"
+                        StrokeThickness="0"
+                        VerticalOptions="Center">
+                        <Border.StrokeShape>
+                            <RoundRectangle CornerRadius="8" />
+                        </Border.StrokeShape>
+                        <Label
+                            x:Name="TypeBadgeLabel"
+                            FontFamily="OpenSansSemibold"
+                            FontSize="10" />
+                    </Border>
                     <Label
                         x:Name="TripDateLabel"
-                        Grid.Column="1"
+                        Grid.Column="2"
                         FontSize="11"
                         TextColor="{StaticResource TextMuted}"
                         VerticalTextAlignment="Center" />
                 </Grid>
 
-                <!-- Hero distance -->
+                <!-- Hero distance (+ all stats on one line in compact mode) -->
                 <HorizontalStackLayout Spacing="4">
                     <Label
                         x:Name="DistanceValueLabel"
@@ -58,10 +74,17 @@
                         TextColor="{StaticResource TextMuted}"
                         VerticalOptions="End"
                         VerticalTextAlignment="End" />
+                    <Label
+                        x:Name="CompactStatsLabel"
+                        FontSize="13"
+                        IsVisible="False"
+                        TextColor="{StaticResource TextSecondary}"
+                        VerticalOptions="End"
+                        VerticalTextAlignment="End" />
                 </HorizontalStackLayout>
 
                 <!-- Stat chips -->
-                <Grid ColumnDefinitions="*,*,*" ColumnSpacing="8">
+                <Grid x:Name="StatsGrid" ColumnDefinitions="*,*,*" ColumnSpacing="8">
                     <Border Grid.Column="0" Style="{StaticResource ChipBorder}">
                         <VerticalStackLayout Spacing="2">
                             <Label Style="{StaticResource StatLabel}" Text="DAUER" />
@@ -93,6 +116,45 @@
                         </VerticalStackLayout>
                     </Border>
                 </Grid>
+
+                <!-- Extras: weather, heart rate, elevation - only when recorded -->
+                <HorizontalStackLayout x:Name="ExtrasRow" IsVisible="False" Spacing="14">
+                    <HorizontalStackLayout x:Name="WeatherBlock" IsVisible="False" Spacing="4">
+                        <Label x:Name="WeatherIconLabel" FontSize="13" VerticalTextAlignment="Center" />
+                        <Label
+                            x:Name="WeatherTempLabel"
+                            FontFamily="OpenSansSemibold"
+                            FontSize="13"
+                            TextColor="{StaticResource TextSecondary}"
+                            VerticalTextAlignment="Center" />
+                    </HorizontalStackLayout>
+                    <HorizontalStackLayout x:Name="HeartRateBlock" IsVisible="False" Spacing="4">
+                        <Label
+                            FontSize="13"
+                            Text="&#x2764;"
+                            TextColor="{StaticResource Record}"
+                            VerticalTextAlignment="Center" />
+                        <Label
+                            x:Name="HeartRateLabel"
+                            FontFamily="OpenSansSemibold"
+                            FontSize="13"
+                            TextColor="{StaticResource TextSecondary}"
+                            VerticalTextAlignment="Center" />
+                    </HorizontalStackLayout>
+                    <HorizontalStackLayout x:Name="ElevationBlock" IsVisible="False" Spacing="4">
+                        <Label
+                            FontSize="13"
+                            Text="&#x25B2;"
+                            TextColor="{StaticResource TextMuted}"
+                            VerticalTextAlignment="Center" />
+                        <Label
+                            x:Name="ElevationLabel"
+                            FontFamily="OpenSansSemibold"
+                            FontSize="13"
+                            TextColor="{StaticResource TextSecondary}"
+                            VerticalTextAlignment="Center" />
+                    </HorizontalStackLayout>
+                </HorizontalStackLayout>
             </VerticalStackLayout>
         </Grid>
     </Border>

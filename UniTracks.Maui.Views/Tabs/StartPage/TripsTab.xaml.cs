@@ -34,6 +34,9 @@ public partial class TripsTab : ContentView
     [BindableProperty(PropertyChangedMethodName = nameof(OnIsRefreshingPropertyChanged), DefaultBindingMode = BindingMode.TwoWay)]
     public partial bool IsRefreshing { get; set; }
 
+    [BindableProperty]
+    public partial bool CompactLayout { get; set; }
+
     private static void OnTripsPropertyChanged(BindableObject bindable, object oldValue, object newValue)
     {
         var tab = (TripsTab)bindable;
@@ -132,7 +135,7 @@ public partial class TripsTab : ContentView
             return;
         }
 
-        var title = string.IsNullOrWhiteSpace(trip.Name) ? trip.StartTime.ToString("dd.MM.yyyy HH:mm") : trip.Name;
+        var title = string.IsNullOrWhiteSpace(trip.Name) ? trip.StartTime.LocalDateTime.ToString("dd.MM.yyyy HH:mm") : trip.Name;
         var confirm = await Shell.Current.DisplayAlertAsync(
             "Trip löschen",
             $"Möchtest du „{title}“ wirklich löschen?",

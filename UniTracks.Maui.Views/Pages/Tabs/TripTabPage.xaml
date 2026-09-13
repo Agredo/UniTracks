@@ -9,6 +9,7 @@
     x:DataType="viewModels:TripTabPageViewModel">
     <Grid>
         <tabViews:TripsTab
+            CompactLayout="{Binding IsCompactLayout}"
             IsRefreshing="{Binding RefreshIndicatorVisible}"
             PullToRefresh="{Binding RefreshCommand}"
             SelectedTrip="{Binding SelectedTrip, Mode=TwoWay}"

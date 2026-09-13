@@ -35,6 +35,14 @@ public partial class SettingsPageViewModel : ObservableObject
         ? "Glättung aktiv"
         : "Glättung aus – Karte zeigt Rohdaten";
 
+    public string TripCardsHint { get; } =
+        "Kompakt zeigt je Trip nur eine Zeile mit Strecke, Dauer und Tempo – mehr Trips passen " +
+        "aufs Display. Aus zeigt die ausführliche Karte mit Statistiken und Extras.";
+
+    public string TripCardsStateText => TripCardsCompact
+        ? "Kompakte Karten aktiv"
+        : "Ausführliche Karten";
+
     public string BackgroundLocationHint { get; } =
         "Ohne \"Immer erlauben\" kann die Aufzeichnung enden, sobald die App in den Hintergrund " +
         "geht. Android 11+ und iOS zeigen die Option nur in den Systemeinstellungen bzw. im Dialog.";
@@ -101,6 +109,7 @@ public partial class SettingsPageViewModel : ObservableObject
     public bool HasLastImport => databaseMaintenance.LastImport is not null;
 
     private readonly ITrackSmoothingSettings smoothingSettings;
+    private readonly ITripCardLayoutSettings tripCardLayoutSettings;
     private readonly IPermissions permissions;
     private readonly IAppSettings appSettings;
     private readonly IMapStyleSettings mapStyleSettings;
@@ -124,6 +133,10 @@ public partial class SettingsPageViewModel : ObservableObject
     [NotifyPropertyChangedFor(nameof(MapStyleAttributionHint))]
     private MapStyleOption selectedMapStyle;
 
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(TripCardsStateText))]
+    private bool tripCardsCompact;
+
     /// <summary>Sperrt die Daten-Knöpfe, solange eine Operation läuft.</summary>
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(IsNotBusy))]
@@ -133,6 +146,7 @@ public partial class SettingsPageViewModel : ObservableObject
 
     public SettingsPageViewModel(
         ITrackSmoothingSettings smoothingSettings,
+        ITripCardLayoutSettings tripCardLayoutSettings,
         IPermissions permissions,
         IAppSettings appSettings,
         IMapStyleSettings mapStyleSettings,
@@ -144,6 +158,7 @@ public partial class SettingsPageViewModel : ObservableObject
         IChangelogPresenter changelogPresenter)
     {
         this.smoothingSettings = smoothingSettings;
+        this.tripCardLayoutSettings = tripCardLayoutSettings;
         this.permissions = permissions;
         this.appSettings = appSettings;
         this.mapStyleSettings = mapStyleSettings;
@@ -156,6 +171,7 @@ public partial class SettingsPageViewModel : ObservableObject
         Navigation = navigation;
 
         trackSmoothingEnabled = smoothingSettings.IsEnabled;
+        tripCardsCompact = tripCardLayoutSettings.IsCompact;
         selectedMapStyle = MapStyleCatalog.Option(mapStyleSettings.Style);
     }
 
@@ -402,6 +418,12 @@ public partial class SettingsPageViewModel : ObservableObject
     partial void OnTrackSmoothingEnabledChanged(bool value)
     {
         smoothingSettings.IsEnabled = value;
+    }
+
+    /// <summary>Persists every flip; the trips tab re-reads it when it appears again.</summary>
+    partial void OnTripCardsCompactChanged(bool value)
+    {
+        tripCardLayoutSettings.IsCompact = value;
     }
 
     /// <summary>

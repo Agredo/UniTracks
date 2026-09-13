@@ -169,7 +169,7 @@ public partial class TripComparePageViewModel : ObservableObject
         if (Trip is not null)
         {
             TripName = TripDisplay.Name(Trip);
-            DateText = Trip.StartTime.ToString("dddd, dd. MMMM yyyy · HH:mm", GermanCulture);
+            DateText = Trip.StartTime.LocalDateTime.ToString("dddd, dd. MMMM yyyy · HH:mm", GermanCulture);
         }
 
         _ = LoadAsync();
