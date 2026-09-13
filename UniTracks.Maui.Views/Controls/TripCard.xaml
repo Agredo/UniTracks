@@ -28,35 +28,33 @@
 
             <VerticalStackLayout Grid.Column="1" Spacing="10">
 
-                <!-- Title + type badge + date -->
-                <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="8">
+                <!-- Title on its own line, type badge + date below so long names keep their space -->
+                <VerticalStackLayout Spacing="6">
                     <Label
                         x:Name="TripNameLabel"
-                        Grid.Column="0"
                         FontFamily="OpenSansSemibold"
-                        FontSize="17"
-                        VerticalTextAlignment="Center" />
-                    <Border
-                        x:Name="TypeBadge"
-                        Grid.Column="1"
-                        Padding="8,2"
-                        StrokeThickness="0"
-                        VerticalOptions="Center">
-                        <Border.StrokeShape>
-                            <RoundRectangle CornerRadius="8" />
-                        </Border.StrokeShape>
+                        FontSize="17" />
+                    <HorizontalStackLayout Spacing="8">
+                        <Border
+                            x:Name="TypeBadge"
+                            Padding="8,2"
+                            StrokeThickness="0"
+                            VerticalOptions="Center">
+                            <Border.StrokeShape>
+                                <RoundRectangle CornerRadius="8" />
+                            </Border.StrokeShape>
+                            <Label
+                                x:Name="TypeBadgeLabel"
+                                FontFamily="OpenSansSemibold"
+                                FontSize="10" />
+                        </Border>
                         <Label
-                            x:Name="TypeBadgeLabel"
-                            FontFamily="OpenSansSemibold"
-                            FontSize="10" />
-                    </Border>
-                    <Label
-                        x:Name="TripDateLabel"
-                        Grid.Column="2"
-                        FontSize="11"
-                        TextColor="{StaticResource TextMuted}"
-                        VerticalTextAlignment="Center" />
-                </Grid>
+                            x:Name="TripDateLabel"
+                            FontSize="11"
+                            TextColor="{StaticResource TextMuted}"
+                            VerticalTextAlignment="Center" />
+                    </HorizontalStackLayout>
+                </VerticalStackLayout>
 
                 <!-- Hero distance (+ all stats on one line in compact mode) -->
                 <HorizontalStackLayout Spacing="4">
