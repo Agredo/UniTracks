@@ -246,8 +246,54 @@ public class TripFingerprintServiceTests
         Assert.Equal(2000, all.Single(fingerprint => fingerprint.TripID == tripId).DistanceMeters);
     }
 
+    [Fact]
+    public async Task Rebuild_UpdatesTheTypeColumnsAfterTheTripTypeChanged()
+    {
+        // Editing a trip's type must reach the fingerprint: the matcher and the route history
+        // compare category and identifier, and EnsureAsync alone would keep the stale row because
+        // the derivation version did not change.
+        using var database = new SqliteTestDatabase();
+        var run = ComparisonFixtures.Type("run", "running");
+        var walk = ComparisonFixtures.Type("walk", "running");
+        await database.Repository.Add(run);
+        await database.Repository.Add(walk);
+
+        var tripId = Guid.NewGuid();
+        var trip = ComparisonFixtures.Trip(
+            tripId,
+            "morgenlauf",
+            ComparisonFixtures.StraightTrack(tripId, 50.0, 8.0, 4000),
+            run,
+            distanceMeters: 4000,
+            movingSeconds: 1200);
+
+        await AddTripWithLocationsAsync(database, trip);
+
+        var service = CreateService(database);
+        var initial = await service.EnsureAsync(trip);
+        Assert.Equal("run", initial!.TripIdentifier);
+
+        trip.TripType = walk;
+        trip.TripTypeId = walk.ID;
+
+        var rebuilt = await service.RebuildAsync(trip);
+
+        Assert.NotNull(rebuilt);
+        Assert.Equal(walk.ID, rebuilt!.TripTypeId);
+        Assert.Equal("walk", rebuilt.TripIdentifier);
+        Assert.Equal("running", rebuilt.TripCategory);
+
+        database.Context.ChangeTracker.Clear();
+
+        var stored = await service.GetAsync(tripId);
+        Assert.NotNull(stored);
+        Assert.Equal("walk", stored!.TripIdentifier);
+    }
+
     private static TripFingerprintService CreateService(SqliteTestDatabase database) =>
-        new(database.Repository, new TripTypeCatalog(database.Repository));    private static async Task AddTripWithLocationsAsync(SqliteTestDatabase database, Models.Trip.Trip trip)
+        new(database.Repository, new TripTypeCatalog(database.Repository));
+
+    private static async Task AddTripWithLocationsAsync(SqliteTestDatabase database, Models.Trip.Trip trip)
     {
         var locations = trip.Locations;
 

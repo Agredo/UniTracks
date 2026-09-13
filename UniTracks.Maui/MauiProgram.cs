@@ -318,6 +318,10 @@ public static class MauiProgram
         services.AddTransient<TripTypeSearchPopupViewModel>();
         services.AddKeyedTransient<Popup, TripTypeSearchPopup>(typeof(TripTypeSearchPopupViewModel));
 
+        services.AddTransientPopup<TripEditPopup, TripEditPopupViewModel>();
+        services.AddTransient<TripEditPopupViewModel>();
+        services.AddKeyedTransient<Popup, TripEditPopup>(typeof(TripEditPopupViewModel));
+
         services.AddTransientPopup<WhatsNewPopup, WhatsNewPopupViewModel>();
         services.AddTransient<WhatsNewPopupViewModel>(sp => new WhatsNewPopupViewModel(
             sp.GetRequiredService<IChangelogService>(),

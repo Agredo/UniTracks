@@ -3,8 +3,11 @@ using System.Globalization;
 using AgredoApplication.MVVM.Services.Abstractions.Navigation;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using UniTracks.Data.Repository;
 using UniTracks.Models.Trip;
+using UniTracks.Services.Comparison;
 using UniTracks.Services.Settings;
+using UniTracks.ViewModels.Controls.Popups;
 using LocationModel = UniTracks.Models.Location.Location;
 
 namespace UniTracks.ViewModels.Pages;
@@ -15,6 +18,9 @@ public partial class TripOverviewViewModel : ObservableObject
 
     public INavigationService Navigation { get; }
 
+    private readonly IPopupNavigationService popupNavigation;
+    private readonly IRepository repository;
+    private readonly ITripFingerprintService fingerprintService;
     private readonly ITrackSmoothingSettings smoothingSettings;
     private readonly IMapStyleSettings mapStyleSettings;
 
@@ -76,10 +82,16 @@ public partial class TripOverviewViewModel : ObservableObject
 
     public TripOverviewViewModel(
         INavigationService navigation,
+        IPopupNavigationService popupNavigation,
+        IRepository repository,
+        ITripFingerprintService fingerprintService,
         ITrackSmoothingSettings smoothingSettings,
         IMapStyleSettings mapStyleSettings)
     {
         Navigation = navigation;
+        this.popupNavigation = popupNavigation;
+        this.repository = repository;
+        this.fingerprintService = fingerprintService;
         this.smoothingSettings = smoothingSettings;
         this.mapStyleSettings = mapStyleSettings;
 
@@ -109,7 +121,7 @@ public partial class TripOverviewViewModel : ObservableObject
 
     private void ApplyTripStats(Trip trip)
     {
-        TripName = GetTripName(trip.StartTime);
+        TripName = trip.Name ?? GetTripName(trip.StartTime);
         DateText = trip.StartTime.LocalDateTime.ToString("dddd, dd. MMMM yyyy · HH:mm", GermanCulture);
 
         if (trip.Distance is { } distance)
@@ -213,6 +225,58 @@ public partial class TripOverviewViewModel : ObservableObject
         {
             await Navigation.ShellNavigationTo("TripComparePage", new Dictionary<string, object> { { "parameter", Trip } });
         }
+    }
+
+    /// <summary>
+    /// Opens the edit popup for name, type and note. A null result means the user cancelled.
+    /// </summary>
+    [RelayCommand]
+    private async Task Edit()
+    {
+        if (Trip is null)
+        {
+            return;
+        }
+
+        var result = await popupNavigation.ShowPopupAsync<TripEditPopupViewModel, TripEditResult?>(
+            viewModel => viewModel.InitializeAsync(Trip));
+
+        if (result is not null)
+        {
+            await ApplyEditAsync(result);
+        }
+    }
+
+    /// <summary>
+    /// Persists the edit and refreshes the page. The fingerprint is only rebuilt when the type
+    /// actually changed — name and note are not fingerprint inputs, and the rebuild touches the
+    /// trip's GPS points.
+    /// </summary>
+    public async Task ApplyEditAsync(TripEditResult result)
+    {
+        if (Trip is null)
+        {
+            return;
+        }
+
+        Trip.Name = result.Name;
+        Trip.Description = result.Description;
+
+        bool typeChanged = result.TripType is not null && result.TripType.ID != Trip.TripTypeId;
+        if (typeChanged)
+        {
+            Trip.TripType = result.TripType;
+            Trip.TripTypeId = result.TripType!.ID;
+        }
+
+        await repository.Update(Trip);
+
+        if (typeChanged)
+        {
+            await fingerprintService.RebuildAsync(Trip);
+        }
+
+        TripName = Trip.Name ?? GetTripName(Trip.StartTime);
     }
 
     private static string GetTripName(DateTimeOffset startTime)

@@ -23,6 +23,13 @@ public interface ITripFingerprintService
     Task<TripFingerprint?> EnsureAsync(Trip trip);
 
     /// <summary>
+    /// Rebuilds the trip's fingerprint even when the stored one is current. Needed after an edit that
+    /// changes the fingerprint's inputs — above all the trip type, whose category and identifier the
+    /// matcher and the route history compare against.
+    /// </summary>
+    Task<TripFingerprint?> RebuildAsync(Trip trip);
+
+    /// <summary>
     /// Derives fingerprints for every trip that does not have a current one. This is the only part of
     /// the feature that has to touch GPS points in bulk, so it runs once after an update and never on
     /// the path of an ordinary comparison.
@@ -69,8 +76,7 @@ public sealed class TripFingerprintService : ITripFingerprintService
             return existing;
         }
 
-        var type = await tripTypes.GetAsync(trip.TripTypeId);
-        var built = TripFingerprintBuilder.Build(await WithLocationsAsync(trip), type);
+        var built = await BuildAsync(trip);
         if (built is null)
         {
             return existing;
@@ -79,6 +85,31 @@ public sealed class TripFingerprintService : ITripFingerprintService
         return existing is null
             ? await repository.Add(built)
             : await repository.Update(built);
+    }
+
+    public async Task<TripFingerprint?> RebuildAsync(Trip trip)
+    {
+        var existing = await repository.GetByIdAsync<TripFingerprint>(trip.ID);
+        var built = await BuildAsync(trip);
+        if (built is null)
+        {
+            return existing;
+        }
+
+        if (existing is not null)
+        {
+            // Replace instead of update: the store still tracks the row it handed out, so attaching
+            // the freshly built instance with the same key would collide with it.
+            await repository.Delete(existing);
+        }
+
+        return await repository.Add(built);
+    }
+
+    private async Task<TripFingerprint?> BuildAsync(Trip trip)
+    {
+        var type = await tripTypes.GetAsync(trip.TripTypeId);
+        return TripFingerprintBuilder.Build(await WithLocationsAsync(trip), type);
     }
 
     public async Task RemoveAsync(Guid tripId)
