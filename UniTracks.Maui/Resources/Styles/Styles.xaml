@@ -296,11 +296,6 @@
         <Setter Property="RefreshControlColor" Value="{StaticResource Accent}" />
     </Style>
 
-    <Style TargetType="Switch">
-        <Setter Property="OnColor" Value="{StaticResource Accent}" />
-        <Setter Property="ThumbColor" Value="{StaticResource TextPrimary}" />
-    </Style>
-
     <Style TargetType="Picker">
         <Setter Property="TextColor" Value="{StaticResource TextPrimary}" />
         <Setter Property="TitleColor" Value="{StaticResource TextSecondary}" />
