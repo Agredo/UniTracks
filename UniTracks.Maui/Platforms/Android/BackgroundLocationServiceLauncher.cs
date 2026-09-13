@@ -1,6 +1,7 @@
 using Android.Content;
 using AndroidX.Core.Content;
 using UniTracks.Services.Data;
+using UniTracks.Services.Location;
 
 namespace UniTracks.Maui;
 
