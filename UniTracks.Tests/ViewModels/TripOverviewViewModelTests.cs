@@ -3,6 +3,7 @@ using UniTracks.Tests.Comparison;
 using UniTracks.Tests.ViewModels.Fakes;
 using UniTracks.ViewModels.Controls.Popups;
 using UniTracks.ViewModels.Pages;
+using LocationModel = UniTracks.Models.Location.Location;
 
 namespace UniTracks.Tests.ViewModels;
 
@@ -15,10 +16,14 @@ public sealed class TripOverviewViewModelTests
 {
     private sealed class Fixture
     {
-        public Fixture(Trip trip)
+        public Fixture(Trip trip, IReadOnlyList<LocationModel>? storedLocations = null)
         {
             Navigation.Parameters["parameter"] = trip;
+
+            // The store holds the trip and its GPS points in separate tables: the list hands the trip
+            // over without the points, so the overview has to read them for itself.
             Repository.Seed(trip);
+            Repository.Seed(storedLocations?.ToArray() ?? Array.Empty<LocationModel>());
 
             ViewModel = new TripOverviewViewModel(
                 Navigation,
@@ -115,5 +120,88 @@ public sealed class TripOverviewViewModelTests
         var fixture = new Fixture(NewTrip(name: "Runde am See"));
 
         Assert.Equal("Runde am See", fixture.ViewModel.TripName);
+    }
+
+    /// <summary>
+    /// The trip list hands the trip over without its GPS points (reading them for every trip made
+    /// that tab slow), so the overview reads the track of the one trip it shows. Without that read the
+    /// map and the profile stayed empty.
+    /// </summary>
+    [Fact]
+    public async Task LoadTrack_ReadsThePointsTheTripListDidNotHandOver()
+    {
+        var trip = NewTrip();
+        var points = NewPoints(trip);
+
+        var fixture = new Fixture(trip, points);
+
+        Assert.Empty(fixture.ViewModel.Locations);
+
+        await fixture.ViewModel.LoadTrackAsync();
+
+        // Oldest first: the map draws the route in the order the points are handed over.
+        Assert.Equal(points.Select(point => point.ID).Reverse(), fixture.ViewModel.Locations.Select(location => location.ID));
+        Assert.Equal(points.Count, fixture.ViewModel.Trip!.Locations!.Count);
+        Assert.True(fixture.ViewModel.HasProfile);
+    }
+
+    /// <summary>
+    /// The page reads the track on every appearance (a Shell tab switch keeps it alive), so the second
+    /// appearance must not query the store again.
+    /// </summary>
+    [Fact]
+    public async Task LoadTrack_ReadsOnlyOnce()
+    {
+        var trip = NewTrip();
+        var fixture = new Fixture(trip, NewPoints(trip));
+
+        await fixture.ViewModel.LoadTrackAsync();
+        var reads = fixture.Repository.Reads.Count;
+
+        await fixture.ViewModel.LoadTrackAsync();
+
+        Assert.Equal(reads, fixture.Repository.Reads.Count);
+        Assert.Equal(2, fixture.ViewModel.Locations.Count);
+    }
+
+    [Fact]
+    public async Task LoadTrack_WithoutStoredPoints_LeavesTheMapEmpty()
+    {
+        var fixture = new Fixture(NewTrip());
+
+        await fixture.ViewModel.LoadTrackAsync();
+
+        Assert.Empty(fixture.ViewModel.Locations);
+        Assert.False(fixture.ViewModel.HasProfile);
+    }
+
+    /// <summary>
+    /// The charts read the points off the trip they are handed, so a tap before the track had loaded
+    /// must not open them with an empty route.
+    /// </summary>
+    [Fact]
+    public async Task OpenDetails_LoadsTheTrackBeforeOpeningTheCharts()
+    {
+        var trip = NewTrip();
+        var fixture = new Fixture(trip, NewPoints(trip));
+
+        await fixture.ViewModel.OpenDetailsCommand.ExecuteAsync(null);
+
+        Assert.Equal(2, fixture.ViewModel.Trip!.Locations!.Count);
+
+        var navigation = Assert.Single(fixture.Navigation.Navigations);
+        Assert.Equal("TripChartsPage", navigation.Route);
+        Assert.Same(trip, navigation.Parameters!["parameter"]);
+    }
+
+    /// <summary>Two points a few seconds apart, newest first — the store returns them unordered.</summary>
+    private static List<LocationModel> NewPoints(Trip trip)
+    {
+        var start = new DateTimeOffset(2026, 3, 1, 8, 0, 0, TimeSpan.FromHours(1));
+        return new List<LocationModel>
+        {
+            new() { ID = Guid.NewGuid(), TripID = trip.ID, Latitude = 50.2, Timestamp = start.AddSeconds(10) },
+            new() { ID = Guid.NewGuid(), TripID = trip.ID, Latitude = 50.1, Timestamp = start },
+        };
     }
 }

@@ -31,6 +31,12 @@ public partial class TripsTab : ContentView
     [BindableProperty(PropertyChangedMethodName = nameof(OnPullToRefreshPropertyChanged), DefaultBindingMode = BindingMode.TwoWay)]
     public partial ICommand? PullToRefresh { get; set; }
 
+    [BindableProperty(PropertyChangedMethodName = nameof(OnLoadMorePropertyChanged))]
+    public partial ICommand? LoadMore { get; set; }
+
+    [BindableProperty(PropertyChangedMethodName = nameof(OnHasMoreTripsPropertyChanged))]
+    public partial bool HasMoreTrips { get; set; }
+
     [BindableProperty(PropertyChangedMethodName = nameof(OnIsRefreshingPropertyChanged), DefaultBindingMode = BindingMode.TwoWay)]
     public partial bool IsRefreshing { get; set; }
 
@@ -67,6 +73,18 @@ public partial class TripsTab : ContentView
         tab.IsRefreshingChanged((bool)newValue);
     }
 
+    private static void OnLoadMorePropertyChanged(BindableObject bindable, object oldValue, object newValue)
+    {
+        var tab = (TripsTab)bindable;
+        tab.LoadMoreCommandChanged((ICommand?)newValue);
+    }
+
+    private static void OnHasMoreTripsPropertyChanged(BindableObject bindable, object oldValue, object newValue)
+    {
+        var tab = (TripsTab)bindable;
+        tab.LoadMoreButton.IsVisible = (bool)newValue;
+    }
+
     private void TripsChanged(ICollection<Trip>? newTrips)
     {
         TracksCollectionView.ItemsSource = newTrips;
@@ -94,6 +112,19 @@ public partial class TripsTab : ContentView
     private void PullToRefreshCommandChanged(ICommand? newCommand)
     {
         Refresh.Command = newCommand;
+    }
+
+    private void LoadMoreCommandChanged(ICommand? newCommand)
+    {
+        TracksCollectionView.RemainingItemsThresholdReachedCommand = newCommand;
+    }
+
+    private void OnLoadMoreClicked(object? sender, EventArgs e)
+    {
+        if (LoadMore is { } command && command.CanExecute(null))
+        {
+            command.Execute(null);
+        }
     }
 
     private void IsRefreshingChanged(bool newValue)
