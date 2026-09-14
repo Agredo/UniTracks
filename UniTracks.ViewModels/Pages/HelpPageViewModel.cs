@@ -64,7 +64,7 @@ public partial class HelpPageViewModel : ObservableObject
             {
                 Title = "Einen Trip aufzeichnen",
                 Icon = "▶️",
-                Body = "Im Tab »Record« wählst du oben die Sportart: Der aktive Sport steht groß über der Steuerung, die meistgenutzten liegen als Chips darunter — der zuletzt genutzte rutscht nach vorne, die ganze Liste mit Suche steckt hinter »Alle«. Der große Knopf in der Mitte startet und pausiert die Aufnahme, der runde Knopf daneben beendet sie und ist nur aktiv, solange ein Trip offen ist. Die Farben zeigen den Zustand: grün bereit, rot während der Aufnahme, amber pausiert. Beim ersten Mal fragt die App nach Standortberechtigungen; der fertige Trip erscheint im Tab »Trips«.",
+                Body = "Im Tab »Record« wählst du oben die Sportart: Der aktive Sport steht groß über der Steuerung, die meistgenutzten liegen als Chips darunter — der zuletzt genutzte rutscht nach vorne, die ganze Liste mit Suche steckt hinter »Alle«. Der große Knopf in der Mitte startet und pausiert die Aufnahme, der runde Knopf daneben beendet sie und ist nur aktiv, solange ein Trip offen ist. Die Farben zeigen den Zustand: grün bereit, rot während der Aufnahme, amber pausiert. Beim ersten Mal fragt die App nach Standortberechtigungen; der fertige Trip erscheint im Tab »Trips«. Die Sportart kannst du auch während der Aufnahme noch wechseln: Tippe dazu auf die große Sportart über der Steuerung — sie gilt sofort für den laufenden Trip und steht danach auch in der Trip-Liste.",
             },
             new HelpItem
             {

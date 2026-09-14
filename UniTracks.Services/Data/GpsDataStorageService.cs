@@ -40,6 +40,34 @@ public class GpsDataStorageService : IGpsDataStorageService
     public Guid? CurrentTripTypeId { get; set; }
 
     /// <summary>
+    /// Writes the type to the trip that is open right now. The trip row is created with the first GPS
+    /// fix, so a type picked afterwards (the activity card stays tappable while recording) used to only
+    /// reach the *next* trip: the finished trip kept the type it had been created with, and only a
+    /// later edit in the trip overview changed it.
+    /// </summary>
+    public async Task ApplyTripTypeAsync(Guid? tripTypeId)
+    {
+        // Set before the gate: a trip created while the write is still queued must already see it.
+        CurrentTripTypeId = tripTypeId;
+
+        await storeGate.WaitAsync();
+        try
+        {
+            if (currentTrip is null || currentTrip.TripTypeId == tripTypeId)
+            {
+                return;
+            }
+
+            currentTrip.TripTypeId = tripTypeId;
+            await Repository.Update<Trip>(currentTrip);
+        }
+        finally
+        {
+            storeGate.Release();
+        }
+    }
+
+    /// <summary>
     /// True while a trip is being recorded. The trip lives only in memory until <see cref="FinalizeTrip"/>,
     /// so a caller can tell "nothing to finalise" from "finalise what is running" - calling FinalizeTrip()
     /// on a page that is only being created used to end a running recording silently.

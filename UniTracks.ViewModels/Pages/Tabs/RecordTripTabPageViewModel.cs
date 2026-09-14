@@ -285,7 +285,12 @@ public partial class RecordTripTabPageViewModel : ObservableObject
     partial void OnSelectedTripTypeChanged(TripType? value)
     {
         Context.TripType = value;
-        GpsDataStorageService.CurrentTripTypeId = value?.ID;
+
+        // The type is not only a setting for the next trip: while a recording is running the trip row
+        // already exists (it is written with the first GPS fix), so the change has to be written to it.
+        // Otherwise the finished trip kept the type it had been created with and only a manual edit in
+        // the trip overview took the new one over.
+        _ = ApplyTripTypeAsync(value);
         OnPropertyChanged(nameof(SelectedTripTypeName));
 
         if (value is null)
@@ -309,6 +314,22 @@ public partial class RecordTripTabPageViewModel : ObservableObject
             {
                 FavoriteTripTypes.RemoveAt(FavoriteTripTypes.Count - 1);
             }
+        }
+    }
+
+    /// <summary>
+    /// Stores the selected type. Called from a property change, so it cannot be awaited: the page has
+    /// already switched over, and a failed write must not take the app down with it.
+    /// </summary>
+    private async Task ApplyTripTypeAsync(TripType? tripType)
+    {
+        try
+        {
+            await GpsDataStorageService.ApplyTripTypeAsync(tripType?.ID);
+        }
+        catch (Exception exception)
+        {
+            Debug.WriteLine($"[UniTracks] Sportart {tripType?.Name} konnte nicht gespeichert werden: {exception}");
         }
     }
 
@@ -437,7 +458,9 @@ public partial class RecordTripTabPageViewModel : ObservableObject
             LocationDiagnostics.Write($"Android Mitteilungs-Freigabe (POST_NOTIFICATIONS): {notificationStatus}.");
         }
 
-        GpsDataStorageService.CurrentTripTypeId = SelectedTripType?.ID;
+        // The type of a paused trip can have been changed since it was opened, so it is written to the
+        // open trip here as well instead of only being remembered for the next one.
+        await GpsDataStorageService.ApplyTripTypeAsync(SelectedTripType?.ID);
 
         IsPaused = false;
         IsRecording = true;

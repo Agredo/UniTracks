@@ -145,6 +145,52 @@ public sealed class GpsDataStorageServiceTests
     }
 
     /// <summary>
+    /// Regression test for the reported bug: the activity picked while a recording is already running
+    /// was only remembered for the next trip. The trip row is written with the first GPS fix, so the
+    /// finished trip kept the type it had been created with and the overview showed that one until the
+    /// type was edited manually.
+    /// </summary>
+    [Fact]
+    public async Task ApplyTripTypeAsync_WhileRecording_WritesTheTypeToTheOpenTrip()
+    {
+        using var db = new SqliteTestDatabase();
+        var types = db.Repository.Get<TripTypeModel>().ToList();
+        var service = await FeedAsync(db, 2, types[0].ID);
+
+        await service.ApplyTripTypeAsync(types[1].ID);
+
+        // The overview reads the trip together with its type, so the navigation has to follow the change.
+        var trip = Assert.Single((await db.Repository.GetAllAsync<TripModel>(trip => trip.TripType)).ToList());
+
+        Assert.Equal<Guid?>(types[1].ID, trip.TripTypeId);
+        Assert.NotNull(trip.TripType);
+        Assert.Equal(types[1].ID, trip.TripType!.ID);
+
+        // The trip and its already stored points must stay the same row.
+        Assert.Equal(2, StoredLocations(db.Repository).Count(location => location.TripID == trip.ID));
+    }
+
+    [Fact]
+    public async Task ApplyTripTypeAsync_WithoutAnOpenTrip_OnlyAffectsTheNextTrip()
+    {
+        using var db = new SqliteTestDatabase();
+        var types = db.Repository.Get<TripTypeModel>().ToList();
+        var service = await FeedAsync(db, 2, types[0].ID);
+
+        service.FinalizeTrip();
+        await service.ApplyTripTypeAsync(types[1].ID);
+        await service.StoreData(Point(2));
+
+        var trips = db.Repository.Get<TripModel>().ToList();
+        var locations = StoredLocations(db.Repository);
+        var finished = Assert.Single(trips, trip => locations.Count(location => location.TripID == trip.ID) == 2);
+        var started = Assert.Single(trips, trip => locations.Count(location => location.TripID == trip.ID) == 1);
+
+        Assert.Equal<Guid?>(types[0].ID, finished.TripTypeId);
+        Assert.Equal<Guid?>(types[1].ID, started.TripTypeId);
+    }
+
+    /// <summary>
     /// Serialization smoke test for the finding: <see cref="GpsDataStorageService.StoreData"/> and
     /// <see cref="GpsDataStorageService.FinalizeTrip"/> are entered from different threads (the UI
     /// thread and the background location callback) and must not interleave.
