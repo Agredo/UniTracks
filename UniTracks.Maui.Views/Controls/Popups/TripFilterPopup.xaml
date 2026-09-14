@@ -70,11 +70,12 @@
         </Style>
     </toolkit:Popup.Resources>
 
-    <Border
-        x:Name="PopupCard"
-        Padding="20"
-        Style="{StaticResource ScrollCardBorder}">
-        <VerticalStackLayout Spacing="8">
+    <!-- The card's background is a sibling of the content, not its parent: a Border that has a
+         scrolling descendant is re-rastered into its hardware layer on every scroll frame on
+         Android (plus a clip path per draw for the rounded shape). -->
+    <Grid x:Name="PopupRoot">
+        <Border Padding="0" Style="{StaticResource ScrollCardBorder}" />
+        <VerticalStackLayout Padding="20" Spacing="8">
 
             <Label Style="{StaticResource TitleLabel}" Text="Trips filtern" />
             <Label
@@ -196,5 +197,5 @@
                     Text="Abbrechen" />
             </Grid>
         </VerticalStackLayout>
-    </Border>
+    </Grid>
 </toolkit:Popup>

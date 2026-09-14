@@ -161,6 +161,59 @@ Das Skript baut die Brücke für alle Architekturen, erzeugt das `xcframework` u
 `UniTracks.Maui/Platforms/iOS/PlugIns/` ab; der MAUI-Build bindet beides ein. Die `Info.plist` trägt dafür
 `NSSupportsLiveActivities`.
 
+## Android-Performance: Karten, Schatten und Scroller
+
+Scrollende Listen sind auf Android deutlich empfindlicher als auf den anderen Plattformen, weil drei
+MAUI-Mechanismen bei jedem Frame zuschlagen können:
+
+| Auslöser | Was Android dann tut |
+|---|---|
+| `Shadow` auf einem `Border` | `PlatformWrapperView.onDescendantInvalidated` zeichnet bei jeder Invalidierung eines Nachfahren ein weichgezeichnetes Bitmap des **ganzen** Inhalts neu |
+| `Border` als **Elternknoten** eines Scrollers | `BorderHandler` legt bedingungslos einen Hardware-Layer an, der pro Frame neu gerastert wird |
+| `StrokeShape` auf einem `Border` | `ContentViewGroup.Clip` ⇒ bei **jedem** `dispatchDraw` ein neuer Clip-Pfad (`GetClipPath` + `canvas.clipPath`) |
+
+Daraus folgen drei Regeln:
+
+1. **Kein Schatten auf Karten mit Scroller** — dafür gibt es `ScrollCardBorder` in
+   [`Styles.xaml`](UniTracks.Maui/Resources/Styles/Styles.xaml).
+2. **Der Kartenhintergrund darf nicht Elternknoten des Scrollers sein.** Statt
+
+   ```xml
+   <Border Style="{StaticResource ScrollCardBorder}" Padding="16">
+       <ScrollView>…</ScrollView>
+   </Border>
+   ```
+
+   lieber ein `Grid` mit dem `Border` als Geschwister:
+
+   ```xml
+   <Grid>
+       <Border Style="{StaticResource ScrollCardBorder}" Padding="0" />
+       <ScrollView Margin="16">…</ScrollView>
+   </Grid>
+   ```
+
+3. **Popups erben Toolkit-Defaults.** CommunityToolkit.Maui umhüllt jedes Popup mit einem eigenen `Border`
+   und gibt ihm per Default einen Schatten; dieser Border ist ein Vorfahre des Popup-Inhalts. Deshalb setzt
+   [`MauiProgram`](UniTracks.Maui/MauiProgram.cs) per `SetPopupOptionsDefaults` `Shadow = null` und
+   `Shape = null` — die abgerundete Karte zeichnet jeweils der popup-eigene `Border`.
+
+**Warum die Erfolge-Ansicht trotzdem schnell ist:** Dort sitzt die `CollectionView` direkt in einem `Grid`
+der Seite, ohne `Border`-Vorfahren. Beim Scrollen werden die Zellen nur neu zusammengesetzt, statt neu
+gerastert zu werden.
+
+**Nachmessen** (Gerät per USB, Debug-Build, `gfxinfo` vorher zurücksetzen):
+
+```bash
+adb shell dumpsys gfxinfo com.agredoapplication.unitracks reset
+# im Popup scrollen
+adb shell dumpsys gfxinfo com.agredoapplication.unitracks
+```
+
+Beim Scrollen im Popup der Versionshinweise waren es vor der Reparatur rund 66 ms pro Frame (~15 fps,
+siehe Commit `57d043a`); danach meldet `gfxinfo` 2,88 % ruckelige Frames bei 832 Frames (Galaxy Tab A7,
+Android 12).
+
 ## Datenschutz
 
 UniTracks speichert **alle Daten ausschließlich lokal** auf dem Gerät. Keine Cloud, kein Tracking, keine Analyse-Drittanbieter. Karten-Tiles werden von OpenStreetMap geladen.
