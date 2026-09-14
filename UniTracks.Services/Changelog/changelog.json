@@ -20,6 +20,10 @@
         {
           "kind": "feature",
           "text": "Die Hilfe hat einen neuen Abschnitt \"Basislager\" - dort stehen alle Formeln, Preise und Stufen erklärt."
+        },
+        {
+          "kind": "fix",
+          "text": "Scrollen in den Dialogen ruckelt auf Android nicht mehr: Im Fenster \"Was ist neu?\", in der Filter- und der Sportarten-Auswahl sowie in den Kilometer-Splits des Trip-Vergleichs zeichnete die Karte im Hintergrund einen Schatten - dadurch musste jeder Scrollschritt das komplette Fenster neu berechnen. Die Karten sehen unverändert aus, laufen jetzt aber flüssig."
         }
       ]
     },
