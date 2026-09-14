@@ -10,7 +10,9 @@
     <Grid>
         <tabViews:TripsTab
             CompactLayout="{Binding IsCompactLayout}"
+            HasMoreTrips="{Binding HasMoreTrips}"
             IsRefreshing="{Binding RefreshIndicatorVisible}"
+            LoadMore="{Binding LoadMoreTripsCommand}"
             PullToRefresh="{Binding RefreshCommand}"
             SelectedTrip="{Binding SelectedTrip, Mode=TwoWay}"
             SelectionChanged="{Binding SelectedTripChangedCommand}"

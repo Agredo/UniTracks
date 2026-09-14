@@ -444,6 +444,13 @@ internal sealed class InMemoryRepository : IRepository
 
     public List<(string Operation, Type EntityType, IReadOnlyList<object> Entities)> Calls { get; } = new();
 
+    /// <summary>
+    /// Every read in call order, with the includes the caller asked for. The includes are what the
+    /// trip list is judged on: pulling the GPS points of every trip into the list was what made that
+    /// tab slow, and the tests keep it from creeping back in.
+    /// </summary>
+    public List<(Type EntityType, IReadOnlyList<string> Includes)> Reads { get; } = new();
+
     /// <summary>Replaces the table for <typeparamref name="TEntity"/> with <paramref name="entities"/>.</summary>
     public void Seed<TEntity>(params TEntity[] entities)
         where TEntity : class
@@ -505,8 +512,11 @@ internal sealed class InMemoryRepository : IRepository
     /// carries its <c>Locations</c> the way the real include would materialise them.
     /// </summary>
     public Task<IEnumerable<TEntity>> GetAllAsync<TEntity>(params Expression<Func<TEntity, object>>[] includes)
-        where TEntity : class =>
-        Task.FromResult<IEnumerable<TEntity>>(Table<TEntity>().Cast<TEntity>().ToList());
+        where TEntity : class
+    {
+        Reads.Add((typeof(TEntity), IncludeNames(includes)));
+        return Task.FromResult<IEnumerable<TEntity>>(Table<TEntity>().Cast<TEntity>().ToList());
+    }
 
     public Task<IEnumerable<TEntity>> GetAsync<TEntity>(
         Expression<Func<TEntity, bool>>? filter = null,
@@ -519,9 +529,14 @@ internal sealed class InMemoryRepository : IRepository
         params Expression<Func<TEntity, object>>[] includes)
         where TEntity : class
     {
+        Reads.Add((typeof(TEntity), IncludeNames(includes)));
+
         var rows = Table<TEntity>().Cast<TEntity>();
         return filter is null ? rows.ToList() : rows.Where(filter.Compile()).ToList();
     }
+
+    private static IReadOnlyList<string> IncludeNames(IEnumerable<LambdaExpression> includes) =>
+        includes.Select(include => include.ToString()).ToList();
 
     private List<object> Table<TEntity>()
     {
