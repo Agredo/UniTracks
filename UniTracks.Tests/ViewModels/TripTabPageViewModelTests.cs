@@ -14,10 +14,11 @@ public sealed class TripTabPageViewModelTests
 {
     private sealed class Fixture
     {
-        public Fixture(Action<InMemoryRepository>? seed = null)
+        public Fixture(Action<InMemoryRepository>? seed = null, Action<FakeTripFilterSettings>? seedFilters = null)
         {
             // The constructor loads the trips, so the seed has to be in place beforehand.
             seed?.Invoke(Repository);
+            seedFilters?.Invoke(FilterSettings);
 
             ViewModel = new TripTabPageViewModel(
                 Navigation,
@@ -27,7 +28,8 @@ public sealed class TripTabPageViewModelTests
                 Gps,
                 Repository,
                 Fingerprints,
-                CardLayout);
+                CardLayout,
+                FilterSettings);
         }
 
         public FakeNavigationService Navigation { get; } = new();
@@ -45,6 +47,8 @@ public sealed class TripTabPageViewModelTests
         public FakeTripFingerprintService Fingerprints { get; } = new();
 
         public FakeTripCardLayoutSettings CardLayout { get; } = new();
+
+        public FakeTripFilterSettings FilterSettings { get; } = new();
 
         public TripTabPageViewModel ViewModel { get; }
     }

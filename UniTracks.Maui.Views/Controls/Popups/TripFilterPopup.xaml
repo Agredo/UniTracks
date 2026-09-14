@@ -1,0 +1,200 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<toolkit:Popup
+    x:Class="UniTracks.Maui.Views.Controls.Popups.TripFilterPopup"
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    xmlns:tabs="clr-namespace:UniTracks.ViewModels.Pages.Tabs;assembly=UniTracks.ViewModels"
+    xmlns:toolkit="http://schemas.microsoft.com/dotnet/2022/maui/toolkit"
+    xmlns:vm="clr-namespace:UniTracks.ViewModels.Controls.Popups;assembly=UniTracks.ViewModels"
+    x:DataType="vm:TripFilterPopupViewModel"
+    CanBeDismissedByTappingOutsideOfPopup="True">
+
+    <toolkit:Popup.Resources>
+
+        <!-- A chip is a Border, not a control: the selected look comes from the state of the chip
+             view model, so the same markup works for types, dates, durations and distances. -->
+        <Style x:Key="FilterChipBorder" TargetType="Border">
+            <Setter Property="BackgroundColor" Value="{StaticResource CardAlt}" />
+            <Setter Property="Stroke" Value="{StaticResource CardStroke}" />
+            <Setter Property="StrokeThickness" Value="1" />
+            <Setter Property="Padding" Value="12,8" />
+            <Setter Property="Margin" Value="0,0,8,8" />
+            <Setter Property="StrokeShape">
+                <Setter.Value>
+                    <RoundRectangle CornerRadius="14" />
+                </Setter.Value>
+            </Setter>
+            <Style.Triggers>
+                <DataTrigger
+                    Binding="{Binding IsSelected}"
+                    TargetType="Border"
+                    Value="True">
+                    <Setter Property="BackgroundColor" Value="{StaticResource AccentSoft}" />
+                    <Setter Property="Stroke" Value="{StaticResource Accent}" />
+                </DataTrigger>
+            </Style.Triggers>
+        </Style>
+
+        <Style x:Key="FilterChipLabel" TargetType="Label">
+            <Setter Property="FontFamily" Value="OpenSansSemibold" />
+            <Setter Property="FontSize" Value="13" />
+            <Setter Property="TextColor" Value="{StaticResource TextSecondary}" />
+            <Style.Triggers>
+                <DataTrigger
+                    Binding="{Binding IsSelected}"
+                    TargetType="Label"
+                    Value="True">
+                    <Setter Property="TextColor" Value="{StaticResource TextPrimary}" />
+                </DataTrigger>
+            </Style.Triggers>
+        </Style>
+
+        <Style x:Key="FilterChipCount" TargetType="Label" BasedOn="{StaticResource FilterChipLabel}">
+            <Setter Property="FontFamily" Value="OpenSansRegular" />
+            <Setter Property="TextColor" Value="{StaticResource TextMuted}" />
+        </Style>
+
+        <Style x:Key="FilterChipIcon" TargetType="Image">
+            <Setter Property="HeightRequest" Value="16" />
+            <Setter Property="WidthRequest" Value="16" />
+            <Setter Property="Opacity" Value="0.55" />
+            <Setter Property="VerticalOptions" Value="Center" />
+            <Style.Triggers>
+                <DataTrigger
+                    Binding="{Binding IsSelected}"
+                    TargetType="Image"
+                    Value="True">
+                    <Setter Property="Opacity" Value="1" />
+                </DataTrigger>
+            </Style.Triggers>
+        </Style>
+    </toolkit:Popup.Resources>
+
+    <Border
+        x:Name="PopupCard"
+        Padding="20"
+        Style="{StaticResource ScrollCardBorder}">
+        <VerticalStackLayout Spacing="8">
+
+            <Label Style="{StaticResource TitleLabel}" Text="Trips filtern" />
+            <Label
+                Style="{StaticResource SubtitleLabel}"
+                Text="Mehrere Werte einer Gruppe werden kombiniert, die Gruppen selbst eingeschränkt." />
+
+            <ScrollView MaximumHeightRequest="420">
+                <VerticalStackLayout Spacing="4">
+
+                    <Label
+                        IsVisible="{Binding HasTypeChips}"
+                        Style="{StaticResource SectionHeader}"
+                        Text="SPORTART" />
+                    <FlexLayout
+                        BindableLayout.ItemsSource="{Binding TypeChips}"
+                        IsVisible="{Binding HasTypeChips}"
+                        Wrap="Wrap">
+                        <BindableLayout.ItemTemplate>
+                            <DataTemplate x:DataType="tabs:TripFilterChip">
+                                <Border Style="{StaticResource FilterChipBorder}">
+                                    <Border.GestureRecognizers>
+                                        <TapGestureRecognizer Command="{Binding ToggleCommand}" />
+                                    </Border.GestureRecognizers>
+                                    <HorizontalStackLayout Spacing="6">
+                                        <Image
+                                            IsVisible="{Binding HasIcon}"
+                                            Source="{Binding Icon}"
+                                            Style="{StaticResource FilterChipIcon}" />
+                                        <Label
+                                            Style="{StaticResource FilterChipLabel}"
+                                            Text="{Binding Label}"
+                                            VerticalOptions="Center" />
+                                        <Label
+                                            IsVisible="{Binding HasCount}"
+                                            Style="{StaticResource FilterChipCount}"
+                                            Text="{Binding CountText}"
+                                            VerticalOptions="Center" />
+                                    </HorizontalStackLayout>
+                                </Border>
+                            </DataTemplate>
+                        </BindableLayout.ItemTemplate>
+                    </FlexLayout>
+
+                    <Label Style="{StaticResource SectionHeader}" Text="ZEITRAUM" />
+                    <FlexLayout
+                        BindableLayout.ItemsSource="{Binding DateChips}"
+                        Wrap="Wrap">
+                        <BindableLayout.ItemTemplate>
+                            <DataTemplate x:DataType="tabs:TripFilterChip">
+                                <Border Style="{StaticResource FilterChipBorder}">
+                                    <Border.GestureRecognizers>
+                                        <TapGestureRecognizer Command="{Binding ToggleCommand}" />
+                                    </Border.GestureRecognizers>
+                                    <Label
+                                        Style="{StaticResource FilterChipLabel}"
+                                        Text="{Binding Label}" />
+                                </Border>
+                            </DataTemplate>
+                        </BindableLayout.ItemTemplate>
+                    </FlexLayout>
+
+                    <Label Style="{StaticResource SectionHeader}" Text="DAUER" />
+                    <FlexLayout
+                        BindableLayout.ItemsSource="{Binding DurationChips}"
+                        Wrap="Wrap">
+                        <BindableLayout.ItemTemplate>
+                            <DataTemplate x:DataType="tabs:TripFilterChip">
+                                <Border Style="{StaticResource FilterChipBorder}">
+                                    <Border.GestureRecognizers>
+                                        <TapGestureRecognizer Command="{Binding ToggleCommand}" />
+                                    </Border.GestureRecognizers>
+                                    <Label
+                                        Style="{StaticResource FilterChipLabel}"
+                                        Text="{Binding Label}" />
+                                </Border>
+                            </DataTemplate>
+                        </BindableLayout.ItemTemplate>
+                    </FlexLayout>
+
+                    <Label Style="{StaticResource SectionHeader}" Text="DISTANZ" />
+                    <FlexLayout
+                        BindableLayout.ItemsSource="{Binding DistanceChips}"
+                        Wrap="Wrap">
+                        <BindableLayout.ItemTemplate>
+                            <DataTemplate x:DataType="tabs:TripFilterChip">
+                                <Border Style="{StaticResource FilterChipBorder}">
+                                    <Border.GestureRecognizers>
+                                        <TapGestureRecognizer Command="{Binding ToggleCommand}" />
+                                    </Border.GestureRecognizers>
+                                    <Label
+                                        Style="{StaticResource FilterChipLabel}"
+                                        Text="{Binding Label}" />
+                                </Border>
+                            </DataTemplate>
+                        </BindableLayout.ItemTemplate>
+                    </FlexLayout>
+                </VerticalStackLayout>
+            </ScrollView>
+
+            <Button
+                Command="{Binding ApplyCommand}"
+                IsEnabled="{Binding CanApply}"
+                Margin="0,8,0,0"
+                Text="{Binding ApplyLabel}" />
+
+            <Grid
+                ColumnDefinitions="*,*"
+                ColumnSpacing="12">
+                <Button
+                    Command="{Binding ResetCommand}"
+                    Grid.Column="0"
+                    IsVisible="{Binding HasSelection}"
+                    Style="{StaticResource SecondaryButton}"
+                    Text="Zurücksetzen" />
+                <Button
+                    Command="{Binding CancelCommand}"
+                    Grid.Column="1"
+                    Style="{StaticResource SecondaryButton}"
+                    Text="Abbrechen" />
+            </Grid>
+        </VerticalStackLayout>
+    </Border>
+</toolkit:Popup>

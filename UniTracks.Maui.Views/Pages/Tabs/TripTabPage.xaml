@@ -9,11 +9,15 @@
     x:DataType="viewModels:TripTabPageViewModel">
     <Grid>
         <tabViews:TripsTab
+            ActiveFilterCount="{Binding ActiveFilterCount}"
             CompactLayout="{Binding IsCompactLayout}"
+            HasActiveFilters="{Binding HasActiveFilters}"
             HasMoreTrips="{Binding HasMoreTrips}"
             IsRefreshing="{Binding RefreshIndicatorVisible}"
             LoadMore="{Binding LoadMoreTripsCommand}"
+            OpenFilters="{Binding OpenFiltersCommand}"
             PullToRefresh="{Binding RefreshCommand}"
+            ResetFilters="{Binding ResetFiltersCommand}"
             SelectedTrip="{Binding SelectedTrip, Mode=TwoWay}"
             SelectionChanged="{Binding SelectedTripChangedCommand}"
             Trips="{Binding Trips}" />

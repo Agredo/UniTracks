@@ -43,6 +43,18 @@ public partial class TripsTab : ContentView
     [BindableProperty]
     public partial bool CompactLayout { get; set; }
 
+    [BindableProperty(PropertyChangedMethodName = nameof(OnOpenFiltersPropertyChanged))]
+    public partial ICommand? OpenFilters { get; set; }
+
+    [BindableProperty]
+    public partial ICommand? ResetFilters { get; set; }
+
+    [BindableProperty(PropertyChangedMethodName = nameof(OnActiveFilterCountPropertyChanged))]
+    public partial int ActiveFilterCount { get; set; }
+
+    [BindableProperty(PropertyChangedMethodName = nameof(OnHasActiveFiltersPropertyChanged))]
+    public partial bool HasActiveFilters { get; set; }
+
     private static void OnTripsPropertyChanged(BindableObject bindable, object oldValue, object newValue)
     {
         var tab = (TripsTab)bindable;
@@ -85,9 +97,72 @@ public partial class TripsTab : ContentView
         tab.LoadMoreButton.IsVisible = (bool)newValue;
     }
 
+    private static void OnOpenFiltersPropertyChanged(BindableObject bindable, object oldValue, object newValue)
+    {
+        var tab = (TripsTab)bindable;
+        tab.FilterButton.Command = (ICommand?)newValue;
+    }
+
+    private static void OnActiveFilterCountPropertyChanged(BindableObject bindable, object oldValue, object newValue)
+    {
+        var tab = (TripsTab)bindable;
+        var count = (int)newValue;
+
+        tab.FilterBadgeLabel.Text = count.ToString();
+        tab.FilterBadge.IsVisible = count > 0;
+    }
+
+    private static void OnHasActiveFiltersPropertyChanged(BindableObject bindable, object oldValue, object newValue)
+    {
+        var tab = (TripsTab)bindable;
+        tab.ActiveFiltersChanged((bool)newValue);
+    }
+
     private void TripsChanged(ICollection<Trip>? newTrips)
     {
         TracksCollectionView.ItemsSource = newTrips;
+    }
+
+    /// <summary>
+    /// An active filter is worth a visible state on the button: without it the list looks empty for
+    /// no apparent reason and the way back is hard to find.
+    /// </summary>
+    private void ActiveFiltersChanged(bool hasActiveFilters)
+    {
+        if (hasActiveFilters)
+        {
+            FilterButton.BackgroundColor = ResourceColor("AccentSoft");
+            FilterButton.BorderColor = ResourceColor("Accent");
+            FilterButton.TextColor = ResourceColor("Accent");
+        }
+        else
+        {
+            FilterButton.BackgroundColor = ResourceColor("CardAlt");
+            FilterButton.BorderColor = ResourceColor("CardStroke");
+            FilterButton.TextColor = ResourceColor("TextPrimary");
+        }
+
+        // "Nothing recorded yet" and "nothing matches the filter" need different words, so the empty
+        // view switches between them instead of guessing one.
+        EmptyNoTrips.IsVisible = !hasActiveFilters;
+        EmptyFilteredTrips.IsVisible = hasActiveFilters;
+    }
+
+    private static Color ResourceColor(string key) =>
+        Application.Current?.Resources.TryGetValue(key, out var value) == true && value is Color color
+            ? color
+            : Colors.Transparent;
+
+    private void OnFilterClicked(object? sender, EventArgs e) => Execute(OpenFilters);
+
+    private void OnResetFiltersClicked(object? sender, EventArgs e) => Execute(ResetFilters);
+
+    private static void Execute(ICommand? command)
+    {
+        if (command is { } executable && executable.CanExecute(null))
+        {
+            executable.Execute(null);
+        }
     }
 
     private void SelectedTripChanged(Trip? newTrip)

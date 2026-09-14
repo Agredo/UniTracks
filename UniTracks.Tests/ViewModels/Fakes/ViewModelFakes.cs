@@ -564,6 +564,21 @@ internal sealed class FakeTripCardLayoutSettings : UniTracks.Services.Settings.I
     public bool IsCompact { get; set; }
 }
 
+/// <summary>
+/// In-memory stand-in for the persisted trip filter. The strings are the same ones the real
+/// preferences store, so a test can seed a filter exactly as a previous run left it.
+/// </summary>
+internal sealed class FakeTripFilterSettings : UniTracks.Services.Settings.ITripFilterSettings
+{
+    public string TypeIds { get; set; } = string.Empty;
+
+    public string DateRange { get; set; } = "All";
+
+    public string Durations { get; set; } = string.Empty;
+
+    public string Distances { get; set; } = string.Empty;
+}
+
 /// <summary>Static trip type catalogue; the edit popup resolves the trip's current type through it.</summary>
 internal sealed class FakeTripTypeCatalog : UniTracks.Services.Comparison.ITripTypeCatalog
 {

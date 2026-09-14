@@ -199,6 +199,9 @@ public static class MauiProgram
         // User preference: compact or full cards in the trip list.
         services.AddSingleton<ITripCardLayoutSettings, PreferencesTripCardLayoutSettings>();
 
+        // User preference: the trip filter last used, so the list opens the way it was left.
+        services.AddSingleton<ITripFilterSettings, PreferencesTripFilterSettings>();
+
         // User preference: which tile layer the maps use.
         services.AddSingleton<IMapStyleSettings, PreferencesMapStyleSettings>();
 
@@ -321,6 +324,10 @@ public static class MauiProgram
         services.AddTransientPopup<TripEditPopup, TripEditPopupViewModel>();
         services.AddTransient<TripEditPopupViewModel>();
         services.AddKeyedTransient<Popup, TripEditPopup>(typeof(TripEditPopupViewModel));
+
+        services.AddTransientPopup<TripFilterPopup, TripFilterPopupViewModel>();
+        services.AddTransient<TripFilterPopupViewModel>();
+        services.AddKeyedTransient<Popup, TripFilterPopup>(typeof(TripFilterPopupViewModel));
 
         services.AddTransientPopup<WhatsNewPopup, WhatsNewPopupViewModel>();
         services.AddTransient<WhatsNewPopupViewModel>(sp => new WhatsNewPopupViewModel(

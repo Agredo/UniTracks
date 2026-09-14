@@ -22,10 +22,50 @@
             Background="{StaticResource HeroGradientBrush}"
             Padding="20,24,20,16"
             StrokeThickness="0">
-            <VerticalStackLayout Spacing="2">
-                <Label Style="{StaticResource HeroTitle}" Text="Deine Trips" />
-                <Label Style="{StaticResource SubtitleLabel}" Text="Jeder Kilometer zählt." />
-            </VerticalStackLayout>
+            <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
+                <VerticalStackLayout
+                    Grid.Column="0"
+                    Spacing="2"
+                    VerticalOptions="Center">
+                    <Label Style="{StaticResource HeroTitle}" Text="Deine Trips" />
+                    <Label Style="{StaticResource SubtitleLabel}" Text="Jeder Kilometer zählt." />
+                </VerticalStackLayout>
+
+                <!-- The filter lives in the header instead of its own row: a bar of chips would cost
+                     a whole line of height even when no filter is set. -->
+                <Grid Grid.Column="1" VerticalOptions="Center">
+                    <Button
+                        x:Name="FilterButton"
+                        Clicked="OnFilterClicked"
+                        HeightRequest="40"
+                        MinimumHeightRequest="0"
+                        Padding="16,8"
+                        Style="{StaticResource SecondaryButton}"
+                        Text="Filter" />
+                    <Border
+                        x:Name="FilterBadge"
+                        BackgroundColor="{StaticResource Accent}"
+                        HeightRequest="20"
+                        HorizontalOptions="End"
+                        IsVisible="False"
+                        Margin="0,-6,-6,0"
+                        MinimumWidthRequest="20"
+                        Padding="6,0"
+                        StrokeThickness="0"
+                        VerticalOptions="Start">
+                        <Border.StrokeShape>
+                            <RoundRectangle CornerRadius="10" />
+                        </Border.StrokeShape>
+                        <Label
+                            x:Name="FilterBadgeLabel"
+                            FontFamily="OpenSansSemibold"
+                            FontSize="11"
+                            HorizontalTextAlignment="Center"
+                            TextColor="{StaticResource OnAccent}"
+                            VerticalTextAlignment="Center" />
+                    </Border>
+                </Grid>
+            </Grid>
         </Border>
 
         <RefreshView x:Name="Refresh" Grid.Row="1">
@@ -37,35 +77,73 @@
                 SelectionMode="Single">
 
                 <CollectionView.EmptyView>
-                    <VerticalStackLayout
-                        Padding="32"
-                        Spacing="12"
-                        VerticalOptions="Center">
-                        <Border
-                            Background="{StaticResource AccentSoft}"
-                            HeightRequest="88"
-                            HorizontalOptions="Center"
-                            Stroke="{StaticResource AccentDim}"
-                            StrokeThickness="1"
-                            WidthRequest="88">
-                            <Border.StrokeShape>
-                                <RoundRectangle CornerRadius="26" />
-                            </Border.StrokeShape>
-                            <Image
-                                Aspect="AspectFit"
-                                HeightRequest="44"
-                                Source="run.png"
-                                WidthRequest="44" />
-                        </Border>
-                        <Label
-                            HorizontalTextAlignment="Center"
-                            Style="{StaticResource TitleLabel}"
-                            Text="Noch keine Trips" />
-                        <Label
-                            HorizontalTextAlignment="Center"
-                            Style="{StaticResource SubtitleLabel}"
-                            Text="Starte deine erste Aufnahme im Record-Tab&#xA;und sammle deine ersten Kilometer." />
-                    </VerticalStackLayout>
+                    <Grid Padding="32" VerticalOptions="Center">
+                        <VerticalStackLayout
+                            x:Name="EmptyNoTrips"
+                            Spacing="12">
+                            <Border
+                                Background="{StaticResource AccentSoft}"
+                                HeightRequest="88"
+                                HorizontalOptions="Center"
+                                Stroke="{StaticResource AccentDim}"
+                                StrokeThickness="1"
+                                WidthRequest="88">
+                                <Border.StrokeShape>
+                                    <RoundRectangle CornerRadius="26" />
+                                </Border.StrokeShape>
+                                <Image
+                                    Aspect="AspectFit"
+                                    HeightRequest="44"
+                                    Source="run.png"
+                                    WidthRequest="44" />
+                            </Border>
+                            <Label
+                                HorizontalTextAlignment="Center"
+                                Style="{StaticResource TitleLabel}"
+                                Text="Noch keine Trips" />
+                            <Label
+                                HorizontalTextAlignment="Center"
+                                Style="{StaticResource SubtitleLabel}"
+                                Text="Starte deine erste Aufnahme im Record-Tab&#xA;und sammle deine ersten Kilometer." />
+                        </VerticalStackLayout>
+
+                        <!-- "Nothing recorded" and "nothing matches the filter" are different
+                             situations with different ways out, so they get different texts. -->
+                        <VerticalStackLayout
+                            x:Name="EmptyFilteredTrips"
+                            IsVisible="False"
+                            Spacing="12">
+                            <Border
+                                Background="{StaticResource AccentSoft}"
+                                HeightRequest="88"
+                                HorizontalOptions="Center"
+                                Stroke="{StaticResource AccentDim}"
+                                StrokeThickness="1"
+                                WidthRequest="88">
+                                <Border.StrokeShape>
+                                    <RoundRectangle CornerRadius="26" />
+                                </Border.StrokeShape>
+                                <Image
+                                    Aspect="AspectFit"
+                                    HeightRequest="44"
+                                    Source="search.png"
+                                    WidthRequest="44" />
+                            </Border>
+                            <Label
+                                HorizontalTextAlignment="Center"
+                                Style="{StaticResource TitleLabel}"
+                                Text="Keine Trips für diese Auswahl" />
+                            <Label
+                                HorizontalTextAlignment="Center"
+                                Style="{StaticResource SubtitleLabel}"
+                                Text="Passe die Filter an oder setze sie zurück,&#xA;um wieder alle Trips zu sehen." />
+                            <Button
+                                Clicked="OnResetFiltersClicked"
+                                HorizontalOptions="Center"
+                                Style="{StaticResource SecondaryButton}"
+                                Text="Filter zurücksetzen" />
+                        </VerticalStackLayout>
+                    </Grid>
                 </CollectionView.EmptyView>
 
                 <CollectionView.Header>
