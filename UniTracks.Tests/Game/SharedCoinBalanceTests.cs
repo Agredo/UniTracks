@@ -1,3 +1,5 @@
+using UniTracks.Games.BaseCamp;
+using UniTracks.Games.BaseCamp.Persistence;
 using UniTracks.Games.Shared.Persistence;
 using UniTracks.Games.TowerDefense.Persistence;
 using UniTracks.Services.Game;
@@ -7,8 +9,9 @@ using UniTracks.Tests.TowerDefense.Fakes;
 namespace UniTracks.Tests.Game;
 
 /// <summary>
-/// The coin account is shared by both games: what the city builder reports as spendable
-/// must be the same number the catalog (and therefore the tower defense shop) reports.
+/// The coin account is shared by all games: what the city builder reports as spendable
+/// must be the same number the catalog (and therefore the tower defense and camp shops)
+/// reports, and each game may only subtract the other games' spending.
 /// </summary>
 public class SharedCoinBalanceTests
 {
@@ -25,8 +28,9 @@ public class SharedCoinBalanceTests
         var stats = FortyKmRun;
         var cityStore = new InMemoryCityStore();
         var towerStore = new InMemoryTowerDefenseStore();
+        var campStore = new InMemoryCampStore();
         var statsSource = new FakeActivityStatsSource(stats);
-        var account = new CoinAccountService(cityStore, towerStore, statsSource);
+        var account = new CoinAccountService(cityStore, towerStore, campStore, statsSource);
 
         var cityBuilder = new CityBuilderService(cityStore, statsSource, account);
         await towerStore.SaveUnlockAsync(new TowerUnlock { ID = Guid.NewGuid(), TowerId = "zapper" });
@@ -45,8 +49,9 @@ public class SharedCoinBalanceTests
     {
         var cityStore = new InMemoryCityStore();
         var towerStore = new InMemoryTowerDefenseStore();
+        var campStore = new InMemoryCampStore();
         var statsSource = new FakeActivityStatsSource(FortyKmRun);
-        var account = new CoinAccountService(cityStore, towerStore, statsSource);
+        var account = new CoinAccountService(cityStore, towerStore, campStore, statsSource);
         var cityBuilder = new CityBuilderService(cityStore, statsSource, account);
 
         int before = (await cityBuilder.GetCityAsync()).Coins;
@@ -61,8 +66,9 @@ public class SharedCoinBalanceTests
     {
         var cityStore = new InMemoryCityStore();
         var towerStore = new InMemoryTowerDefenseStore();
+        var campStore = new InMemoryCampStore();
         var statsSource = new FakeActivityStatsSource(FortyKmRun);
-        var account = new CoinAccountService(cityStore, towerStore, statsSource);
+        var account = new CoinAccountService(cityStore, towerStore, campStore, statsSource);
         var cityBuilder = new CityBuilderService(cityStore, statsSource, account);
         var catalog = new GameCatalogService(account, statsSource);
 
@@ -78,8 +84,9 @@ public class SharedCoinBalanceTests
     {
         var cityStore = new InMemoryCityStore();
         var towerStore = new InMemoryTowerDefenseStore();
+        var campStore = new InMemoryCampStore();
         var statsSource = new FakeActivityStatsSource(FortyKmRun);
-        var account = new CoinAccountService(cityStore, towerStore, statsSource);
+        var account = new CoinAccountService(cityStore, towerStore, campStore, statsSource);
         var cityBuilder = new CityBuilderService(cityStore, statsSource, account);
 
         // 1405 earned − 650 unlock = 755 left: the 15-coin flowerbed is still affordable.
@@ -90,5 +97,43 @@ public class SharedCoinBalanceTests
 
         Assert.True(result.Success, "a 15-coin building must still be affordable");
         Assert.Equal(1405 - 650 - 15, city.Coins);
+    }
+
+    [Fact]
+    public async Task CampSpending_ReducesTheCityBalance()
+    {
+        var cityStore = new InMemoryCityStore();
+        var towerStore = new InMemoryTowerDefenseStore();
+        var campStore = new InMemoryCampStore();
+        var statsSource = new FakeActivityStatsSource(FortyKmRun);
+        var account = new CoinAccountService(cityStore, towerStore, campStore, statsSource);
+        var cityBuilder = new CityBuilderService(cityStore, statsSource, account);
+
+        int before = (await cityBuilder.GetCityAsync()).Coins;
+        await campStore.SaveModuleAsync(new CampModule { ID = Guid.NewGuid(), ModuleId = CampCatalog.MapId, Level = 1 });
+        int after = (await cityBuilder.GetCityAsync()).Coins;
+
+        Assert.Equal(before - 300, after);
+    }
+
+    [Fact]
+    public async Task CampBalance_MatchesTheSharedBalance_AndIgnoresItsOwnSpendingTwice()
+    {
+        var cityStore = new InMemoryCityStore();
+        var towerStore = new InMemoryTowerDefenseStore();
+        var campStore = new InMemoryCampStore();
+        var statsSource = new FakeActivityStatsSource(FortyKmRun);
+        var account = new CoinAccountService(cityStore, towerStore, campStore, statsSource);
+        var camp = new BaseCampService(campStore, statsSource, account);
+
+        await campStore.SaveModuleAsync(new CampModule { ID = Guid.NewGuid(), ModuleId = CampCatalog.MapId, Level = 1 });
+        await towerStore.SaveUnlockAsync(new TowerUnlock { ID = Guid.NewGuid(), TowerId = "zapper" });
+
+        int shared = await new GameCatalogService(account, statsSource).GetCoinBalanceAsync();
+        var state = await camp.GetCampAsync();
+
+        // The camp's own 300 coins must not be subtracted a second time on top of the shared figure.
+        Assert.Equal(shared, state.Coins);
+        Assert.Equal(1405 - 400 - 300, state.Coins);
     }
 }

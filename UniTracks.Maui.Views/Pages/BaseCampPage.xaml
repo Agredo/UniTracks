@@ -1,0 +1,156 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage
+    x:Class="UniTracks.Maui.Views.Pages.BaseCampPage"
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    xmlns:gameControls="clr-namespace:UniTracks.Maui.Views.Controls.Game"
+    xmlns:mct="http://schemas.microsoft.com/dotnet/2022/maui/toolkit"
+    xmlns:viewModels="clr-namespace:UniTracks.ViewModels.Pages;assembly=UniTracks.ViewModels"
+    Title="Basislager"
+    x:DataType="viewModels:BaseCampPageViewModel">
+
+    <Grid RowDefinitions="Auto,*,Auto">
+
+        <!-- Top bar: stock + production rate + shared coins -->
+        <Grid Grid.Row="0" Padding="16,12" ColumnDefinitions="*,Auto" ColumnSpacing="10">
+            <Border Padding="14,10" Style="{StaticResource CardBorder}">
+                <VerticalStackLayout Spacing="2">
+                    <Label Style="{StaticResource TitleLabel}" Text="{Binding SuppliesLabel}" />
+                    <Label FontSize="10" Style="{StaticResource SubtitleLabel}" Text="{Binding CapacityLabel}" />
+                    <ProgressBar
+                        HeightRequest="6"
+                        Margin="0,2,0,0"
+                        Progress="{Binding FillRatio}"
+                        ProgressColor="{StaticResource Accent}" />
+                </VerticalStackLayout>
+            </Border>
+            <VerticalStackLayout Grid.Column="1" Spacing="6">
+                <Border Padding="14,8" Style="{StaticResource CardBorder}">
+                    <Label Style="{StaticResource TitleLabel}" Text="{Binding CoinsLabel}" VerticalOptions="Center" />
+                </Border>
+                <Border Padding="14,8" Style="{StaticResource CardBorder}">
+                    <Label FontSize="11" Style="{StaticResource StatLabel}" Text="{Binding RateLabel}" VerticalOptions="Center" />
+                </Border>
+            </VerticalStackLayout>
+        </Grid>
+
+        <!-- Camp scene -->
+        <Grid Grid.Row="1">
+            <gameControls:CampScene Camp="{Binding Camp}" ModuleTappedCommand="{Binding ModuleTappedCommand}" />
+
+            <Border
+                Margin="16,12"
+                Padding="12,8"
+                HorizontalOptions="Center"
+                VerticalOptions="Start"
+                IsVisible="{Binding IsFull}"
+                Style="{StaticResource CardBorder}">
+                <Label FontSize="11" Style="{StaticResource StatLabel}" Text="📦 Lager voll — sammeln!" />
+            </Border>
+
+            <VerticalStackLayout
+                Margin="16,0,16,12"
+                HorizontalOptions="Center"
+                Spacing="4"
+                VerticalOptions="End">
+                <Label
+                    FontSize="11"
+                    HorizontalTextAlignment="Center"
+                    IsVisible="{Binding HasFreshnessHint}"
+                    Style="{StaticResource StatLabel}"
+                    Text="{Binding FreshnessHint}" />
+                <Label
+                    FontSize="11"
+                    HorizontalTextAlignment="Center"
+                    Style="{StaticResource SubtitleLabel}"
+                    Text="{Binding StatusHint}" />
+            </VerticalStackLayout>
+        </Grid>
+
+        <!-- Bottom panel: harvest + module shop -->
+        <VerticalStackLayout Grid.Row="2" Padding="16,8,16,16" Spacing="8">
+
+            <Grid ColumnDefinitions="*,Auto" ColumnSpacing="10">
+                <Border
+                    Padding="14,10"
+                    HorizontalOptions="Fill"
+                    Style="{StaticResource CardBorder}">
+                    <Border.GestureRecognizers>
+                        <TapGestureRecognizer Command="{Binding CollectCommand}" />
+                    </Border.GestureRecognizers>
+                    <Label
+                        HorizontalTextAlignment="Center"
+                        Style="{StaticResource TitleLabel}"
+                        Text="{Binding CollectLabel}" />
+                    <Border.Triggers>
+                        <DataTrigger Binding="{Binding CanCollect}" TargetType="Border" Value="True">
+                            <Setter Property="Stroke" Value="{StaticResource Accent}" />
+                        </DataTrigger>
+                        <DataTrigger Binding="{Binding CanCollect}" TargetType="Border" Value="False">
+                            <Setter Property="Opacity" Value="0.55" />
+                        </DataTrigger>
+                    </Border.Triggers>
+                </Border>
+                <Border Grid.Column="1" Padding="14,10" Style="{StaticResource CardBorder}">
+                    <Border.GestureRecognizers>
+                        <TapGestureRecognizer Command="{Binding RefreshCommand}" />
+                    </Border.GestureRecognizers>
+                    <Label FontSize="18" Text="🔄" VerticalOptions="Center" />
+                </Border>
+            </Grid>
+
+            <Label
+                FontSize="11"
+                HorizontalTextAlignment="Center"
+                Style="{StaticResource SubtitleLabel}"
+                Text="{Binding TotalCollectedLabel}" />
+
+            <ScrollView HorizontalScrollBarVisibility="Never" Orientation="Horizontal">
+                <HorizontalStackLayout Spacing="10" BindableLayout.ItemsSource="{Binding ModuleItems}">
+                    <BindableLayout.ItemTemplate>
+                        <DataTemplate x:DataType="viewModels:BaseCampShopItemViewModel">
+                            <Border Padding="12,8" Style="{StaticResource CardBorder}" WidthRequest="104">
+                                <Border.GestureRecognizers>
+                                    <TapGestureRecognizer Command="{Binding Source={RelativeSource AncestorType={x:Type viewModels:BaseCampPageViewModel}}, Path=UpgradeCommand}" CommandParameter="{Binding .}" />
+                                </Border.GestureRecognizers>
+                                <VerticalStackLayout Spacing="2">
+                                    <Label FontSize="24" HorizontalTextAlignment="Center" Text="{Binding Icon}" />
+                                    <Label
+                                        FontSize="11"
+                                        HorizontalTextAlignment="Center"
+                                        Style="{StaticResource TitleLabel}"
+                                        Text="{Binding Name}" />
+                                    <Label
+                                        FontSize="9"
+                                        HorizontalTextAlignment="Center"
+                                        Style="{StaticResource StatLabel}"
+                                        Text="{Binding LevelLabel}" />
+                                    <Label
+                                        FontSize="10"
+                                        HorizontalTextAlignment="Center"
+                                        IsVisible="{Binding IsUnlocked}"
+                                        Style="{StaticResource StatLabel}"
+                                        Text="{Binding CostLabel}" />
+                                    <Label
+                                        FontSize="9"
+                                        HorizontalTextAlignment="Center"
+                                        IsVisible="{Binding IsUnlocked, Converter={mct:InvertedBoolConverter}}"
+                                        Style="{StaticResource StatLabel}"
+                                        Text="{Binding LockLabel}" />
+                                </VerticalStackLayout>
+                                <Border.Triggers>
+                                    <DataTrigger Binding="{Binding IsUnlocked}" TargetType="Border" Value="False">
+                                        <Setter Property="Opacity" Value="0.45" />
+                                    </DataTrigger>
+                                    <DataTrigger Binding="{Binding IsAffordable}" TargetType="Border" Value="True">
+                                        <Setter Property="Stroke" Value="{StaticResource Accent}" />
+                                    </DataTrigger>
+                                </Border.Triggers>
+                            </Border>
+                        </DataTemplate>
+                    </BindableLayout.ItemTemplate>
+                </HorizontalStackLayout>
+            </ScrollView>
+        </VerticalStackLayout>
+    </Grid>
+</ContentPage>

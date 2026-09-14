@@ -37,12 +37,15 @@ public class CoinService : ICoinService
             Trips = trips.Select(t => new TripActivity
             {
                 DistanceKm = (t.Distance ?? 0) / 1000.0,
+                StartedAt = t.StartTime,
                 Category = t.TripType?.Category,
                 Identifier = t.TripType?.Identifier,
             }).ToList(),
             Xp = stats.Xp,
             UnlockedAchievements = stats.Achievements.Count(a => a.IsUnlocked),
             UnlockedAchievementIds = stats.Achievements.Where(a => a.IsUnlocked).Select(a => a.Id).ToList(),
+            CurrentStreakDays = stats.CurrentStreakDays,
+            BestStreakDays = stats.BestStreakDays,
         };
     }
 }

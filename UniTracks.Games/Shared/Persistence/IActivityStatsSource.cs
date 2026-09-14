@@ -15,6 +15,12 @@ public record ActivityStats
     /// <summary>Ids of unlocked achievements — unlocks exclusive buildings.</summary>
     public IReadOnlyList<string> UnlockedAchievementIds { get; init; } = Array.Empty<string>();
 
+    /// <summary>Consecutive active days ending today or yesterday; 0 when the streak is broken.</summary>
+    public int CurrentStreakDays { get; init; }
+
+    /// <summary>Longest streak ever reached — mirrors the streak achievements.</summary>
+    public int BestStreakDays { get; init; }
+
     /// <summary>Computed gamification level (XP/100 + 1).</summary>
     public int Level => Xp / 100 + 1;
 

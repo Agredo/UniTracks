@@ -2,6 +2,7 @@ using System.Data;
 using System.Linq;
 using Microsoft.EntityFrameworkCore;
 using UniTracks.Data.Seeding;
+using UniTracks.Games.BaseCamp.Persistence;
 using UniTracks.Games.CityBuilder.Persistence;
 using UniTracks.Games.TowerDefense.Persistence;
 using UniTracks.Models.Comparison;
@@ -31,6 +32,8 @@ public class SqliteDBContext : DbContext
     public DbSet<EnergyPurchase> EnergyPurchases { get; set; }
     public DbSet<DefenseRecord> DefenseRecords { get; set; }
     public DbSet<DefenseRunProgress> DefenseRunProgresses { get; set; }
+    public DbSet<CampModule> CampModules { get; set; }
+    public DbSet<CampLog> CampLogs { get; set; }
 
     public DbContext Context => this;
     public string DatabasePath { get; }

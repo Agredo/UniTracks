@@ -5,7 +5,7 @@ namespace UniTracks.ViewModels.Pages;
 
 /// <summary>
 /// Inhalte der Hilfe-Seite: Navigation, der Sport-Teil (Aufzeichnen und Tripvergleich), Profil und
-/// Einstellungen, das Münzsystem, die beiden Spiele und die Errungenschaften. Alle Werte sind
+/// Einstellungen, das Münzsystem, die drei Spiele und die Errungenschaften. Alle Werte sind
 /// statisch aus dem Spiel-, Ökonomie- und Vergleichs-Code abgeleitet, damit die Hilfe exakt zum
 /// Verhalten der App passt.
 /// </summary>
@@ -26,6 +26,7 @@ public partial class HelpPageViewModel : ObservableObject
         Sections.Add(BuildCoins());
         Sections.Add(BuildCozyCity());
         Sections.Add(BuildTrailDefense());
+        Sections.Add(BuildBaseCamp());
         Sections.Add(BuildAchievements());
     }
 
@@ -196,7 +197,7 @@ public partial class HelpPageViewModel : ObservableObject
             {
                 Title = "So funktioniert das Münzsystem",
                 Icon = "💡",
-                Body = "Münzen werden nie gespeichert — der Saldo wird bei jedem Öffnen des Spiel-Bereichs automatisch aus deinen echten Trips, Errungenschaften und Level neu berechnet. Neue Aktivität erhöht ihn sofort; Ausgaben werden abgezogen. Cozy City und Trail Defense teilen sich ein einziges Konto: Was du im einen Spiel ausgibst, fehlt sofort im anderen. So kann das Konto nie auseinanderlaufen.",
+                Body = "Münzen werden nie gespeichert — der Saldo wird bei jedem Öffnen des Spiel-Bereichs automatisch aus deinen echten Trips, Errungenschaften und Level neu berechnet. Neue Aktivität erhöht ihn sofort; Ausgaben werden abgezogen. Cozy City, Trail Defense und Basislager teilen sich ein einziges Konto: Was du im einen Spiel ausgibst, fehlt sofort in den anderen. So kann das Konto nie auseinanderlaufen.",
             },
             new HelpItem
             {
@@ -232,7 +233,8 @@ public partial class HelpPageViewModel : ObservableObject
                 Title = "Wie du Münzen einlöst",
                 Icon = "🔄",
                 Body = "• Cozy City: Gebäude bauen (15–500 🪙), Stadt erweitern (300 / 800 / 1500 🪙); Abriss erstattet 50 %.\n" +
-                       "• Trail Defense: Türme freischalten (150–1000 🪙) und Energie im Lauf mit Münzen kaufen (2 🪙 pro ⚡, Paket 25 ⚡ = 50 🪙).",
+                       "• Trail Defense: Türme freischalten (150–1000 🪙) und Energie im Lauf mit Münzen kaufen (2 🪙 pro ⚡, Paket 25 ⚡ = 50 🪙).\n" +
+                       "• Basislager: Ausbaustufen der Karte (300 / 700 / 1500 🪙), des Funkgeräts (400 / 900 🪙), des Vorratskellers (300 / 700 / 1500 🪙 plus Vorräte) und der Basislager-Hütte (2000 🪙).",
             },
         },
     };
@@ -325,6 +327,63 @@ public partial class HelpPageViewModel : ObservableObject
                 Title = "Leben & Rekord",
                 Icon = "❤️",
                 Body = "Leben sinken, wenn ein Gegner das Ende des Trails erreicht. Bei 0 Leben ist der Lauf verloren. Nur Wellen, die du ganz sauber (ohne Leck) schaffst, zählen für deinen Rekord.",
+            },
+        },
+    };
+
+    private static HelpSection BuildBaseCamp() => new()
+    {
+        Title = "Basislager",
+        Icon = "🏕️",
+        Items =
+        {
+            new HelpItem
+            {
+                Title = "Was ist das?",
+                Icon = "⛰️",
+                Body = "Ein Idle-Spiel: Dein Basislager sammelt auch dann Vorräte, wenn du die App geschlossen hast. Vorräte sind eine eigene, lagerinterne Währung — sie sind nicht handelbar und werden nicht zu Münzen.",
+            },
+            new HelpItem
+            {
+                Title = "Vorräte sammeln",
+                Icon = "📦",
+                Body = "Das Lager füllt sich Stunde für Stunde von allein — oben links siehst du deinen Vorratsbestand, darunter den Füllstand des Lagers. Mit »Sammeln« holst du den Füllstand in deinen Bestand; erst dort kannst du ihn für Module ausgeben. Es werden immer nur ganze Stunden ausgezahlt — eine angefangene Stunde bleibt liegen und wird beim nächsten Mal mitgezählt. Bis zu 48 Stunden werden nachgeholt, alles Ältere ist verloren (das Lager war ohnehin voll).",
+            },
+            new HelpItem
+            {
+                Title = "Wie schnell das Lager läuft",
+                Icon = "📈",
+                Body = "Grundtempo: 6 Vorräte pro Stunde. Dazu kommt deine echte Aktivität: 0,8 Vorräte pro Stunde für jeden gewichteten Kilometer der letzten 7 Tage (die Karte erhöht diesen Anteil um 20 % pro Stufe).",
+            },
+            new HelpItem
+            {
+                Title = "Streak & Frische",
+                Icon = "🔥",
+                Body = "Deine Streak erhöht das Tempo um 10 % pro Tag (bis 10 Tage, das Funkgerät um je 5 % mehr pro Stufe). Gleichzeitig verliert das Lager an Schwung, wenn du pausierst: Nach 24 Stunden ohne Trip sinkt die Leistung auf 60 %, dann 35 %, 20 % und schließlich 12 %. Der Vorratskeller hebt diese Untergrenze an (8 % / 15 % / 25 % / 40 %). Ohne einen einzigen Trip läuft das Lager mit voller Leistung.",
+            },
+            new HelpItem
+            {
+                Title = "Kapazität",
+                Icon = "⛺",
+                Body = "Ein frisches Lager fasst 400 Vorräte. Der Zeltplatz erhöht die Kapazität um 50 % pro Stufe (4 Stufen), die Basislager-Hütte noch einmal um 10 %. Die Grenze gilt nur fürs Lager: Ist es voll, verfallen weitere Vorräte — sammle also regelmäßig. Dein Bestand kann beliebig groß werden.",
+            },
+            new HelpItem
+            {
+                Title = "Module & Preise",
+                Icon = "🧰",
+                Body = "• Zeltplatz: 150 / 400 / 900 / 1800 Vorräte (Kapazität)\n" +
+                       "• Kochstelle: 120 / 320 / 800 / 1900 Vorräte (Grundtempo +25 % pro Stufe)\n" +
+                       "• Vorratskeller (Level 2): 600 + 300 🪙 / 1400 + 700 🪙 / 3000 + 1500 🪙 (Frische-Untergrenze)\n" +
+                       "• Karte (Level 2): 300 / 700 / 1500 🪙 (Kilometer zählen mehr)\n" +
+                       "• Funkgerät (Level 3): 400 / 900 🪙 (Streak zählt mehr)\n" +
+                       "• Basislager-Hütte (Level 7 + 7-Tage-Streak): 2000 🪙\n" +
+                       "• Gipfelfahne (Errungenschaft »Gipfelstürmer«): kostenlos",
+            },
+            new HelpItem
+            {
+                Title = "Startvorrat",
+                Icon = "🎁",
+                Body = "Ein neues Lager startet mit 250 Vorräten im Bestand — genug, um sofort die erste Stufe der Kochstelle zu bauen. Das Lager selbst ist dabei noch leer und beginnt beim ersten Öffnen zu füllen.",
             },
         },
     };

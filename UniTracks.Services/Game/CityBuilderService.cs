@@ -28,9 +28,9 @@ public class CityBuilderService : ICityBuilderService
         var expansions = await cityStore.LoadExpansionsAsync();
         var stats = await activityStats.GetAsync();
 
-        // The account is shared with the tower defense game, so its spending is gone here too.
+        // The account is shared with the other games, so their spending is gone here too.
         var account = await coinAccount.GetAsync();
-        return CityEngine.Rebuild(placed, expansions, stats, account.TowerDefenseSpent);
+        return CityEngine.Rebuild(placed, expansions, stats, account.SpentOutsideCity);
     }
 
     public async Task<PlaceResult> TryPlaceAsync(string buildingId, int x, int y)

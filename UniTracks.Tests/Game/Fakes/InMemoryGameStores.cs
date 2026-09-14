@@ -1,3 +1,4 @@
+using UniTracks.Games.BaseCamp.Persistence;
 using UniTracks.Games.CityBuilder.Persistence;
 using UniTracks.Games.Shared.Persistence;
 
@@ -42,4 +43,50 @@ internal sealed class FakeActivityStatsSource : IActivityStatsSource
     public ActivityStats Stats { get; set; }
 
     public Task<ActivityStats> GetAsync() => Task.FromResult(Stats);
+}
+
+/// <summary>
+/// In-memory <see cref="ICampStore"/> with the same single-row-per-module semantics as the real
+/// store: saving an existing module updates it in place instead of appending a second row.
+/// </summary>
+internal sealed class InMemoryCampStore : ICampStore
+{
+    private readonly List<CampModule> modules = new();
+    private CampLog? log;
+
+    public int ModuleRowCount => modules.Count;
+
+    public Task<IReadOnlyList<CampModule>> LoadModulesAsync() =>
+        Task.FromResult<IReadOnlyList<CampModule>>(modules.ToList());
+
+    public Task SaveModuleAsync(CampModule module)
+    {
+        var existing = modules.FirstOrDefault(m => m.ModuleId == module.ModuleId);
+        if (existing is null)
+        {
+            modules.Add(module);
+            return Task.CompletedTask;
+        }
+
+        existing.Level = module.Level;
+        existing.UpdatedAt = module.UpdatedAt;
+        return Task.CompletedTask;
+    }
+
+    public Task<CampLog?> LoadLogAsync() => Task.FromResult(log);
+
+    public Task SaveLogAsync(CampLog value)
+    {
+        if (log is null)
+        {
+            log = value;
+            return Task.CompletedTask;
+        }
+
+        log.LastCollectedAt = value.LastCollectedAt;
+        log.TotalCollected = value.TotalCollected;
+        log.BankedSupplies = value.BankedSupplies;
+        log.UpdatedAt = value.UpdatedAt;
+        return Task.CompletedTask;
+    }
 }

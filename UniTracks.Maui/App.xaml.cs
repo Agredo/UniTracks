@@ -60,6 +60,7 @@ namespace UniTracks.Maui
             Routing.RegisterRoute(nameof(TripComparisonPage), typeof(TripComparisonPage));
             Routing.RegisterRoute(nameof(CityBuilderPage), typeof(CityBuilderPage));
             Routing.RegisterRoute(nameof(TowerDefensePage), typeof(TowerDefensePage));
+        Routing.RegisterRoute(nameof(BaseCampPage), typeof(BaseCampPage));
             Routing.RegisterRoute(nameof(AboutPage), typeof(AboutPage));
             Routing.RegisterRoute(nameof(FeedbackPage), typeof(FeedbackPage));
             Routing.RegisterRoute(nameof(StatisticsPage), typeof(StatisticsPage));

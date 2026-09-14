@@ -17,6 +17,7 @@ using UniTracks.Maui.Views;
 using UniTracks.Maui.Views.Controls.Popups;
 using UniTracks.Maui.Views.Pages;
 using UniTracks.Maui.Views.Pages.Tabs;
+using UniTracks.Games.BaseCamp.Persistence;
 using UniTracks.Games.CityBuilder.Persistence;
 using UniTracks.Games.Shared.Persistence;
 using UniTracks.Games.TowerDefense.Persistence;
@@ -229,6 +230,8 @@ public static class MauiProgram
         services.AddSingleton<ICityBuilderService, CityBuilderService>();
         services.AddSingleton<ITowerDefenseStore, TowerDefenseStore>();
         services.AddSingleton<ITowerDefenseService, TowerDefenseService>();
+        services.AddSingleton<ICampStore, CampStore>();
+        services.AddSingleton<IBaseCampService, BaseCampService>();
         services.AddSingleton<IGameCatalogService, GameCatalogService>();
         services.AddSingleton<UniTracks.Services.ApplicationModel.IPermissions, UniTracks.Maui.Services.ApplicationModel.Permissions>();
         services.AddSingleton<UniTracks.Services.ApplicationModel.IAppSettings, UniTracks.Maui.Services.ApplicationModel.AppSettings>();
@@ -300,6 +303,7 @@ public static class MauiProgram
         services.AddTransient<GameTabPage, GameTabPageViewModel>();
         services.AddTransient<CityBuilderPage, CityBuilderPageViewModel>();
         services.AddTransient<TowerDefensePage, TowerDefensePageViewModel>();
+        services.AddTransient<BaseCampPage, BaseCampPageViewModel>();
         services.AddTransient<AboutPageViewModel>(_ => new AboutPageViewModel(GetDisplayVersion()));
         services.AddTransient<AboutPage>();
         services.AddTransient<FeedbackPageViewModel>();
