@@ -1,13 +1,17 @@
 namespace UniTracks.Games.BaseCamp;
 
 /// <summary>
-/// Complete state of the player's base camp. Supplies are derived from the last harvest
-/// timestamp and the player's real activity — they are never persisted, exactly like the
-/// coin balance, so the camp can never drift out of sync with the recorded trips.
+/// Complete state of the player's base camp. Production is derived from the last harvest
+/// timestamp and the player's real activity — it is never persisted, exactly like the coin
+/// balance, so the camp can never drift out of sync with the recorded trips. Only what has
+/// been harvested and spent is stored.
 /// </summary>
 public record CampState
 {
-    /// <summary>Supplies waiting to be collected right now.</summary>
+    /// <summary>Supplies waiting in the camp right now — what a harvest banks.</summary>
+    public int Stock { get; init; }
+
+    /// <summary>Supplies the player owns and can spend on modules (harvested, minus spent).</summary>
     public int Supplies { get; init; }
 
     /// <summary>Upper bound of the camp stock.</summary>
@@ -30,6 +34,9 @@ public record CampState
 
     /// <summary>Supplies harvested over the camp's lifetime.</summary>
     public int TotalCollected { get; init; }
+
+    /// <summary>Fill level of the camp in 0…1, drives the progress bar.</summary>
+    public double FillRatio => Capacity <= 0 ? 0 : Math.Clamp((double)Stock / Capacity, 0, 1);
 
     /// <summary>Spendable coins (earned − spent in every game, shared account).</summary>
     public int Coins { get; init; }
@@ -59,7 +66,7 @@ public record CampState
     public IReadOnlyList<CampModuleLevel> Modules { get; init; } = Array.Empty<CampModuleLevel>();
 
     /// <summary>True when nothing more can be produced until the camp is harvested.</summary>
-    public bool IsFull => Supplies >= Capacity;
+    public bool IsFull => Stock >= Capacity;
 
     /// <summary>Level of one module (0 when it was never built).</summary>
     public int LevelOf(string moduleId) => CampEconomy.LevelOf(Modules, moduleId);

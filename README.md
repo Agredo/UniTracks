@@ -17,6 +17,8 @@ Cross-Plattform Sport-Tracking-App mit **.NET 11** und **.NET MAUI** — Fokus a
 - 🏆 **Gamification** — Erfolge-Tab mit Level, XP, Streaks und Badges (Erster Trip, 10/25 Trips, Distanz-Meilensteine u. v. m.)
 - 🎮 **Spiel-Tab** — Erfolge werden zur Währung: Coins verdienen durch Aktivität (10 🪙/km + 5 🪙/Trip + 25 🪙/Erfolg + 500 🪙 Startguthaben)
 - 🏙️ **Cozy City Builder** — isometrische Stadt bauen, gerendert mit SkiaSharp: 11 Gebäude, Pan/Pinch-Zoom, Ghost-Preview, Drop-in-Animationen, Coin-Sparkles, Wolken, Vögel und Tag/Nacht-Zyklus
+- 🗼 **Trail Defense** — Tower Defense auf dem Trail: Türme platzieren, Mückenschwärme abwehren, endlose Wellen, fünf Welten und Energie als sportbasierter Einsatz
+- 🏕️ **Basislager** — Idle-Spiel: Das Lager sammelt Vorräte auch bei geschlossener App, das Tempo hängt an deiner echten Aktivität und deiner Streak; sieben Module zum Ausbauen, von Zeltplatz bis Gipfelfahne
 - 🌑 **Dark 2026 Sports UI** — modernes dunkles Design mit Mint-Akzenten (#4DE790)
 - 📊 **Trip-Statistiken** — Distanz, Dauer, Ø- und Max-Geschwindigkeit pro Trip; die Trip-Karten zeigen Symbol und Farbe der Sportart, das Datum relativ („Heute", „Gestern") sowie — sofern vorhanden — Wetter, Puls und Höhe, wahlweise kompakt als eine Zeile
 - ✏️ **Trips bearbeiten** — Name, Sportart und Notiz lassen sich nachträglich ändern; ein Wechsel der Sportart berechnet den Streckenabdruck für Vorschläge und Vergleich neu
@@ -101,8 +103,8 @@ UniTracks.Maui.Views      → Pages, Tabs, Controls (XAML), Custom Controls mit 
 UniTracks.Maui.Services   → Plattform-Services (GPS-Listener, Dispatcher)
 UniTracks.ViewModels      → ViewModels ([ObservableProperty], [RelayCommand])
 UniTracks.Services        → App-Logik (Tracking, Data-Services, Gamification, Game-Services)
-UniTracks.Games           → Spiele-Logik, dependency-frei; ein Ordner pro Spiel (CityBuilder/, TowerDefense/),
-                            geteilter Code in Shared/ (Coin-Wirtschaft), Spiele-Katalog in Catalog/
+UniTracks.Games           → Spiele-Logik, dependency-frei; ein Ordner pro Spiel (CityBuilder/, TowerDefense/,
+                            BaseCamp/), geteilter Code in Shared/ (Coin-Wirtschaft), Spiele-Katalog in Catalog/
 UniTracks.Data            → Persistenz: Entity Framework Core (SQLite) + LiteDB
 UniTracks.Models          → Domänen-Modelle (Trip, Location, User, Weather)
 UniTracks.Core            → Basis-Abstraktionen

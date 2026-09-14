@@ -8,6 +8,8 @@ public static class GameCatalog
 {
     public const string CityBuilderId = "city-builder";
 
+    public const string BaseCampId = "base-camp";
+
     public static IReadOnlyList<GameInfo> Games { get; } = new List<GameInfo>
     {
         new()
@@ -25,6 +27,14 @@ public static class GameCatalog
             Description = "Verteidige deinen Trail gegen fiese Mücken.",
             Icon = "🗼",
             Route = "TowerDefensePage",
+        },
+        new()
+        {
+            Id = BaseCampId,
+            Title = "Basislager",
+            Description = "Dein Lager am Berg füllt sich, während du unterwegs bist — auch offline.",
+            Icon = "🏕️",
+            Route = "BaseCampPage",
         },
     };
 

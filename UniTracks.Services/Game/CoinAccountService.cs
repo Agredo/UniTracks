@@ -1,3 +1,5 @@
+using UniTracks.Games.BaseCamp;
+using UniTracks.Games.BaseCamp.Persistence;
 using UniTracks.Games.CityBuilder;
 using UniTracks.Games.CityBuilder.Persistence;
 using UniTracks.Games.Shared.Economy;
@@ -16,12 +18,18 @@ public class CoinAccountService : ICoinAccountService
 {
     private readonly ICityStore cityStore;
     private readonly ITowerDefenseStore towerDefenseStore;
+    private readonly ICampStore campStore;
     private readonly IActivityStatsSource activityStats;
 
-    public CoinAccountService(ICityStore cityStore, ITowerDefenseStore towerDefenseStore, IActivityStatsSource activityStats)
+    public CoinAccountService(
+        ICityStore cityStore,
+        ITowerDefenseStore towerDefenseStore,
+        ICampStore campStore,
+        IActivityStatsSource activityStats)
     {
         this.cityStore = cityStore;
         this.towerDefenseStore = towerDefenseStore;
+        this.campStore = campStore;
         this.activityStats = activityStats;
     }
 
@@ -32,12 +40,14 @@ public class CoinAccountService : ICoinAccountService
         var expansions = await cityStore.LoadExpansionsAsync();
         var unlocks = await towerDefenseStore.LoadUnlocksAsync();
         var energyPurchases = await towerDefenseStore.LoadEnergyPurchasesAsync();
+        var campModules = await campStore.LoadModulesAsync();
 
         return new CoinAccount
         {
             Earned = CoinEconomy.ComputeEarned(stats.Trips, stats.Xp, stats.UnlockedAchievements),
             CitySpent = CityEngine.ComputeTotalSpent(placed, expansions),
             TowerDefenseSpent = DefenseEngine.ComputeTotalSpent(unlocks, energyPurchases),
+            CampSpent = CampEngine.ComputeSpent(CampEngine.ToLevels(campModules)),
         };
     }
 }

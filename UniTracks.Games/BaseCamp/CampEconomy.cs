@@ -162,22 +162,47 @@ public static class CampEconomy
         DateTimeOffset lastCollectedAt,
         DateTimeOffset now)
     {
-        var earliest = now.AddHours(-MaxCatchUpHours);
-        var start = lastCollectedAt < earliest ? earliest : lastCollectedAt;
-        if (start >= now)
+        int hours = ComputeWholeHours(lastCollectedAt, now);
+        if (hours == 0)
         {
-            // Nothing to pay out — also covers a clock that was set backwards.
             return 0;
         }
 
         double capacity = ComputeCapacity(modules);
         double total = 0;
-        for (var hour = start; hour < now && total < capacity; hour = hour.AddHours(1))
+        for (int i = 0; i < hours && total < capacity; i++)
         {
-            total += ComputeRate(stats, modules, hour);
+            total += ComputeRate(stats, modules, StartOfWindow(lastCollectedAt, now).AddHours(i));
         }
 
         return Math.Min(total, capacity);
+    }
+
+    /// <summary>
+    /// Completed hours between the last harvest and <paramref name="now"/>. Partial hours only
+    /// pay out once they are full, so repeatedly tapping "collect" cannot mint supplies.
+    /// </summary>
+    public static int ComputeWholeHours(DateTimeOffset lastCollectedAt, DateTimeOffset now)
+    {
+        var start = StartOfWindow(lastCollectedAt, now);
+        return start >= now ? 0 : (int)Math.Floor((now - start).TotalHours);
+    }
+
+    /// <summary>
+    /// Anchor the next harvest accrues from: it advances by the whole hours that were paid out,
+    /// so the leftover partial hour is kept instead of being dropped.
+    /// </summary>
+    public static DateTimeOffset ComputeNextAnchor(DateTimeOffset lastCollectedAt, DateTimeOffset now) =>
+        StartOfWindow(lastCollectedAt, now).AddHours(ComputeWholeHours(lastCollectedAt, now));
+
+    /// <summary>
+    /// Beginning of the pay-out window: the anchor, or the start of the catch-up limit when the
+    /// player was away longer than <see cref="MaxCatchUpHours"/> (older time is lost).
+    /// </summary>
+    private static DateTimeOffset StartOfWindow(DateTimeOffset lastCollectedAt, DateTimeOffset now)
+    {
+        var earliest = now.AddHours(-MaxCatchUpHours);
+        return lastCollectedAt < earliest ? earliest : lastCollectedAt;
     }
 
     /// <summary>Most recent trip at or before <paramref name="at"/> (null without any history).</summary>

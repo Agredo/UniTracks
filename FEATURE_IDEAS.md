@@ -53,6 +53,20 @@ Legende: 🟢 kleiner Aufwand · 🟡 mittlerer Aufwand · 🔴 großer Aufwand 
 | Offline-Karten-Tiles | 🟡 | Mapsui-Tiles cachen, damit die Karte auch ohne Netz nutzbar ist |
 | Smart-Trip-Namen | 🟢 | Automatische Namensvorschläge („Abendtrip", Wochenendtour, Wochenabschnitt) |
 
+## 🎮 Spiele
+
+Alle Spiele teilen sich ein einziges Münzkonto: Münzen entstehen nur aus echten Trips, Level-Ups und
+Errungenschaften und werden über die Spiele ausgegeben — so kann der Saldo nie auseinanderlaufen.
+
+| Feature | Aufwand | Beschreibung |
+|---|---|---|
+| Cozy City Builder | ✓ | Isometrische Stadt auf einem Raster, SkiaSharp-gerendert, 11 Gebäude, Pan/Pinch-Zoom, Abriss mit 50 % Erstattung |
+| Trail Defense | ✓ | Tower Defense mit endlosen Wellen, fünf Welten, Türmen aus Münzen und Energie als sportbasiertem Einsatz |
+| **Basislager** | ✓ | Idle-Spiel: Vorräte sammeln sich in Echtzeit, das Tempo hängt an Wochenkilometern und Streak, sieben Module zum Ausbauen |
+| Tagesaufgaben im Basislager | 🟢 | Eine kleine Aufgabe pro Tag („Sammle 3×", „Ein Trip heute") mit Vorratsbonus — verstärkt den täglichen Blick in die App |
+| Lager-Besuche | 🟡 | Das eigene Lager als geteilte Ansicht oder Screenshot exportieren |
+| Streak-Schutz im Lager | 🟡 | Vorräte in einen „Ruhetag" investieren, der die Streak einmal rettet |
+
 ## 🚀 Empfohlene Reihenfolge
 
 1. **Trip bearbeiten & löschen** — schneller Nutzen, gute Basis für Swipe-UX

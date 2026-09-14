@@ -29,19 +29,30 @@ public static class CampEngine
         DateTimeOffset now,
         int coinsSpentInOtherGames = 0)
     {
-        var levels = modules.Select(m => new CampModuleLevel { ModuleId = m.ModuleId, Level = m.Level }).ToList();
+        var levels = ToLevels(modules);
 
         int earned = CoinEconomy.ComputeEarned(stats.Trips, stats.Xp, stats.UnlockedAchievements);
         int spent = ComputeSpent(levels) + coinsSpentInOtherGames;
         int capacity = CampEconomy.ComputeCapacity(levels);
 
-        // A brand-new camp anchors on "now", so the welcome stock is all there is to collect.
+        // A brand-new camp anchors on "now", so the welcome stock is all there is to spend.
         var anchor = log?.LastCollectedAt ?? now;
         double accrued = CampEconomy.ComputeAccrued(stats, levels, anchor, now);
-        int supplies = Math.Min(capacity, CampEconomy.StartingSupplies + (int)Math.Floor(accrued));
+
+        // The welcome stock is granted once, while the camp has never been touched. Handing it
+        // out again would let the balance grow by tapping instead of by moving.
+        int welcome = log is null ? CampEconomy.StartingSupplies : 0;
+
+        // Two separate things: the supplies produced since the anchor, capped by the tent (what
+        // the player can harvest), and the balance they own (what they can spend). Production is
+        // capped, the balance is not — so a full camp stops producing, while spending or
+        // harvesting frees it up again.
+        int stock = Math.Min(capacity, (int)Math.Floor(accrued));
+        int supplies = Math.Max(0, welcome + (log?.BankedSupplies ?? 0));
 
         return new CampState
         {
+            Stock = stock,
             Supplies = supplies,
             Capacity = capacity,
             RatePerHour = CampEconomy.ComputeRate(stats, levels, now),
@@ -61,6 +72,12 @@ public static class CampEngine
             Modules = levels,
         };
     }
+
+    /// <summary>
+    /// Projects persisted module rows onto the level pairs the economy works with.
+    /// </summary>
+    public static IReadOnlyList<CampModuleLevel> ToLevels(IEnumerable<CampModule> modules) =>
+        modules.Select(m => new CampModuleLevel { ModuleId = m.ModuleId, Level = m.Level }).ToList();
 
     /// <summary>Coins currently invested in camp modules (every purchased level counts).</summary>
     public static int ComputeSpent(IEnumerable<CampModuleLevel> modules) =>

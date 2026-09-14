@@ -1,13 +1,16 @@
 using UniTracks.Games.BaseCamp;
 using UniTracks.Games.BaseCamp.Persistence;
 using UniTracks.Games.Shared.Persistence;
+using UniTracks.Services.Game;
+using UniTracks.Tests.Game.Fakes;
+using UniTracks.Tests.TowerDefense.Fakes;
 
 namespace UniTracks.Tests.Game;
 
 /// <summary>
 /// The base camp is an idle game, but its supplies must never grow on pure waiting:
 /// production is driven by the player's real trips, decays during pauses and is capped by
-/// the camp's capacity. Nothing but module levels and the harvest anchor is persisted.
+/// the camp's capacity. Only module levels and the camp's ledger are persisted.
 /// </summary>
 public class BaseCampTests
 {
@@ -33,6 +36,10 @@ public class BaseCampTests
         Assert.Equal(CampEconomy.BaseCapacity, camp.Capacity);
         Assert.Equal(CampEconomy.BaseRatePerHour, camp.RatePerHour, 3);
         Assert.False(camp.IsFull);
+
+        // The welcome stock is spendable right away, but it is not lying in the camp: the camp
+        // itself only starts filling up once the first visit has anchored it.
+        Assert.Equal(0, camp.Stock);
     }
 
     [Fact]
@@ -94,8 +101,11 @@ public class BaseCampTests
         // Far more than 400 supplies accrue in 48 h, but the camp only holds 400.
         var camp = CampEngine.Rebuild(Array.Empty<CampModule>(), log, stats, Now);
 
-        Assert.Equal(camp.Capacity, camp.Supplies);
+        Assert.Equal(camp.Capacity, camp.Stock);
         Assert.True(camp.IsFull);
+
+        // The cap applies to production only — the balance the player owns is unaffected.
+        Assert.Equal(0, camp.Supplies);
     }
 
     [Fact]
@@ -115,17 +125,37 @@ public class BaseCampTests
     }
 
     [Fact]
-    public void Harvest_ResetsTheStockToTheWelcomeAmount()
+    public void Harvest_MovesTheStockIntoTheBalanceAndLeavesTheCampEmpty()
     {
         var stats = StatsWith(Run(40, Now.AddHours(-50)));
-        var log = new CampLog { ID = Guid.NewGuid(), LastCollectedAt = Now, TotalCollected = 400 };
+        var log = new CampLog
+        {
+            ID = Guid.NewGuid(),
+            LastCollectedAt = Now,
+            TotalCollected = 400,
+            BankedSupplies = 400,
+        };
 
         var camp = CampEngine.Rebuild(Array.Empty<CampModule>(), log, stats, Now);
 
-        // The anchor is now, so nothing has accrued since the last harvest.
-        Assert.Equal(CampEconomy.StartingSupplies, camp.Supplies);
+        // The welcome stock is granted once, and a harvest empties the camp: only new activity
+        // fills it up again. What was harvested stays spendable.
+        Assert.Equal(0, camp.Stock);
+        Assert.Equal(400, camp.Supplies);
         Assert.Equal(Now, camp.LastCollectedAt);
         Assert.Equal(400, camp.TotalCollected);
+    }
+
+    [Fact]
+    public void PartialHour_DoesNotPayOutYetAndIsKeptForTheNextHarvest()
+    {
+        double accrued = CampEconomy.ComputeAccrued(StatsWith(), Array.Empty<CampModuleLevel>(), Now, Now.AddMinutes(59));
+
+        Assert.Equal(0, accrued, 3);
+
+        // The anchor only advances by the paid-out hours, so the 59 minutes are not lost.
+        Assert.Equal(Now, CampEconomy.ComputeNextAnchor(Now, Now.AddMinutes(59)));
+        Assert.Equal(Now.AddHours(1), CampEconomy.ComputeNextAnchor(Now, Now.AddHours(1).AddMinutes(59)));
     }
 
     [Fact]
@@ -271,5 +301,181 @@ public class BaseCampTests
         Assert.True(result.Success);
         Assert.Equal(1, result.NewLevel);
         Assert.Equal(CampCatalog.TentId, result.ModuleId);
+    }
+
+    // --- Service layer: persistence round-trips and the shared coin account ---
+
+    private static BaseCampService Service(InMemoryCampStore campStore, ActivityStats stats, out CoinAccountService account)
+    {
+        var statsSource = new FakeActivityStatsSource(stats);
+        account = new CoinAccountService(new InMemoryCityStore(), new InMemoryTowerDefenseStore(), campStore, statsSource);
+        return new BaseCampService(campStore, statsSource, account);
+    }
+
+    /// <summary>
+    /// Camp whose ledger was anchored a few hours ago, so exactly
+    /// <paramref name="hours"/> × <see cref="CampEconomy.BaseRatePerHour"/> supplies are waiting.
+    /// No trips are recorded, which keeps the rate at its base value.
+    /// </summary>
+    private static async Task<InMemoryCampStore> CampWithAccruedHoursAsync(int hours)
+    {
+        var campStore = new InMemoryCampStore();
+        await campStore.SaveLogAsync(new CampLog
+        {
+            ID = Guid.NewGuid(),
+            LastCollectedAt = DateTimeOffset.UtcNow.AddHours(-hours),
+            BankedSupplies = CampEconomy.StartingSupplies,
+        });
+
+        return campStore;
+    }
+
+    [Fact]
+    public async Task FirstVisit_AnchorsTheCampSoItStartsProducing()
+    {
+        var campStore = new InMemoryCampStore();
+        var service = Service(campStore, StatsWith(), out _);
+
+        var camp = await service.GetCampAsync();
+
+        // Without a ledger row the anchor would move with every read and the camp would never
+        // fill up, so the first look at the camp opens it.
+        Assert.Equal(CampEconomy.StartingSupplies, camp.Supplies);
+        Assert.Equal(0, camp.Stock);
+    }
+
+    [Fact]
+    public async Task Collect_BanksTheStockAndMovesTheAnchor()
+    {
+        var campStore = await CampWithAccruedHoursAsync(3);
+        var service = Service(campStore, StatsWith(), out _);
+
+        var result = await service.CollectAsync();
+
+        Assert.True(result.Success);
+        Assert.Equal(3 * CampEconomy.BaseRatePerHour, result.Collected);
+
+        var after = await service.GetCampAsync();
+        Assert.Equal(0, after.Stock);
+        Assert.Equal(CampEconomy.StartingSupplies + result.Collected, after.Supplies);
+        Assert.Equal(result.Collected, after.TotalCollected);
+    }
+
+    [Fact]
+    public async Task Collect_OnAnEmptyCamp_FailsAndMintsNothing()
+    {
+        var campStore = new InMemoryCampStore();
+        var service = Service(campStore, StatsWith(), out _);
+
+        var first = await service.CollectAsync();
+        var second = await service.CollectAsync();
+
+        // The welcome stock is granted once and is not lying in the camp, so there is nothing
+        // to bank and tapping cannot turn into supplies.
+        Assert.False(first.Success);
+        Assert.False(second.Success);
+        Assert.Contains("leer", second.ErrorMessage);
+        Assert.Equal(CampEconomy.StartingSupplies, (await service.GetCampAsync()).Supplies);
+    }
+
+    [Fact]
+    public async Task Collect_LeavesTheCoinBalanceUntouched()
+    {
+        var campStore = await CampWithAccruedHoursAsync(3);
+        var service = Service(campStore, StatsWith(), out var account);
+
+        int before = (await account.GetAsync()).Spent;
+        await service.CollectAsync();
+        int after = (await account.GetAsync()).Spent;
+
+        // Supplies are camp-private: harvesting must neither mint nor burn coins.
+        Assert.Equal(before, after);
+    }
+
+    [Fact]
+    public async Task Upgrade_PersistsOneRowPerModuleAndChargesItsPrice()
+    {
+        var campStore = await CampWithAccruedHoursAsync(6);
+        var service = Service(campStore, StatsWith(), out var account);
+
+        await service.CollectAsync();
+        var result = await service.TryUpgradeAsync(CampCatalog.TentId);
+        var second = await service.TryUpgradeAsync(CampCatalog.KitchenId);
+        var camp = await service.GetCampAsync();
+
+        Assert.True(result.Success);
+        Assert.True(second.Success);
+        Assert.Equal(2, campStore.ModuleRowCount);
+        Assert.Equal(1, camp.LevelOf(CampCatalog.TentId));
+        Assert.Equal(1, camp.LevelOf(CampCatalog.KitchenId));
+
+        // 250 welcome + 36 harvested − 150 tent − 120 kitchen: the prices really are paid.
+        Assert.Equal(CampEconomy.StartingSupplies + 36 - 150 - 120, camp.Supplies);
+
+        // Tent and kitchen are supply-only, so the shared coin balance is unaffected.
+        Assert.Equal((await account.GetAsync()).Earned, camp.Coins);
+    }
+
+    [Fact]
+    public async Task Upgrade_IsNotFreeOnceTheCampHasBeenHarvested()
+    {
+        var campStore = await CampWithAccruedHoursAsync(6);
+        var service = Service(campStore, StatsWith(), out _);
+
+        await service.CollectAsync();
+        var before = await service.GetCampAsync();
+
+        await service.TryUpgradeAsync(CampCatalog.TentId);
+        var after = await service.GetCampAsync();
+
+        // The stock is derived from the anchor, so a purchase must not be able to hide behind
+        // it: the 150 supplies of the first tent level leave the balance.
+        Assert.Equal(150, CampCatalog.Find(CampCatalog.TentId)!.CostFor(1).Supplies);
+        Assert.Equal(before.Supplies - 150, after.Supplies);
+        Assert.Equal(0, after.Stock);
+    }
+
+    [Fact]
+    public async Task Upgrade_KeepsTheUnharvestedStockWaiting()
+    {
+        var campStore = await CampWithAccruedHoursAsync(3);
+        var service = Service(campStore, StatsWith(), out _);
+
+        await service.TryUpgradeAsync(CampCatalog.TentId);
+        var camp = await service.GetCampAsync();
+
+        // Buying does not move the anchor, so the 18 supplies stay in the camp and can still
+        // be harvested afterwards.
+        Assert.Equal(3 * CampEconomy.BaseRatePerHour, camp.Stock);
+        Assert.Equal(CampEconomy.StartingSupplies - 150, camp.Supplies);
+    }
+
+    [Fact]
+    public async Task Upgrade_IsRejectedWhenTheSuppliesAreNotThereYet()
+    {
+        var campStore = new InMemoryCampStore();
+        var service = Service(campStore, StatsWith(), out _);
+
+        // 250 welcome supplies pay for the 150-supply first tent level, leaving 100 — not
+        // enough for the 400-supply second level.
+        await service.TryUpgradeAsync(CampCatalog.TentId);
+        var result = await service.TryUpgradeAsync(CampCatalog.TentId);
+
+        Assert.False(result.Success);
+        Assert.Contains("Vorräte", result.ErrorMessage);
+        Assert.Equal(1, campStore.ModuleRowCount);
+        Assert.Equal(CampEconomy.StartingSupplies - 150, (await service.GetCampAsync()).Supplies);
+    }
+
+    [Fact]
+    public async Task Upgrade_IsRejectedForAnUnknownModule()
+    {
+        var campStore = new InMemoryCampStore();
+        var service = Service(campStore, StatsWith(), out _);
+
+        var result = await service.TryUpgradeAsync("greenhouse");
+
+        Assert.False(result.Success);
+        Assert.Equal(0, campStore.ModuleRowCount);
     }
 }

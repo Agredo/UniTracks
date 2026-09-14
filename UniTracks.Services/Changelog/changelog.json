@@ -1,6 +1,29 @@
 {
   "releases": [
     {
+      "version": "0.5.0",
+      "date": "2026-09-15",
+      "title": "Basislager - das neue Idle-Spiel",
+      "changes": [
+        {
+          "kind": "feature",
+          "text": "Neues drittes Minispiel: \"Basislager\". Ein Idle-Spiel, das auch dann Vorräte sammelt, wenn die App geschlossen ist. Das Lager füllt sich Stunde für Stunde, mit \"Sammeln\" holst du den Füllstand in deinen Vorratsbestand - und baust davon Zeltplatz, Kochstelle, Vorratskeller, Karte, Funkgerät, Basislager-Hütte und Gipfelfahne aus. Je mehr du dich draußen bewegst, desto schneller läuft das Lager; pausierst du, verliert es an Schwung."
+        },
+        {
+          "kind": "feature",
+          "text": "Die Vorräte sind eine eigene, lagerinterne Währung - sie lassen sich nicht in Münzen umtauschen und verfallen, wenn das Lager voll ist. Damit bleibt das Münzkonto unangetastet: Münzen verdienst du weiterhin nur über echte Trips, Level und Errungenschaften, und Cozy City, Trail Defense und Basislager teilen sich ein einziges Konto."
+        },
+        {
+          "kind": "feature",
+          "text": "Die Streak zahlt sich jetzt auch im Basislager aus: Jeder Tag in Folge erhöht das Tempo um 10 Prozent, das Funkgerät legt je Stufe 5 Prozent drauf. Die Karte lässt deine Wochenkilometer stärker zählen, der Vorratskeller hält die Leistung länger oben, wenn du mal pausierst."
+        },
+        {
+          "kind": "feature",
+          "text": "Die Hilfe hat einen neuen Abschnitt \"Basislager\" - dort stehen alle Formeln, Preise und Stufen erklärt."
+        }
+      ]
+    },
+    {
       "version": "0.4.1",
       "date": "2026-09-14",
       "title": "Backup, neue Record-Seite & Trip-Karten",
