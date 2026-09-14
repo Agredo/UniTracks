@@ -32,6 +32,10 @@
                   {
                     "kind": "feature",
                     "text": "Alle Sportarten heißen jetzt deutsch: Aus \"Cycling\" wird \"Radfahren\", aus \"Run\" wird \"Laufen\", aus \"Soccer\" wird \"Fußball\" und so weiter - die App war schon überall deutsch, nur die Sportarten waren es nicht. Die Suche versteht zusätzlich die Wörter, die man umgangssprachlich tippt: \"Fahrrad\", \"Rennrad\" oder \"MTB\" finden die Rad-Sportarten, \"Joggen\" findet \"Laufen\", \"Hund\" findet \"Gassi gehen\", \"Fussball\" findet \"Fußball\"."
+                  },
+                  {
+                    "kind": "fix",
+                    "text": "Die Sportart gilt jetzt für den ganzen laufenden Trip: Wählst du während der Aufnahme eine andere Sportart, steht sie sofort auch in der Trip-Liste. Bisher übernahm der beendete Trip die Sportart, die beim ersten GPS-Punkt eingestellt war, und musste erst in der Trip-Übersicht von Hand geändert werden."
                   }
                 ]
               },

@@ -353,6 +353,31 @@ public sealed class RecordTripTabPageViewModelTests
             fixture.ViewModel.FavoriteTripTypes.Select(t => t.ID));
     }
 
+    /// <summary>
+    /// Regression test for the reported bug: the activity is not only a setting for the next trip. Once
+    /// the recording is running the trip row already exists (it is written with the first GPS fix), so
+    /// the change has to be handed to the storage service - which owns that row - instead of only being
+    /// stored for the next trip. Otherwise the finished trip kept the old type in the overview until it
+    /// was edited manually.
+    /// </summary>
+    [Fact]
+    public async Task SelectedTripType_WhileRecording_IsAppliedToTheRunningTrip()
+    {
+        var first = NewTripType("A");
+        var second = NewTripType("B");
+        var fixture = new Fixture(repository => repository.Seed(first, second));
+        fixture.Permissions.Status = PermissionStatus.Granted;
+
+        await fixture.ViewModel.StartListeningCommand.ExecuteAsync(null);
+        Assert.True(fixture.ViewModel.IsRecording);
+
+        fixture.ViewModel.SelectedTripType = second;
+
+        Assert.Equal(second.ID, fixture.Gps.CurrentTripTypeId);
+        Assert.Equal(second.ID, fixture.Gps.AppliedTripTypeIds[^1]);
+        Assert.Equal(second.ID, fixture.ViewModel.Context.TripType?.ID);
+    }
+
     [Theory]
     [InlineData(0, "00:00")]
     [InlineData(59_999, "00:59")]

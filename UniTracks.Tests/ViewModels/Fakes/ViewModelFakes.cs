@@ -386,6 +386,9 @@ internal sealed class FakeGpsDataStorageService : IGpsDataStorageService
 {
     public Guid? CurrentTripTypeId { get; set; }
 
+    /// <summary>Trip type ids passed to <see cref="IGpsDataStorageService.ApplyTripTypeAsync"/>, in call order.</summary>
+    public List<Guid?> AppliedTripTypeIds { get; } = new();
+
     public int FinalizeTripCalls { get; private set; }
 
     /// <summary>Set to true to mimic a recording that is still open, so a stop has a trip to finalise.</summary>
@@ -409,6 +412,13 @@ internal sealed class FakeGpsDataStorageService : IGpsDataStorageService
     }
 
     public Task<List<LocationModel>> getAll() => Task.FromResult(Locations.ToList());
+
+    public Task ApplyTripTypeAsync(Guid? tripTypeId)
+    {
+        CurrentTripTypeId = tripTypeId;
+        AppliedTripTypeIds.Add(tripTypeId);
+        return Task.CompletedTask;
+    }
 
     public void FinalizeTrip() => FinalizeTripCalls++;
 }
