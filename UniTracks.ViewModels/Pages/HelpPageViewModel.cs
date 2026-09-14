@@ -92,6 +92,12 @@ public partial class HelpPageViewModel : ObservableObject
             },
             new HelpItem
             {
+                Title = "Trips filtern",
+                Icon = "🔍",
+                Body = "Der Knopf oben rechts in der Trip-Übersicht öffnet das Filter-Blatt. Du kannst nach Sportart, Zeitraum (Letzte 7 Tage, Letzte 30 Tage, Dieses Jahr), Dauer (unter 30 min, 30–60 min, über 60 min) und Streckenlänge (unter 5 km bis Halbmarathon+) eingrenzen. Die Sportarten erscheinen als Chips mit der Anzahl deiner Trips, damit du siehst, was sich lohnt; mehrere Sportarten, Dauern und Längen lassen sich gleichzeitig wählen und werden miteinander kombiniert, der Zeitraum bleibt eine einzelne Auswahl. Der Knopf unten im Blatt zeigt schon vor dem Übernehmen an, wie viele Trips übrig bleiben, und ist ausgegraut, wenn nichts passt. Läuft ein Filter, steht die Anzahl aktiver Filter als kleiner Zähler am Knopf, die Liste beginnt wieder bei den neuesten Trips und die leere Liste erklärt, dass ein Filter aktiv ist — »Filter zurücksetzen« hebt ihn auf. Der zuletzt gesetzte Filter bleibt über den Neustart der App erhalten.",
+            },
+            new HelpItem
+            {
                 Title = "Vergleichen starten",
                 Icon = "🔀",
                 Body = "Öffne einen Trip und tippe auf »Vergleichen«. Die Seite schlägt die anderen Trips in drei Gruppen vor:\n" +
