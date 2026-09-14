@@ -352,86 +352,91 @@
             <!-- Kilometre splits: one column per run when more than two trips are compared -->
             <VerticalStackLayout IsVisible="{Binding ShowMultiSplits}" Spacing="8">
                 <Label Style="{StaticResource SectionHeader}" Text="KILOMETER-SPLITS" />
-                <Border Padding="14" Style="{StaticResource ScrollCardBorder}">
-                    <ScrollView Orientation="Horizontal">
-                        <VerticalStackLayout Spacing="10">
-                            <HorizontalStackLayout Spacing="12">
-                                <Label
-                                    Style="{StaticResource StatLabel}"
-                                    Text="KM"
-                                    VerticalOptions="Center"
-                                    WidthRequest="72" />
-                                <HorizontalStackLayout BindableLayout.ItemsSource="{Binding MatrixColumns}" Spacing="12">
+
+                <!-- The card background is a sibling of the scroller, not its parent: a Border with a
+                     scrolling descendant is re-rastered on every scroll frame on Android. -->
+                <Grid>
+                    <Border Padding="0" Style="{StaticResource ScrollCardBorder}" />
+                    <ScrollView Margin="14" Orientation="Horizontal">
+                            <VerticalStackLayout Spacing="10">
+                                <HorizontalStackLayout Spacing="12">
+                                    <Label
+                                        Style="{StaticResource StatLabel}"
+                                        Text="KM"
+                                        VerticalOptions="Center"
+                                        WidthRequest="72" />
+                                    <HorizontalStackLayout BindableLayout.ItemsSource="{Binding MatrixColumns}" Spacing="12">
+                                        <BindableLayout.ItemTemplate>
+                                            <DataTemplate x:DataType="vm:SplitColumn">
+                                                <VerticalStackLayout Spacing="3" WidthRequest="64">
+                                                    <controls:ColorDot ColorHex="{Binding ColorHex}" />
+                                                    <Label
+                                                        FontSize="10"
+                                                        LineBreakMode="TailTruncation"
+                                                        Text="{Binding Name}"
+                                                        TextColor="{StaticResource TextSecondary}" />
+                                                    <Label
+                                                        FontSize="10"
+                                                        Text="{Binding RankText}"
+                                                        TextColor="{StaticResource TextMuted}" />
+                                                </VerticalStackLayout>
+                                            </DataTemplate>
+                                        </BindableLayout.ItemTemplate>
+                                    </HorizontalStackLayout>
+                                </HorizontalStackLayout>
+                                <BoxView Color="{StaticResource CardStroke}" HeightRequest="1" />
+                                <VerticalStackLayout BindableLayout.ItemsSource="{Binding SplitMatrix}" Spacing="9">
                                     <BindableLayout.ItemTemplate>
-                                        <DataTemplate x:DataType="vm:SplitColumn">
-                                            <VerticalStackLayout Spacing="3" WidthRequest="64">
-                                                <controls:ColorDot ColorHex="{Binding ColorHex}" />
+                                        <DataTemplate x:DataType="vm:SplitMatrixRow">
+                                            <HorizontalStackLayout Spacing="12">
                                                 <Label
-                                                    FontSize="10"
-                                                    LineBreakMode="TailTruncation"
-                                                    Text="{Binding Name}"
-                                                    TextColor="{StaticResource TextSecondary}" />
-                                                <Label
-                                                    FontSize="10"
-                                                    Text="{Binding RankText}"
-                                                    TextColor="{StaticResource TextMuted}" />
-                                            </VerticalStackLayout>
+                                                    FontSize="13"
+                                                    Text="{Binding Kilometer}"
+                                                    TextColor="{StaticResource TextMuted}"
+                                                    VerticalOptions="Center"
+                                                    WidthRequest="72" />
+                                                <HorizontalStackLayout BindableLayout.ItemsSource="{Binding Cells}" Spacing="12">
+                                                    <BindableLayout.ItemTemplate>
+                                                        <DataTemplate x:DataType="vm:SplitCellRow">
+                                                            <VerticalStackLayout Spacing="1" WidthRequest="64">
+                                                                <Label
+                                                                    FontSize="13"
+                                                                    Text="{Binding PaceText}"
+                                                                    TextColor="{StaticResource TextPrimary}">
+                                                                    <Label.Triggers>
+                                                                        <DataTrigger
+                                                                            Binding="{Binding IsFastest}"
+                                                                            TargetType="Label"
+                                                                            Value="True">
+                                                                            <Setter Property="TextColor" Value="{StaticResource Record}" />
+                                                                        </DataTrigger>
+                                                                    </Label.Triggers>
+                                                                </Label>
+                                                                <Label
+                                                                    FontSize="10"
+                                                                    Text="{Binding DeltaText}"
+                                                                    TextColor="{StaticResource TextMuted}">
+                                                                    <Label.Triggers>
+                                                                        <DataTrigger
+                                                                            Binding="{Binding DeltaIsFaster}"
+                                                                            TargetType="Label"
+                                                                            Value="True">
+                                                                            <Setter Property="TextColor" Value="{StaticResource Accent}" />
+                                                                        </DataTrigger>
+                                                                    </Label.Triggers>
+                                                                </Label>
+                                                            </VerticalStackLayout>
+                                                        </DataTemplate>
+                                                    </BindableLayout.ItemTemplate>
+                                                </HorizontalStackLayout>
+                                            </HorizontalStackLayout>
                                         </DataTemplate>
                                     </BindableLayout.ItemTemplate>
-                                </HorizontalStackLayout>
-                            </HorizontalStackLayout>
-                            <BoxView Color="{StaticResource CardStroke}" HeightRequest="1" />
-                            <VerticalStackLayout BindableLayout.ItemsSource="{Binding SplitMatrix}" Spacing="9">
-                                <BindableLayout.ItemTemplate>
-                                    <DataTemplate x:DataType="vm:SplitMatrixRow">
-                                        <HorizontalStackLayout Spacing="12">
-                                            <Label
-                                                FontSize="13"
-                                                Text="{Binding Kilometer}"
-                                                TextColor="{StaticResource TextMuted}"
-                                                VerticalOptions="Center"
-                                                WidthRequest="72" />
-                                            <HorizontalStackLayout BindableLayout.ItemsSource="{Binding Cells}" Spacing="12">
-                                                <BindableLayout.ItemTemplate>
-                                                    <DataTemplate x:DataType="vm:SplitCellRow">
-                                                        <VerticalStackLayout Spacing="1" WidthRequest="64">
-                                                            <Label
-                                                                FontSize="13"
-                                                                Text="{Binding PaceText}"
-                                                                TextColor="{StaticResource TextPrimary}">
-                                                                <Label.Triggers>
-                                                                    <DataTrigger
-                                                                        Binding="{Binding IsFastest}"
-                                                                        TargetType="Label"
-                                                                        Value="True">
-                                                                        <Setter Property="TextColor" Value="{StaticResource Record}" />
-                                                                    </DataTrigger>
-                                                                </Label.Triggers>
-                                                            </Label>
-                                                            <Label
-                                                                FontSize="10"
-                                                                Text="{Binding DeltaText}"
-                                                                TextColor="{StaticResource TextMuted}">
-                                                                <Label.Triggers>
-                                                                    <DataTrigger
-                                                                        Binding="{Binding DeltaIsFaster}"
-                                                                        TargetType="Label"
-                                                                        Value="True">
-                                                                        <Setter Property="TextColor" Value="{StaticResource Accent}" />
-                                                                    </DataTrigger>
-                                                                </Label.Triggers>
-                                                            </Label>
-                                                        </VerticalStackLayout>
-                                                    </DataTemplate>
-                                                </BindableLayout.ItemTemplate>
-                                            </HorizontalStackLayout>
-                                        </HorizontalStackLayout>
-                                    </DataTemplate>
-                                </BindableLayout.ItemTemplate>
+                                </VerticalStackLayout>
                             </VerticalStackLayout>
-                        </VerticalStackLayout>
                     </ScrollView>
-                </Border>
+                </Grid>
+
                 <Label
                     FontSize="11"
                     HorizontalTextAlignment="Center"

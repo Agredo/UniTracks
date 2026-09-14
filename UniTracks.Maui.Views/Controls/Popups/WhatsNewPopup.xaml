@@ -39,11 +39,13 @@
         </Style>
     </toolkit:Popup.Resources>
 
-    <Border
-        x:Name="PopupCard"
-        Padding="24"
-        Style="{StaticResource ScrollCardBorder}">
-        <VerticalStackLayout Spacing="14">
+    <!-- The card's background is a sibling of the content, not its parent. A Border that has a
+         scrolling descendant is re-rastered into its hardware layer on every scroll frame on
+         Android (plus a clip path per draw for the rounded shape), which is what made this popup
+         scroll at ~15 fps. As a sibling it is drawn once and only composited while scrolling. -->
+    <Grid x:Name="PopupRoot">
+        <Border Padding="0" Style="{StaticResource ScrollCardBorder}" />
+        <VerticalStackLayout Padding="24" Spacing="14">
 
             <Label Style="{StaticResource TitleLabel}" Text="Was ist neu?" />
             <Label Style="{StaticResource SubtitleLabel}" Text="{Binding Subtitle}" />
@@ -105,5 +107,5 @@
 
             <Button Command="{Binding CloseCommand}" Text="Alles klar" />
         </VerticalStackLayout>
-    </Border>
+    </Grid>
 </toolkit:Popup>

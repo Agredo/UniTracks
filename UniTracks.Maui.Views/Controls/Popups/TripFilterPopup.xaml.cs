@@ -11,7 +11,7 @@ public partial class TripFilterPopup : Popup
 	public TripFilterPopup(TripFilterPopupViewModel viewModel)
 	{
 		InitializeComponent();
-		PopupCard.WidthRequest = PopupSizing.ContentWidth;
+		PopupRoot.WidthRequest = PopupSizing.ContentWidth;
 
 		BindingContext = viewModel;
 		_viewModel = viewModel;

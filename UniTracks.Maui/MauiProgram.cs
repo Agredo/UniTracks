@@ -48,14 +48,18 @@ public static class MauiProgram
             .UseMauiApp<App>()
             .UseMauiCommunityToolkit(options =>
             {
+                // The toolkit wraps every popup in its own Border and gives it a Shadow and a Shape by
+                // default. That Border is an ancestor of whatever the popup contains, so a ScrollView
+                // inside a popup sits underneath both of them. On Android a shadowed view is redrawn as
+                // a blurred bitmap whenever any descendant invalidates (PlatformWrapperView
+                // .onDescendantInvalidated in the MAUI Android runtime) and a shaped Border runs a
+                // per-draw clip path, so both cost a full popup rasterisation on every scroll frame:
+                // measured 66 ms/frame (~15 fps) on the changelog popup. The rounded card of each popup
+                // is drawn by the popup's own Border, so neither default is needed.
                 options.SetPopupOptionsDefaults(new DefaultPopupOptionsSettings
                 {
-                    Shape = new Microsoft.Maui.Controls.Shapes.RoundRectangle
-                    {
-                        CornerRadius = new CornerRadius(20, 20, 20, 20),
-                        StrokeThickness = 0,
-                        Stroke = new SolidColorBrush(Colors.Transparent),
-                    },
+                    Shadow = null,
+                    Shape = null,
                 });
 
                 // The toolkit paints every popup white and insets its content by 15, which showed up
