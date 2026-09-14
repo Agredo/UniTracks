@@ -87,6 +87,93 @@ public sealed class TripTabPageViewModelTests
         repository.Seed(trips.SelectMany(trip => trip.Locations).ToArray());
     }
 
+    /// <summary>Builds <paramref name="count"/> trips a minute apart, newest first.</summary>
+    private static Trip[] NewTrips(int count)
+    {
+        var now = DateTimeOffset.UtcNow;
+        return Enumerable.Range(0, count)
+            .Select(index => NewTrip($"Trip {index}", now.AddMinutes(-index)))
+            .ToArray();
+    }
+
+    /// <summary>
+    /// The list must not read the GPS points: a trip carries one point per second of recording, so
+    /// pulling them in for every trip made this tab slow while no card shows anything from the track.
+    /// </summary>
+    [Fact]
+    public void Constructor_ReadsTheTripsWithoutTheirGpsPoints()
+    {
+        var fixture = new Fixture(repository =>
+            SeedTrips(repository, NewTrip("Mit Punkten", DateTimeOffset.UtcNow, locationCount: 3)));
+
+        var read = Assert.Single(fixture.Repository.Reads, entry => entry.EntityType == typeof(Trip));
+
+        Assert.DoesNotContain(read.Includes, include => include.Contains("Locations"));
+        Assert.Contains(read.Includes, include => include.Contains("TripType"));
+    }
+
+    /// <summary>
+    /// The list shows one block and appends the next when the user reaches the end, so a card is only
+    /// built for what is on screen.
+    /// </summary>
+    [Fact]
+    public void Constructor_ShowsOnlyTheNewestBlock()
+    {
+        var trips = NewTrips(20);
+
+        var fixture = new Fixture(repository => SeedTrips(repository, trips));
+
+        Assert.Equal(TripTabPageViewModel.PageSize, fixture.ViewModel.Trips.Count);
+        Assert.Equal(
+            trips.Take(TripTabPageViewModel.PageSize).Select(trip => trip.ID),
+            fixture.ViewModel.Trips.Select(trip => trip.ID));
+        Assert.True(fixture.ViewModel.HasMoreTrips);
+    }
+
+    [Fact]
+    public void Constructor_WithFewerTripsThanABlock_HasNothingMoreToLoad()
+    {
+        var fixture = new Fixture(repository => SeedTrips(repository, NewTrip("Einziger", DateTimeOffset.UtcNow)));
+
+        Assert.Single(fixture.ViewModel.Trips);
+        Assert.False(fixture.ViewModel.HasMoreTrips);
+    }
+
+    [Fact]
+    public void LoadMoreTrips_AppendsTheRestAndThenStops()
+    {
+        var trips = NewTrips(20);
+        var fixture = new Fixture(repository => SeedTrips(repository, trips));
+
+        fixture.ViewModel.LoadMoreTripsCommand.Execute(null);
+
+        Assert.Equal(trips.Select(trip => trip.ID), fixture.ViewModel.Trips.Select(trip => trip.ID));
+        Assert.False(fixture.ViewModel.HasMoreTrips);
+
+        // Nothing left to append: calling again must not duplicate what is already shown.
+        fixture.ViewModel.LoadMoreTripsCommand.Execute(null);
+        Assert.Equal(trips.Length, fixture.ViewModel.Trips.Count);
+    }
+
+    /// <summary>
+    /// A refresh rebuilds the list from the store, so it starts at the first block again — otherwise
+    /// the fresh block would be appended to the one the user had already scrolled to.
+    /// </summary>
+    [Fact]
+    public async Task Refresh_StartsAtTheFirstBlockAgain()
+    {
+        var trips = NewTrips(20);
+        var fixture = new Fixture(repository => SeedTrips(repository, trips));
+
+        fixture.ViewModel.LoadMoreTripsCommand.Execute(null);
+        Assert.Equal(trips.Length, fixture.ViewModel.Trips.Count);
+
+        await fixture.ViewModel.RefreshCommand.ExecuteAsync(null);
+
+        Assert.Equal(TripTabPageViewModel.PageSize, fixture.ViewModel.Trips.Count);
+        Assert.True(fixture.ViewModel.HasMoreTrips);
+    }
+
     [Fact]
     public void Constructor_LoadsTripsNewestFirst()
     {

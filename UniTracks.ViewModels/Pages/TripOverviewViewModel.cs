@@ -24,6 +24,9 @@ public partial class TripOverviewViewModel : ObservableObject
     private readonly ITrackSmoothingSettings smoothingSettings;
     private readonly IMapStyleSettings mapStyleSettings;
 
+    /// <summary>Set once the track was read, so a re-appearing page does not query again.</summary>
+    private bool trackLoaded;
+
     [ObservableProperty]
     private Trip? trip;
 
@@ -119,6 +122,37 @@ public partial class TripOverviewViewModel : ObservableObject
         MapStyle = mapStyleSettings.Style;
     }
 
+    /// <summary>
+    /// Reads the GPS points of the shown trip. The trip list hands the trip over without its points
+    /// (reading them for every trip made that tab far too slow), so the one trip that is opened loads
+    /// its own track — the map, the profile and the pages opened from here all work off those points.
+    /// Called from the page's <c>OnAppearing</c>.
+    /// </summary>
+    public async Task LoadTrackAsync()
+    {
+        if (Trip is not { } trip || trackLoaded || trip.Locations is { Count: > 0 })
+        {
+            return;
+        }
+
+        trackLoaded = true;
+
+        var points = (await repository.GetAsync<LocationModel>(location => location.TripID == trip.ID))
+            .OrderBy(location => location.Timestamp)
+            .ToList();
+
+        if (points.Count == 0)
+        {
+            return;
+        }
+
+        // The map draws what its bound property holds, and a binding only reacts to a new value, so
+        // the points go into a fresh collection instead of into the one already assigned.
+        trip.Locations = points;
+        Locations = new ObservableCollection<LocationModel>(points);
+        ApplyLocationStats(trip);
+    }
+
     private void ApplyTripStats(Trip trip)
     {
         TripName = trip.Name ?? GetTripName(trip.StartTime);
@@ -210,6 +244,9 @@ public partial class TripOverviewViewModel : ObservableObject
     {
         if (Trip is not null)
         {
+            // The charts read the points off the trip they are handed, so make sure they are there
+            // even when the user tapped before the track had finished loading.
+            await LoadTrackAsync();
             await Navigation.ShellNavigationTo("TripChartsPage", new Dictionary<string, object> { { "parameter", Trip } });
         }
     }

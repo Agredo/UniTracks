@@ -15,6 +15,12 @@ namespace UniTracks.ViewModels.Pages.Tabs;
 
 public partial class TripTabPageViewModel : ObservableObject
 {
+    /// <summary>
+    /// Trips the list shows at once. Reaching the end of the visible block appends the next one, so a
+    /// card only has to be built for what is actually on screen.
+    /// </summary>
+    public const int PageSize = 15;
+
     public INavigationService Navigation { get; }
     public IPopupNavigationService PopupNavigation { get; }
     public ILocationService LocationService { get; }
@@ -26,8 +32,18 @@ public partial class TripTabPageViewModel : ObservableObject
 
     private readonly ITripFingerprintService fingerprints;
 
+    /// <summary>
+    /// Every trip, newest first. <see cref="Trips"/> holds the leading block of this list, so the
+    /// list itself stays the single source of the sort order while paging.
+    /// </summary>
+    private readonly List<Trip> allTrips = new List<Trip>();
+
     [ObservableProperty]
     private ObservableCollection<Trip> trips = new ObservableCollection<Trip>();
+
+    /// <summary>True while further trips are waiting behind <see cref="LoadMoreTripsCommand"/>.</summary>
+    [ObservableProperty]
+    private bool hasMoreTrips;
 
     [ObservableProperty]
     private bool isCompactLayout;
@@ -83,18 +99,43 @@ public partial class TripTabPageViewModel : ObservableObject
 
     private async Task GetTrips()
     {
+        // Read without the GPS points on purpose: a trip carries one point per second of recording,
+        // so pulling them in for every trip made this the most expensive read in the app - while the
+        // cards only need the trip's own values and its type. The overview reads the points of the
+        // one trip it opens.
         var orderedTrips = (await Repository.GetAllAsync<Trip>(
-                trip => trip.Locations,
-                trip => trip.TripType,
-                trip => trip.HeartRates,
-                trip => trip.Weather))
+                trip => trip.TripType))
             .OrderByDescending(trip => trip.StartTime)
             .ToList();
+
+        allTrips.Clear();
+        allTrips.AddRange(orderedTrips);
 
         // Assigning the collection in one go raises a single change notification instead of one
         // per trip, which keeps the list from re-measuring itself for every single item.
         RefreshIndicatorVisible = false;
-        Trips = new ObservableCollection<Trip>(orderedTrips);
+        Trips = new ObservableCollection<Trip>(allTrips.Take(PageSize));
+        HasMoreTrips = allTrips.Count > Trips.Count;
+    }
+
+    /// <summary>
+    /// Appends the next block of trips. The list calls this when the user scrolls close to the end
+    /// (and from its footer, which covers a screen tall enough to show the whole first block).
+    /// </summary>
+    [RelayCommand]
+    private void LoadMoreTrips()
+    {
+        if (!HasMoreTrips)
+        {
+            return;
+        }
+
+        foreach (var trip in allTrips.Skip(Trips.Count).Take(PageSize))
+        {
+            Trips.Add(trip);
+        }
+
+        HasMoreTrips = allTrips.Count > Trips.Count;
     }
 
     [RelayCommand]

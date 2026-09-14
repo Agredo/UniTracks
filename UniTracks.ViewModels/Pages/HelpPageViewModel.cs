@@ -87,6 +87,12 @@ public partial class HelpPageViewModel : ObservableObject
             },
             new HelpItem
             {
+                Title = "Lange Trip-Liste",
+                Icon = "📜",
+                Body = "Die Trip-Liste zeigt die letzten 15 Läufe und lädt beim Scrollen jeweils 15 weitere nach; passt der erste Block aufs Display, steht unten der Knopf »Weitere Trips laden«. So bleibt der Tab auch mit Hunderten von Trips schnell, weil nur die Karten gebaut werden, die du gerade siehst.",
+            },
+            new HelpItem
+            {
                 Title = "Vergleichen starten",
                 Icon = "🔀",
                 Body = "Öffne einen Trip und tippe auf »Vergleichen«. Die Seite schlägt die anderen Trips in drei Gruppen vor:\n" +

@@ -59,6 +59,10 @@
                   {
                     "kind": "fix",
                     "text": "Die Sportart gilt jetzt für den ganzen laufenden Trip: Wählst du während der Aufnahme eine andere Sportart, steht sie sofort auch in der Trip-Liste. Bisher übernahm der beendete Trip die Sportart, die beim ersten GPS-Punkt eingestellt war, und musste erst in der Trip-Übersicht von Hand geändert werden."
+                  },
+                  {
+                    "kind": "improvement",
+                    "text": "Die Trip-Liste lädt schneller und bleibt auch mit vielen Trips flüssig: Sie baut nur noch die letzten 15 Karten auf und lädt beim Scrollen jeweils 15 weitere nach. Beim Öffnen eines Trips werden dessen GPS-Punkte separat geladen, sodass Karte und Profil unverändert erscheinen."
                   }
                 ]
               },
