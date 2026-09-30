@@ -29,6 +29,28 @@
 	<key>XSAppIconAssets</key>
 	<string>Assets.xcassets/appicon.appiconset</string>
 
+	<!-- Seit dem iOS-27-SDK verlangt UIKit den szenenbasierten Lebenszyklus; ohne diesen
+	     Eintrag bricht der Start mit "UIScene life cycle is required for apps built with
+	     this SDK" ab. Der Konfigurationsname ist fest mit MAUI verdrahtet und darf nicht
+	     geaendert werden, der Delegate-Name muss zu [Register("SceneDelegate")] passen. -->
+	<key>UIApplicationSceneManifest</key>
+	<dict>
+		<key>UIApplicationSupportsMultipleScenes</key>
+		<false/>
+		<key>UISceneConfigurations</key>
+		<dict>
+			<key>UIWindowSceneSessionRoleApplication</key>
+			<array>
+				<dict>
+					<key>UISceneConfigurationName</key>
+					<string>__MAUI_DEFAULT_SCENE_CONFIGURATION__</string>
+					<key>UISceneDelegateClassName</key>
+					<string>SceneDelegate</string>
+				</dict>
+			</array>
+		</dict>
+	</dict>
+
 	<key>NSLocationAlwaysUsageDescription</key>
         <string>UniTracks benötigt laufenden Zugriff auf deinen Standort, um Trips auch im Hintergrund aufzuzeichnen.</string>
         

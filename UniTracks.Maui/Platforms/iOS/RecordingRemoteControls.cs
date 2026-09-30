@@ -54,13 +54,24 @@ public class RecordingRemoteControls : IRecordingRemoteControls
         LiveActivityBridge.SetCommandHandler(OnLiveActivityCommand);
 
         // The lock-screen surface belongs to the background: post it when the app leaves the screen,
-        // drop it again when the runner is back in the app.
+        // drop it again when the runner is back in the app. Since the szenenbasierte Lebenszyklus
+        // iOS 27 verpflichtend ist, kommen die Uebergaenge als Szenen-Mitteilungen; die
+        // Applikations-Mitteilungen bleiben als Rueckfall registriert. Beide Wege sind idempotent,
+        // ein doppelter Aufruf faellt also nicht auf.
         NSNotificationCenter.DefaultCenter.AddObserver(
             UIApplication.DidEnterBackgroundNotification,
             _ => Refresh(),
             null);
         NSNotificationCenter.DefaultCenter.AddObserver(
             UIApplication.WillEnterForegroundNotification,
+            _ => RemoveDelivered(),
+            null);
+        NSNotificationCenter.DefaultCenter.AddObserver(
+            UIScene.DidEnterBackgroundNotification,
+            _ => Refresh(),
+            null);
+        NSNotificationCenter.DefaultCenter.AddObserver(
+            UIScene.WillEnterForegroundNotification,
             _ => RemoveDelivered(),
             null);
     }
