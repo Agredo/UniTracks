@@ -79,5 +79,5 @@ Zielarchitektur kompilieren.
 ## Versionsnummern
 
 - Android/iOS: `ApplicationDisplayVersion` / `ApplicationVersion` in der csproj.
-- Windows: `Version` im `Package.appxmanifest` (aktuell `1.0.0.0`).
+- Windows: `Version` im `Package.appxmanifest` und in `app.manifest` (aktuell `1.0.0.1`).
 - Dateinamen der Artefakte: `VERSION` in `build-unitracks.bat`.

@@ -1,6 +1,29 @@
 {
   "releases": [
     {
+      "version": "0.5.1",
+      "date": "2026-11-10",
+      "title": "Einheitliche Metriken & iOS-Import",
+      "changes": [
+        {
+          "kind": "fix",
+          "text": "Ein frisch aufgenommener Trip zeigt sofort die Sportart, die beim Aufnehmen gewählt war - auf der Startseite und in der Trip-Übersicht. Bisher musste der Trip erst bearbeitet werden, damit die Anzeige stimmte."
+        },
+        {
+          "kind": "fix",
+          "text": "Strecke, Dauer, Tempo und Höhenmeter werden in Übersicht, Vergleich, Diagrammen und Kilometer-Splits gleich berechnet. Ein gespeicherter Wert für die Dauer gewinnt immer, das Durchschnittstempo fällt nur dann auf den gespeicherten Wert zurück, wenn kein Track vorliegt. Altbestände rechnet die App beim Start einmalig nach."
+        },
+        {
+          "kind": "improvement",
+          "text": "Der Vergleich sortiert und bewertet jetzt auf denselben Kennzahlen wie die Übersicht - Rangliste, Kilometerabschnitte und Tempoverlauf passen damit zusammen."
+        },
+        {
+          "kind": "feature",
+          "text": "Eine Datenbank aus der iPhone-App lässt sich auf Windows importieren: Die App erkennt das iOS-Format und wandelt es beim nächsten Start in die Datenbank dieser Installation um. Schlägt die Umwandlung fehl, bleibt die bisherige Datenbank unverändert stehen."
+        }
+      ]
+    },
+    {
       "version": "0.5.0",
       "date": "2026-09-15",
       "title": "Basislager - das neue Idle-Spiel",
