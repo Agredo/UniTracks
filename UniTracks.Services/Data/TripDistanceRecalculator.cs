@@ -1,15 +1,15 @@
 using System.Diagnostics;
 using UniTracks.Data.Repository;
 using UniTracks.Models.Trip;
-using UniTracks.Services.Location;
+using UniTracks.Services.Comparison;
+using UniTracks.Services.Stats;
 
 namespace UniTracks.Services.Data;
 
 /// <summary>
-/// Recalculates the stored distance of already-recorded trips with the <see cref="TrackSmoother"/>.
-/// Trips recorded before smoothing existed carry the raw incremental distance, which overestimates
-/// due to GPS jitter. Runs once per app start; trips whose smoothed distance matches the stored
-/// value are skipped, so the pass is cheap after the first run.
+/// Recalculates legacy recorded-trip metrics with the same raw-track rules used by the overview,
+/// comparison and new recordings. Runs once per app start; matching trips are skipped, so the pass
+/// is cheap after the first run.
 /// </summary>
 public class TripDistanceRecalculator
 {
@@ -35,18 +35,32 @@ public class TripDistanceRecalculator
 
             foreach (var trip in trips)
             {
-                if (trip.Locations is null || trip.Locations.Count < 3)
+                if (trip.Locations is null || trip.Locations.Count < 2)
                 {
                     continue;
                 }
 
-                double smoothed = TrackSmoother.SmoothedDistanceMeters(trip.Locations);
+                var ordered = trip.Locations.OrderBy(location => location.Timestamp).ToList();
+                double distance = TripMetrics.DistanceMeters(trip, ordered);
+                double elapsedSeconds = TripMetrics.ElapsedSeconds(trip);
+                var (moving, stopped) = TripMetricsCalculator.ComputeMovingAndStopped(ordered);
+                double movingSeconds = moving.TotalSeconds;
+                // Long GPS gaps are unknown time, not a measured pause.
+                double stoppedSeconds = stopped.TotalSeconds;
+                double averageSpeed = movingSeconds > 0 ? distance / movingSeconds : 0;
 
-                // Only write when the value actually changed (0.1 m tolerance), so repeat
-                // runs on already-recalculated trips touch nothing.
-                if (trip.Distance is null || Math.Abs(trip.Distance.Value - smoothed) > 0.1)
+                // Only write when a value actually changed, so repeat runs touch nothing.
+                if (trip.Distance is null || Math.Abs(trip.Distance.Value - distance) > 0.1
+                    || trip.AverageSpeed is null || Math.Abs(trip.AverageSpeed.Value - averageSpeed) > 0.001
+                    || trip.TotalTime is null || Math.Abs(trip.TotalTime.Value - elapsedSeconds) > 0.001
+                    || trip.MovingTime is null || Math.Abs(trip.MovingTime.Value - movingSeconds) > 0.001
+                    || trip.StoppedTime is null || Math.Abs(trip.StoppedTime.Value - stoppedSeconds) > 0.001)
                 {
-                    trip.Distance = smoothed;
+                    trip.Distance = distance;
+                    trip.TotalTime = elapsedSeconds;
+                    trip.MovingTime = movingSeconds;
+                    trip.StoppedTime = stoppedSeconds;
+                    trip.AverageSpeed = averageSpeed;
                     await _repository.Update<Trip>(trip);
                 }
             }

@@ -19,8 +19,9 @@ public static class TripFingerprintBuilder
     /// <summary>
     /// Bump whenever the derivation below changes, so stored fingerprints are rebuilt.
     /// 2: the fingerprint carries the trip's category and identifier.
+    /// 3: raw-track totals and zero movement use the same rules as the comparison.
     /// </summary>
-    public const int Version = 2;
+    public const int Version = 3;
 
     /// <summary>Points per resampled polyline; enough to keep the shape, few enough to compare cheaply.</summary>
     public const int PolylinePointCount = 32;
@@ -56,25 +57,13 @@ public static class TripFingerprintBuilder
         var center = GeoMath.Centroid(geometry);
         var polyline = GeoMath.ResampleByDistance(geometry, PolylinePointCount);
 
-        // The stored trip distance is already computed from the smoothed track at finalize time;
-        // recomputing it here only matters for trips recorded before that behaviour existed.
-        double distance = trip.Distance is > 0
-            ? trip.Distance.Value
-            : TrackSmoother.SmoothedDistanceMeters(ordered);
+        // The stored distance came from the raw track, just like the kilometre splits.
+        double distance = TripMetrics.DistanceMeters(trip, ordered);
 
-        var (moving, stopped) = TripMetricsCalculator.ComputeMovingAndStopped(ordered);
         double elevationGain = TripMetricsCalculator.ComputeElevationGain(ordered);
 
-        double elapsed = trip.TotalTime is > 0
-            ? trip.TotalTime.Value
-            : (trip.EndTime - trip.StartTime).TotalSeconds;
-        elapsed = Math.Max(0, elapsed);
-
-        double movingSeconds = trip.MovingTime is > 0 ? trip.MovingTime.Value : moving.TotalSeconds;
-        if (movingSeconds <= 0)
-        {
-            movingSeconds = elapsed;
-        }
+        double elapsed = TripMetrics.ElapsedSeconds(trip);
+        double movingSeconds = TripMetrics.MovingSeconds(trip, ordered);
 
         var first = geometry[0];
         var last = geometry[^1];
@@ -93,9 +82,7 @@ public static class TripFingerprintBuilder
             DistanceMeters = distance,
             ElapsedSeconds = elapsed,
             MovingSeconds = movingSeconds,
-            AverageSpeedMetersPerSecond = trip.AverageSpeed is > 0
-                ? trip.AverageSpeed.Value
-                : distance / Math.Max(1, movingSeconds),
+            AverageSpeedMetersPerSecond = TripMetrics.AverageSpeedMetersPerSecond(trip, ordered),
             MaxSpeedMetersPerSecond = trip.MaxSpeed ?? 0,
             ElevationGainMeters = elevationGain,
             MinAltitude = trip.MinAltitude ?? shape.Min(l => l.Altitude),

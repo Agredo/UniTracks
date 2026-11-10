@@ -394,7 +394,8 @@ public partial class TripComparePageViewModel : ObservableObject
 
         var picked = Attempts
             .Where(item => item.IsSelected)
-            .OrderBy(item => item.PaceSeconds)
+            .OrderBy(item => item.PaceSeconds <= 0 ? 1 : 0)
+            .ThenBy(item => item.PaceSeconds <= 0 ? double.MaxValue : item.PaceSeconds)
             .ToList();
 
         if (picked.Count < 2)

@@ -1,7 +1,9 @@
 using UniTracks.Data.Repository;
 using UniTracks.Models.GPS;
 using UniTracks.Models.Trip;
+using UniTracks.Services.Comparison;
 using UniTracks.Services.Location;
+using UniTracks.Services.Stats;
 using LocationModel = UniTracks.Models.Location.Location;
 
 namespace UniTracks.Services.Data;
@@ -30,9 +32,12 @@ public class GpsDataStorageService : IGpsDataStorageService
     // currentTrip are never mutated concurrently (EF Core's DbContext is not thread-safe).
     private readonly SemaphoreSlim storeGate = new(1, 1);
 
-    public GpsDataStorageService(IRepository repository)
+    private readonly ITripTypeCatalog tripTypes;
+
+    public GpsDataStorageService(IRepository repository, ITripTypeCatalog? tripTypes = null)
     {
         Repository = repository;
+        this.tripTypes = tripTypes ?? new TripTypeCatalog(repository);
     }
 
     public IRepository Repository { get; }
@@ -53,12 +58,19 @@ public class GpsDataStorageService : IGpsDataStorageService
         await storeGate.WaitAsync();
         try
         {
-            if (currentTrip is null || currentTrip.TripTypeId == tripTypeId)
+            if (currentTrip is null)
+            {
+                return;
+            }
+
+            var tripType = await tripTypes.GetAsync(tripTypeId);
+            if (currentTrip.TripTypeId == tripTypeId && currentTrip.TripType == tripType)
             {
                 return;
             }
 
             currentTrip.TripTypeId = tripTypeId;
+            currentTrip.TripType = tripType;
             await Repository.Update<Trip>(currentTrip);
         }
         finally
@@ -93,14 +105,28 @@ public class GpsDataStorageService : IGpsDataStorageService
         storeGate.Wait();
         try
         {
-            if (currentTrip is not null && currentTrip.Locations.Count > 2)
+            if (currentTrip is null)
             {
-                // Post-processing: replace the noisy incremental distance (accumulated from raw
-                // GPS points, which overestimates due to jitter) with the smoothed track distance.
-                // Raw points stay untouched in the database.
-                currentTrip.Distance = TrackSmoother.SmoothedDistanceMeters(currentTrip.Locations);
-                Repository.Update<Trip>(currentTrip).GetAwaiter().GetResult();
+                return;
             }
+
+            if (currentTrip.Locations.Count > 1)
+            {
+                // Persist the same raw-track distance that the overview and comparison derive.
+                currentTrip.Distance = TripMetrics.DistanceMeters(currentTrip, currentTrip.Locations);
+                var (moving, stopped) = TripMetricsCalculator.ComputeMovingAndStopped(currentTrip.Locations);
+                currentTrip.MovingTime = moving.TotalSeconds;
+                currentTrip.StoppedTime = stopped.TotalSeconds;
+            }
+
+            currentTrip.AverageSpeed = TripMetrics.AverageSpeedMetersPerSecond(currentTrip, currentTrip.Locations);
+
+            // Even a single fix or no fix at all is a completed recording. A null timespan would be
+            // mistaken for a legacy value and derived again later.
+            currentTrip.TotalTime = TripMetrics.ElapsedSeconds(currentTrip);
+            currentTrip.MovingTime ??= 0;
+            currentTrip.StoppedTime ??= 0;
+            Repository.Update<Trip>(currentTrip).GetAwaiter().GetResult();
 
             currentTrip = null;
             ResetAggregates();
@@ -166,12 +192,14 @@ public class GpsDataStorageService : IGpsDataStorageService
                 ResetAggregates();
                 AccountFor(location);
 
+                var tripType = await tripTypes.GetAsync(CurrentTripTypeId);
                 var trip = new Trip()
                 {
                     ID = Guid.NewGuid(),
                     StartTime = DateTimeOffset.UtcNow,
                     EndTime = DateTimeOffset.UtcNow,
                     TripTypeId = CurrentTripTypeId,
+                    TripType = tripType,
                     Locations = new List<LocationModel>() { location }
                 };
 

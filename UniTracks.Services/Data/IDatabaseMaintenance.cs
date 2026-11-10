@@ -50,6 +50,9 @@ public interface IDatabaseMaintenance
     /// </summary>
     Task<string?> CreateExportCopyAsync();
 
+    /// <summary>True when a backup of the iOS app (LiteDB) is converted instead of being refused.</summary>
+    bool ConvertsLiteBackups { get; }
+
     /// <summary>
     /// Applies a staged operation. Called at startup <em>before</em> the repository is created;
     /// never throws so a broken file cannot keep the app from launching.

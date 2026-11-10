@@ -27,6 +27,23 @@ public sealed class TripMetricsCalculatorTests
     }
 
     [Fact]
+    public void ComputeMovingAndStopped_UsesSensorSpeedForTimeMetrics_EvenWhenPositionIsUnchanged()
+    {
+        // Split segmentation may discard this sub-metre position change as GPS noise. The movement
+        // predicate nevertheless stays shared so a split cannot charge more time than the trip.
+        var points = new[]
+        {
+            Point(0, speed: 1.0),
+            Point(1, speed: 1.0),
+        };
+
+        var (moving, stopped) = TripMetricsCalculator.ComputeMovingAndStopped(points);
+
+        Assert.Equal(TimeSpan.FromSeconds(1), moving);
+        Assert.Equal(TimeSpan.Zero, stopped);
+    }
+
+    [Fact]
     public void ComputeMovingAndStopped_TreatsTheThresholdItselfAsMoving()
     {
         var points = new[]

@@ -143,6 +143,7 @@ public partial class TripOverviewViewModel : ObservableObject
 
         if (points.Count == 0)
         {
+            trackLoaded = false;
             return;
         }
 
@@ -158,21 +159,23 @@ public partial class TripOverviewViewModel : ObservableObject
         TripName = trip.Name ?? GetTripName(trip.StartTime);
         DateText = trip.StartTime.LocalDateTime.ToString("dddd, dd. MMMM yyyy · HH:mm", GermanCulture);
 
-        if (trip.Distance is { } distance)
+        var locations = trip.Locations?
+            .OrderBy(location => location.Timestamp)
+            .ToList() ?? new List<LocationModel>();
+        double distanceMeters = TripMetrics.DistanceMeters(trip, locations);
+
+        if (distanceMeters >= 1000)
         {
-            if (distance >= 1000)
-            {
-                DistanceText = (distance / 1000).ToString("0.00", GermanCulture);
-                DistanceUnit = "km";
-            }
-            else
-            {
-                DistanceText = Math.Round(distance).ToString("0", GermanCulture);
-                DistanceUnit = "m";
-            }
+            DistanceText = (distanceMeters / 1000).ToString("0.00", GermanCulture);
+            DistanceUnit = "km";
+        }
+        else
+        {
+            DistanceText = Math.Round(distanceMeters).ToString("0", GermanCulture);
+            DistanceUnit = "m";
         }
 
-        TimeSpan duration = trip.EndTime - trip.StartTime;
+        TimeSpan duration = TimeSpan.FromSeconds(TripMetrics.ElapsedSeconds(trip));
         if (duration > TimeSpan.Zero)
         {
             DurationText = duration.TotalHours >= 1
@@ -201,15 +204,28 @@ public partial class TripOverviewViewModel : ObservableObject
     {
         var locations = trip.Locations?
             .OrderBy(l => l.Timestamp)
-            .ToList();
+            .ToList() ?? new List<LocationModel>();
 
-        if (locations is null || locations.Count < 2)
+        if (locations.Count < 2)
         {
+            ApplyMetricStats(trip, locations);
             return;
         }
 
         BuildProfiles(locations);
+        ApplyMetricStats(trip, locations);
     }
+
+    private void ApplyMetricStats(Trip trip, IReadOnlyList<LocationModel> locations)
+    {
+        if (trip.AverageSpeed is null || locations.Count >= 2)
+        {
+            AverageSpeedText = FormatSpeed(TripMetrics.AverageSpeedMetersPerSecond(trip, locations));
+        }
+    }
+
+    private static string FormatSpeed(double metersPerSecond)
+        => Math.Round(metersPerSecond * 3.6, 1).ToString("0.0", GermanCulture);
 
     /// <summary>Resamples the GPS points to at most 100 values so the charts stay cheap to draw.</summary>
     private void BuildProfiles(List<LocationModel> locations)

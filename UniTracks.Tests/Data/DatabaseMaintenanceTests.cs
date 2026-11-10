@@ -1,5 +1,7 @@
 using System.Text;
+using UniTracks.Data.SQLite;
 using UniTracks.Models.Constants;
+using UniTracks.Models.Trip;
 using UniTracks.Services.Data;
 using UniTracks.Tests.ViewModels.Fakes;
 
@@ -112,10 +114,39 @@ public sealed class DatabaseMaintenanceTests : IDisposable
     }
 
     [Fact]
-    public async Task StageImport_RefusesAFileOfTheOtherStore()
+    public async Task StageImport_AcceptsAnIosBackupOnTheSqlitePlatform()
     {
+        // A LiteDB file is not this platform's store, but it is rebuilt into SQLite on import, so it
+        // has to be accepted here - that is the whole point of the conversion.
         var path = Path.Combine(directory, "litedb.db");
         WriteText(path, LiteDbHeader);
+
+        var maintenance = CreateMaintenance(useLiteDatabase: false);
+
+        Assert.Null(await maintenance.StageImportAsync(path));
+        Assert.True(maintenance.HasPendingOperation);
+        Assert.Contains("konvertiert", maintenance.PendingOperationText);
+    }
+
+    [Fact]
+    public async Task StageImport_RefusesASqliteBackupOnIos()
+    {
+        var path = Path.Combine(directory, "sqlite.db");
+        WriteText(path, SqliteHeader);
+
+        var maintenance = CreateMaintenance(useLiteDatabase: true);
+
+        var error = await maintenance.StageImportAsync(path);
+
+        Assert.Contains("iOS", error);
+        Assert.False(maintenance.HasPendingOperation);
+    }
+
+    [Fact]
+    public async Task StageImport_RefusesAFileWithoutADatabaseHeader()
+    {
+        var path = Path.Combine(directory, "notiz.txt");
+        WriteText(path, "kein datenbankkopf");
 
         var error = await CreateMaintenance(useLiteDatabase: false).StageImportAsync(path);
 
@@ -236,6 +267,59 @@ public sealed class DatabaseMaintenanceTests : IDisposable
     }
 
     [Fact]
+    public async Task ApplyPending_ConvertsAnIosBackupIntoTheSqliteStore()
+    {
+        var maintenance = CreateMaintenance(useLiteDatabase: false);
+        WriteDatabase(maintenance, "alte daten");
+        var trip = new Trip
+        {
+            ID = Guid.NewGuid(),
+            Name = "Feierabendrunde",
+            StartTime = DateTimeOffset.Now.AddHours(-1),
+            EndTime = DateTimeOffset.Now,
+            Locations = [],
+        };
+        var source = Path.Combine(directory, "ios.db");
+        WriteLiteDatabase(source, trip);
+        await maintenance.StageImportAsync(source);
+
+        var result = maintenance.ApplyPending();
+
+        Assert.True(result.Applied, result.Message);
+        Assert.Contains("iOS-Datenbank", result.Message);
+        Assert.Single(BackupFiles());
+        Assert.NotNull(maintenance.LastImport);
+        Assert.False(File.Exists(maintenance.DatabasePath + DatabaseMaintenance.ImportPendingSuffix));
+
+        // The replaced file has to be a readable SQLite database that holds the imported trip.
+        using var context = new SqliteDBContext(maintenance.DatabasePath);
+        Assert.Equal(trip.ID, Assert.Single(context.Trips).ID);
+    }
+
+    [Fact]
+    public async Task ApplyPending_KeepsTheDatabaseWhenTheIosConversionFails()
+    {
+        var maintenance = CreateMaintenance(useLiteDatabase: false);
+        WriteDatabase(maintenance, "alte daten");
+        var pending = maintenance.DatabasePath + DatabaseMaintenance.ImportPendingSuffix;
+        WriteLiteDatabase(
+            pending,
+            new Trip { ID = Guid.NewGuid(), Name = "Feierabendrunde", Locations = [] });
+
+        // Reading the header is still allowed, the conversion is not: it has to open the backup for
+        // writing. That is the failure the live database must survive untouched.
+        using var unavailable = new FileStream(pending, FileMode.Open, FileAccess.Read, FileShare.Read);
+
+        var result = maintenance.ApplyPending();
+
+        Assert.False(result.Applied, result.Message);
+        Assert.Contains("fehlgeschlagen", result.Message);
+        Assert.Contains("alte daten", File.ReadAllText(maintenance.DatabasePath));
+        Assert.Empty(BackupFiles());
+        Assert.False(File.Exists(maintenance.DatabasePath + DatabaseMaintenance.ImportConvertedSuffix));
+    }
+
+    [Fact]
     public async Task ApplyPending_DiscardsATamperedImportFile()
     {
         var maintenance = CreateMaintenance(useLiteDatabase: false);
@@ -339,6 +423,19 @@ public sealed class DatabaseMaintenanceTests : IDisposable
 
     private void WriteDatabase(DatabaseMaintenance maintenance, string payload = "nutzdaten") =>
         WriteText(maintenance.DatabasePath, SqliteHeader + payload);
+
+    private static void WriteLiteDatabase(string path, params Trip[] trips)
+    {
+        Directory.CreateDirectory(Path.GetDirectoryName(path)!);
+
+        using var database = new UniTracks.Data.LiteDB.LiteDatabase(path);
+        var collection = database.Database.GetCollection<Trip>();
+
+        foreach (var trip in trips)
+        {
+            collection.Insert(trip);
+        }
+    }
 
     private string[] BackupFiles()
     {

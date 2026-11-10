@@ -37,9 +37,8 @@ namespace UniTracks.Maui
             // shell is created keeps the first page from rendering an empty catalog.
             databaseInitializer.EnsureSeededAsync().GetAwaiter().GetResult();
 
-            // Recalculate stored trip distances with the smoothing pipeline (trips recorded before
-            // smoothing existed carry the noisy raw distance). Fire-and-forget so startup is not
-            // blocked; already-recalculated trips are skipped, so later runs are cheap.
+            // Recalculate legacy metrics so old average-speed samples and smoothed distances cannot
+            // keep disagreeing with the splits and overview.
             _ = distanceRecalculator.RecalculateAsync();
 
             // Indexes every trip that predates the comparison feature. Also fire-and-forget, because

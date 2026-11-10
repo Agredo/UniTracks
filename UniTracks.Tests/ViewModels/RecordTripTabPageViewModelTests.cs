@@ -1,4 +1,6 @@
 using System.ComponentModel;
+using System.Linq.Expressions;
+using UniTracks.Data.Repository;
 using UniTracks.Models.Constants;
 using UniTracks.Models.Trip;
 using UniTracks.Models.User;
@@ -28,8 +30,12 @@ public sealed class RecordTripTabPageViewModelTests
     /// </summary>
     private sealed class Fixture
     {
-        public Fixture(Action<InMemoryRepository>? seed = null, bool seedUser = true)
+        public Fixture(
+            Action<InMemoryRepository>? seed = null,
+            FakeRecordingSettings? recordingSettings = null,
+            bool seedUser = true)
         {
+            RecordingSettings = recordingSettings ?? new FakeRecordingSettings();
             if (seedUser)
             {
                 Repository.Seed(new User { ID = Guid.NewGuid(), Name = "Testfahrer" });
@@ -46,7 +52,8 @@ public sealed class RecordTripTabPageViewModelTests
                 Dispatcher,
                 Repository,
                 Gps,
-                Remote);
+                Remote,
+                RecordingSettings);
         }
 
         public FakeNavigationService Navigation { get; } = new();
@@ -66,6 +73,8 @@ public sealed class RecordTripTabPageViewModelTests
         public FakeGpsDataStorageService Gps { get; } = new();
 
         public FakeRecordingRemoteControls Remote { get; } = new();
+
+        public FakeRecordingSettings RecordingSettings { get; }
 
         public RecordTripTabPageViewModel ViewModel { get; }
     }
@@ -278,6 +287,131 @@ public sealed class RecordTripTabPageViewModelTests
         Assert.False(fixture.ViewModel.IsRecording);
     }
 
+    private sealed class BlockingTripTypeRepository : IRepository
+    {
+        private readonly TripType[] availableTypes;
+        private readonly TaskCompletionSource<IEnumerable<TripType>> load =
+            new(TaskCreationOptions.RunContinuationsAsynchronously);
+
+        public BlockingTripTypeRepository(params TripType[] types)
+        {
+            availableTypes = types;
+        }
+
+        public string DatabasePath => ":memory:";
+
+        public long DataVersion => 0;
+
+        public void CompleteLoad() => load.TrySetResult(availableTypes);
+
+        public async Task<IEnumerable<TEntity>> GetAllAsync<TEntity>(
+            params Expression<Func<TEntity, object>>[] includes)
+            where TEntity : class
+        {
+            if (typeof(TEntity) != typeof(TripType))
+            {
+                return Enumerable.Empty<TEntity>();
+            }
+
+            return (IEnumerable<TEntity>)await load.Task.WaitAsync(TimeSpan.FromSeconds(5));
+        }
+
+        public Task<IEnumerable<TEntity>> GetAsync<TEntity>(
+            Expression<Func<TEntity, bool>>? filter = null,
+            params Expression<Func<TEntity, object>>[] includes)
+            where TEntity : class =>
+            Task.FromResult(Enumerable.Empty<TEntity>());
+
+        public IEnumerable<TEntity> Get<TEntity>(
+            Expression<Func<TEntity, bool>>? filter = null,
+            params Expression<Func<TEntity, object>>[] includes)
+            where TEntity : class => Enumerable.Empty<TEntity>();
+
+        public Task<TEntity> Add<TEntity>(TEntity entity) where TEntity : class =>
+            throw new NotSupportedException();
+
+        public Task<TEntity> Update<TEntity>(TEntity entity) where TEntity : class =>
+            throw new NotSupportedException();
+
+        public Task Delete<TEntity>(TEntity entity) where TEntity : class =>
+            throw new NotSupportedException();
+
+        public Task DeleteRange<TEntity>(IEnumerable<TEntity> entities) where TEntity : class =>
+            throw new NotSupportedException();
+
+        public Task<TEntity?> GetByIdAsync<TEntity>(Guid id) where TEntity : class =>
+            throw new NotSupportedException();
+    }
+
+    [Fact]
+    public async Task Constructor_UserSelectsTypeWhileCatalogIsLoading_DoesNotRestoreOlderPreference()
+    {
+        var first = NewTripType("A");
+        var second = NewTripType("B");
+        var repository = new BlockingTripTypeRepository(first, second);
+        var settings = new FakeRecordingSettings { LastTripTypeId = first.ID.ToString() };
+
+        var viewModel = new RecordTripTabPageViewModel(
+            new FakeNavigationService(),
+            new FakePopupNavigationService(),
+            new FakeLocationService(),
+            new FakePermissions(),
+            new FakeMainThread(),
+            new FakeDispatcher(),
+            repository,
+            new FakeGpsDataStorageService(),
+            new FakeRecordingRemoteControls(),
+            settings);
+
+        viewModel.SelectedTripType = second;
+        repository.CompleteLoad();
+
+        await WaitUntilAsync(() => viewModel.TripTypes.Count == 2);
+
+        Assert.Equal(second.ID, viewModel.SelectedTripType?.ID);
+        Assert.Equal(second.ID.ToString(), settings.LastTripTypeId);
+    }
+
+    [Fact]
+    public async Task Constructor_UserClearsSelectionWhileCatalogIsLoading_DoesNotRestorePreference()
+    {
+        var first = NewTripType("A");
+        var second = NewTripType("B");
+        var repository = new BlockingTripTypeRepository(first, second);
+        var settings = new FakeRecordingSettings { LastTripTypeId = second.ID.ToString() };
+
+        var viewModel = new RecordTripTabPageViewModel(
+            new FakeNavigationService(),
+            new FakePopupNavigationService(),
+            new FakeLocationService(),
+            new FakePermissions(),
+            new FakeMainThread(),
+            new FakeDispatcher(),
+            repository,
+            new FakeGpsDataStorageService(),
+            new FakeRecordingRemoteControls(),
+            settings);
+
+        viewModel.SelectedTripType = first;
+        viewModel.SelectedTripType = null;
+        repository.CompleteLoad();
+
+        await WaitUntilAsync(() => viewModel.TripTypes.Count == 2);
+
+        Assert.Null(viewModel.SelectedTripType);
+        Assert.Equal(string.Empty, settings.LastTripTypeId);
+    }
+
+    private static async Task WaitUntilAsync(Func<bool> condition)
+    {
+        for (int attempt = 0; attempt < 500 && !condition(); attempt++)
+        {
+            await Task.Delay(10, TestContext.Current.CancellationToken);
+        }
+
+        Assert.True(condition(), "Der asynchrone Ladevorgang wurde nicht rechtzeitig abgeschlossen.");
+    }
+
     /// <summary>
     /// iOS can end background updates without any error. The watchdog maps the platform snapshot to
     /// a visible warning so a silently stopped recording is no longer invisible.
@@ -324,6 +458,7 @@ public sealed class RecordTripTabPageViewModelTests
         fixture.ViewModel.SelectedTripType = third;
 
         Assert.Equal(third.ID, fixture.Gps.CurrentTripTypeId);
+        Assert.Equal(third.ID.ToString(), fixture.RecordingSettings.LastTripTypeId);
         Assert.Equal(third.ID, fixture.ViewModel.Context.TripType?.ID);
         Assert.Equal("C", fixture.ViewModel.SelectedTripTypeName);
         Assert.Equal(new[] { third.ID, first.ID, second.ID }, fixture.ViewModel.FavoriteTripTypes.Select(t => t.ID));
@@ -335,6 +470,7 @@ public sealed class RecordTripTabPageViewModelTests
 
         Assert.Null(fixture.Gps.CurrentTripTypeId);
         Assert.Null(fixture.ViewModel.Context.TripType);
+        Assert.Equal(string.Empty, fixture.RecordingSettings.LastTripTypeId);
         Assert.Equal("Aktivität wählen", fixture.ViewModel.SelectedTripTypeName);
     }
 
@@ -351,6 +487,51 @@ public sealed class RecordTripTabPageViewModelTests
         Assert.Equal(
             new[] { types[4].ID, types[0].ID, types[1].ID, types[2].ID },
             fixture.ViewModel.FavoriteTripTypes.Select(t => t.ID));
+    }
+
+    [Fact]
+    public void SelectedTripType_IsRestoredAndSavedForTheNextRecordingPage()
+    {
+        var first = NewTripType("A");
+        var second = NewTripType("B");
+        var firstPage = new Fixture(repository => repository.Seed(first, second));
+
+        firstPage.ViewModel.SelectedTripType = second;
+
+        var secondPage = new Fixture(
+            repository => repository.Seed(first, second),
+            firstPage.RecordingSettings);
+
+        Assert.Equal(second.ID, secondPage.ViewModel.SelectedTripType?.ID);
+        Assert.Equal(second.ID, secondPage.Gps.CurrentTripTypeId);
+        Assert.Empty(secondPage.Gps.AppliedTripTypeIds);
+    }
+
+    [Fact]
+    public void Constructor_RestoringAType_DoesNotApplyItToAnOpenRecording()
+    {
+        var first = NewTripType("A");
+        var second = NewTripType("B");
+        var settings = new FakeRecordingSettings { LastTripTypeId = second.ID.ToString() };
+
+        var fixture = new Fixture(repository => repository.Seed(first, second), settings);
+        fixture.Gps.AppliedTripTypeIds.Clear();
+
+        fixture.ViewModel.SelectedTripType = first;
+
+        Assert.Equal(new Guid?[] { first.ID }, fixture.Gps.AppliedTripTypeIds);
+    }
+
+    [Fact]
+    public void Constructor_DeletedSavedType_FallsBackToTheFirstAvailableType()
+    {
+        var first = NewTripType("A");
+        var second = NewTripType("B");
+        var settings = new FakeRecordingSettings { LastTripTypeId = Guid.NewGuid().ToString() };
+
+        var fixture = new Fixture(repository => repository.Seed(first, second), settings);
+
+        Assert.Equal(first.ID, fixture.ViewModel.SelectedTripType?.ID);
     }
 
     /// <summary>

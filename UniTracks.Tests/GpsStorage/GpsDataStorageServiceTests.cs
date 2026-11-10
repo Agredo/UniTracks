@@ -1,6 +1,7 @@
 using System.Collections.Concurrent;
 using UniTracks.Data.Repository;
 using UniTracks.Models.GPS;
+using UniTracks.Services.Comparison;
 using UniTracks.Services.Data;
 using UniTracks.Services.Location;
 using UniTracks.Tests.TestSupport;
@@ -41,7 +42,8 @@ public sealed class GpsDataStorageServiceTests
         int pointCount,
         Guid? tripTypeId = null)
     {
-        var service = new GpsDataStorageService(db.Repository) { CurrentTripTypeId = tripTypeId };
+        var catalog = new TripTypeCatalog(db.Repository);
+        var service = new GpsDataStorageService(db.Repository, catalog) { CurrentTripTypeId = tripTypeId };
 
         for (var index = 0; index < pointCount; index++)
         {
@@ -74,6 +76,34 @@ public sealed class GpsDataStorageServiceTests
     }
 
     [Fact]
+    public async Task StoreData_FirstPoint_ResolvesTheSelectedTypeOnTheLiveTrip()
+    {
+        using var db = new SqliteTestDatabase();
+        var tripTypeId = db.Repository.Get<TripTypeModel>().First().ID;
+
+        await FeedAsync(db, 1, tripTypeId);
+
+        var trip = Assert.Single(db.Repository.Get<TripModel>());
+        Assert.Equal<Guid?>(tripTypeId, trip.TripTypeId);
+        Assert.Equal(tripTypeId, trip.TripType?.ID);
+    }
+
+    [Fact]
+    public async Task ApplyTripTypeAsync_SameIdWithMissingNavigation_RepairsTheLiveTrip()
+    {
+        using var db = new SqliteTestDatabase();
+        var types = db.Repository.Get<TripTypeModel>().ToList();
+        var service = await FeedAsync(db, 1, types[0].ID);
+        var trip = Assert.Single(db.Repository.Get<TripModel>());
+        trip.TripType = null;
+
+        await service.ApplyTripTypeAsync(types[0].ID);
+
+        Assert.Same(trip, Assert.Single(db.Repository.Get<TripModel>()));
+        Assert.Equal(types[0].ID, trip.TripType?.ID);
+    }
+
+    [Fact]
     public async Task StoreData_FurtherPoints_AccumulateOnTheSameTrip()
     {
         using var db = new SqliteTestDatabase();
@@ -94,27 +124,56 @@ public sealed class GpsDataStorageServiceTests
     }
 
     [Fact]
-    public async Task FinalizeTrip_WithMoreThanTwoLocations_ReplacesRawDistanceWithSmoothedDistance()
+    public async Task FinalizeTrip_WithMoreThanTwoLocations_KeepsTheRawTrackDistance()
     {
         using var db = new SqliteTestDatabase();
         var service = await FeedAsync(db, 5);
 
         var rawDistance = Assert.Single(db.Repository.Get<TripModel>()).Distance;
         var points = StoredLocations(db.Repository);
+        double expectedDistance = 0;
+        for (int index = 1; index < points.Count; index++)
+        {
+            expectedDistance += GeoMath.HaversineMeters(
+                points[index - 1].Latitude, points[index - 1].Longitude,
+                points[index].Latitude, points[index].Longitude);
+        }
 
         service.FinalizeTrip();
 
-        var smoothedDistance = Assert.Single(db.Repository.Get<TripModel>()).Distance;
+        var finalizedDistance = Assert.Single(db.Repository.Get<TripModel>()).Distance;
 
         Assert.True(rawDistance > 0);
-        Assert.True(
-            smoothedDistance < rawDistance,
-            $"Die geglättete Distanz ({smoothedDistance}) muss die verrauschte Rohdistanz ({rawDistance}) unterschreiten.");
-        Assert.Equal(TrackSmoother.SmoothedDistanceMeters(points), smoothedDistance!.Value, 6);
+        Assert.Equal(expectedDistance, finalizedDistance!.Value, 6);
     }
 
     [Fact]
-    public async Task FinalizeTrip_WithTwoOrFewerLocations_KeepsTheRawDistance()
+    public async Task FinalizeTrip_StoresCanonicalRawDistanceAndMovementMetrics()
+    {
+        using var db = new SqliteTestDatabase();
+        var service = await FeedAsync(db, 5);
+
+        service.FinalizeTrip();
+
+        var trip = Assert.Single(db.Repository.Get<TripModel>());
+        double expectedDistance = 0;
+        var points = StoredLocations(db.Repository);
+        for (int index = 1; index < points.Count; index++)
+        {
+            expectedDistance += GeoMath.HaversineMeters(
+                points[index - 1].Latitude, points[index - 1].Longitude,
+                points[index].Latitude, points[index].Longitude);
+        }
+
+        Assert.Equal(expectedDistance, trip.Distance!.Value, 6);
+        Assert.Equal(12, trip.MovingTime!.Value, 3);
+        Assert.Equal(0, trip.StoppedTime!.Value, 3);
+        Assert.Equal(trip.Distance!.Value / trip.MovingTime!.Value, trip.AverageSpeed!.Value, 6);
+        Assert.Equal(TripMetrics.ElapsedSeconds(trip), trip.TotalTime!.Value, 3);
+    }
+
+    [Fact]
+    public async Task FinalizeTrip_WithTwoLocations_StoresTheSameSplitDistance()
     {
         using var db = new SqliteTestDatabase();
         var service = await FeedAsync(db, 2);
@@ -123,8 +182,14 @@ public sealed class GpsDataStorageServiceTests
 
         service.FinalizeTrip();
 
-        // Smoothing needs at least three points, so the incremental value has to survive.
-        Assert.Equal(rawDistance, Assert.Single(db.Repository.Get<TripModel>()).Distance);
+        var trip = Assert.Single(db.Repository.Get<TripModel>());
+        var points = StoredLocations(db.Repository);
+        double expectedDistance = GeoMath.HaversineMeters(
+            points[0].Latitude, points[0].Longitude,
+            points[1].Latitude, points[1].Longitude);
+        Assert.Equal(expectedDistance, rawDistance!.Value, 6);
+        Assert.Equal(expectedDistance, trip.Distance!.Value, 6);
+        Assert.NotNull(trip.MovingTime);
     }
 
     [Fact]
@@ -159,8 +224,9 @@ public sealed class GpsDataStorageServiceTests
 
         await service.ApplyTripTypeAsync(types[1].ID);
 
-        // The overview reads the trip together with its type, so the navigation has to follow the change.
-        var trip = Assert.Single((await db.Repository.GetAllAsync<TripModel>(trip => trip.TripType)).ToList());
+        var trip = Assert.Single(db.Repository.Get<TripModel>());
+
+        Assert.Same(trip, Assert.Single((await db.Repository.GetAllAsync<TripModel>(item => item.TripType)).ToList()));
 
         Assert.Equal<Guid?>(types[1].ID, trip.TripTypeId);
         Assert.NotNull(trip.TripType);

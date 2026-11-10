@@ -206,6 +206,7 @@ public static class MauiProgram
 
         // User preference: the trip filter last used, so the list opens the way it was left.
         services.AddSingleton<ITripFilterSettings, PreferencesTripFilterSettings>();
+        services.AddSingleton<IRecordingSettings, PreferencesRecordingSettings>();
 
         // User preference: which tile layer the maps use.
         services.AddSingleton<IMapStyleSettings, PreferencesMapStyleSettings>();

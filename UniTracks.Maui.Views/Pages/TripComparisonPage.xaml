@@ -266,8 +266,11 @@
                         HeightRequest="200"
                         InvertY="True"
                         LineColor="#4D9FE7"
+                        MissingValues="{Binding MissingPaceValues}"
+                        PrimaryMissingValues="{Binding PrimaryMissingPaceValues}"
                         PrimaryValues="{Binding PaceSeriesA}"
                         SecondaryColor="#FF6B3D"
+                        SecondaryMissingValues="{Binding SecondaryMissingPaceValues}"
                         SecondaryValues="{Binding PaceSeriesB}"
                         Series="{Binding Curves}"
                         SharedScale="True" />

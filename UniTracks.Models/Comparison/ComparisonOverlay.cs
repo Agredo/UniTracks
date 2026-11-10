@@ -25,6 +25,6 @@ public sealed record ComparisonCurve
 
     public required string ColorHex { get; init; }
 
-    /// <summary>Climb-adjusted pace per kilometre, in seconds. 0 for a kilometre that is missing.</summary>
+    /// <summary>Climb-adjusted pace per kilometre, in seconds. Non-positive values are missing.</summary>
     public required IReadOnlyList<double> Values { get; init; }
 }

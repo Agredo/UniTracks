@@ -90,7 +90,10 @@ public partial class SettingsPageViewModel : ObservableObject
     public string ImportHint =>
         "Wähle die Datenbankdatei einer anderen UniTracks-Installation aus. " +
         "Der Import wird beim nächsten Start der App übernommen; deine jetzige Datenbank bleibt als " +
-        "Kopie erhalten.";
+        "Kopie erhalten." +
+        (databaseMaintenance.ConvertsLiteBackups
+            ? " Eine Sicherung aus der iOS-App wird dabei in das Format dieser Plattform umgewandelt."
+            : string.Empty);
 
     public string DatabaseInfoText =>
         $"{databaseMaintenance.DatabaseFileName} · {FormatSize(databaseMaintenance.DatabaseSizeBytes)}";

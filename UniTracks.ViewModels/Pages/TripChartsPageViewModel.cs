@@ -97,27 +97,29 @@ public partial class TripChartsPageViewModel : ObservableObject
         TripName = TripDisplay.TimeOfDayName(trip.StartTime);
         DateText = trip.StartTime.LocalDateTime.ToString("dddd, dd. MMMM yyyy · HH:mm", GermanCulture);
 
-        if (trip.Distance is { } distance)
+        var locations = trip.Locations?
+            .OrderBy(location => location.Timestamp)
+            .ToList() ?? new List<LocationModel>();
+        double distanceMeters = TripMetrics.DistanceMeters(trip, locations);
+
+        if (distanceMeters >= 1000)
         {
-            if (distance >= 1000)
-            {
-                DistanceText = (distance / 1000).ToString("0.00", GermanCulture);
-                DistanceUnit = "km";
-            }
-            else
-            {
-                DistanceText = Math.Round(distance).ToString("0", GermanCulture);
-                DistanceUnit = "m";
-            }
+            DistanceText = (distanceMeters / 1000).ToString("0.00", GermanCulture);
+            DistanceUnit = "km";
+        }
+        else
+        {
+            DistanceText = Math.Round(distanceMeters).ToString("0", GermanCulture);
+            DistanceUnit = "m";
         }
 
-        TimeSpan duration = trip.EndTime - trip.StartTime;
+        TimeSpan duration = TimeSpan.FromSeconds(TripMetrics.ElapsedSeconds(trip));
         if (duration > TimeSpan.Zero)
         {
             DurationText = FormatDuration(duration);
         }
 
-        if (trip.AverageSpeed is { } averageSpeed)
+        if (trip.AverageSpeed is { } averageSpeed && (trip.Locations is null || trip.Locations.Count < 2))
         {
             AverageSpeedText = Math.Round(averageSpeed * 3.6, 1).ToString("0.0", GermanCulture);
         }
@@ -134,29 +136,36 @@ public partial class TripChartsPageViewModel : ObservableObject
     {
         var locations = trip.Locations?
             .OrderBy(l => l.Timestamp)
-            .ToList();
+            .ToList() ?? new List<LocationModel>();
 
-        if (locations is null || locations.Count < 2)
+        if (locations.Count < 2)
         {
             return;
         }
 
-        var (moving, stopped) = TripMetricsCalculator.ComputeMovingAndStopped(locations);
-        MovingTimeText = FormatDuration(moving);
-        StoppedTimeText = FormatDuration(stopped);
+        var (_, stopped) = TripMetricsCalculator.ComputeMovingAndStopped(locations);
+        double movingSeconds = TripMetrics.MovingSeconds(trip, locations);
+        MovingTimeText = FormatDuration(TimeSpan.FromSeconds(movingSeconds));
+        StoppedTimeText = FormatDuration(TimeSpan.FromSeconds(
+            Math.Max(0, trip.StoppedTime ?? stopped.TotalSeconds)));
 
         double minAltitude = trip.MinAltitude ?? locations.Min(l => l.Altitude);
         double maxAltitude = trip.MaxAltitude ?? locations.Max(l => l.Altitude);
         AltitudeText = $"{Math.Round(minAltitude)}–{Math.Round(maxAltitude)} m";
 
-        double distanceKm = (trip.Distance ?? 0) / 1000.0;
-        if (distanceKm > 0.05 && moving.TotalSeconds > 0)
+        double distanceMeters = TripMetrics.DistanceMeters(trip, locations);
+        double distanceKm = distanceMeters / 1000.0;
+        if (distanceKm > 0.05 && movingSeconds > 0)
         {
-            var pace = TimeSpan.FromSeconds(moving.TotalSeconds / distanceKm);
+            var pace = TimeSpan.FromSeconds(movingSeconds / distanceKm);
             PaceText = $"{(int)pace.TotalMinutes}:{pace.Seconds:00}";
         }
 
         BuildProfiles(locations);
+
+        AverageSpeedText = Math.Round(
+            TripMetrics.AverageSpeedMetersPerSecond(trip, locations) * 3.6, 1)
+            .ToString("0.0", GermanCulture);
     }
 
     /// <summary>

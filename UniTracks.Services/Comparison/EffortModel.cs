@@ -24,8 +24,8 @@ public static class EffortModel
     }
 
     /// <summary>
-    /// Seconds per equivalent kilometre. Falls back to total elapsed time when the moving-time
-    /// detection found nothing to latch onto.
+    /// Seconds per equivalent kilometre. Zero when distance or actual movement is unavailable;
+    /// elapsed time must never turn a stationary trip into a valid pace.
     /// </summary>
     public static double EquivalentPaceSecondsPerKilometer(
         double distanceMeters,
@@ -40,9 +40,7 @@ public static class EffortModel
             return 0;
         }
 
-        double seconds = movingSeconds > 0 ? movingSeconds : elapsedSeconds;
-
-        return seconds <= 0 ? 0 : seconds / (equivalentDistance / 1000.0);
+        return movingSeconds <= 0 ? 0 : movingSeconds / (equivalentDistance / 1000.0);
     }
 
     /// <summary>

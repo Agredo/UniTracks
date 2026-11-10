@@ -130,11 +130,7 @@ public sealed record TripFilters
     /// <summary>Drops every filter.</summary>
     public TripFilters Clear() => Empty;
 
-    /// <summary>
-    /// Which duration bucket a recorded span falls in. The duration is computed from
-    /// <c>EndTime - StartTime</c> because <c>TotalTime</c>/<c>MovingTime</c>/<c>StoppedTime</c> are
-    /// never written by the app — the same way the trip card shows it.
-    /// </summary>
+    /// <summary>Which duration bucket a recorded span falls in.</summary>
     public static DurationBucket BucketFor(TimeSpan duration)
     {
         if (duration < TimeSpan.FromMinutes(30))

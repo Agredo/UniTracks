@@ -4,6 +4,7 @@ using UniTracks.Games.Shared.Persistence;
 using UniTracks.Games.TowerDefense.Persistence;
 using UniTracks.Models.Achievement;
 using UniTracks.Models.Trip;
+using UniTracks.Services.Comparison;
 
 namespace UniTracks.Services.Stats;
 
@@ -65,14 +66,12 @@ public class StatisticsService : IStatisticsService
             t => t.ID,
             t =>
             {
-                var ordered = t.Locations?.OrderBy(l => l.Timestamp).ToList();
-                if (ordered is null || ordered.Count < 2)
-                {
-                    return (Moving: t.EndTime - t.StartTime, ElevationGain: 0.0);
-                }
-
-                var (moving, _) = TripMetricsCalculator.ComputeMovingAndStopped(ordered);
-                return (Moving: moving > TimeSpan.Zero ? moving : t.EndTime - t.StartTime,
+                var ordered = t.Locations?.OrderBy(l => l.Timestamp).ToList()
+                    ?? new List<Models.Location.Location>();
+                return (
+                    Distance: TripMetrics.DistanceMeters(t, ordered),
+                    Moving: TimeSpan.FromSeconds(TripMetrics.MovingSeconds(t, ordered)),
+                    AverageSpeed: TripMetrics.AverageSpeedMetersPerSecond(t, ordered),
                     ElevationGain: TripMetricsCalculator.ComputeElevationGain(ordered));
             });
 
@@ -98,7 +97,7 @@ public class StatisticsService : IStatisticsService
             var weekEnd = weekStart.AddDays(7);
             double km = trips
                 .Where(t => t.StartTime.LocalDateTime.Date >= weekStart && t.StartTime.LocalDateTime.Date < weekEnd)
-                .Sum(t => t.Distance ?? 0) / 1000.0;
+                .Sum(t => metrics[t.ID].Distance) / 1000.0;
             weeks.Add(new WeeklyDistance { WeekStart = weekStart, DistanceKm = km });
         }
 
@@ -106,7 +105,7 @@ public class StatisticsService : IStatisticsService
 
         // Pace (s/km) per trip — only meaningful for trips with real distance and time.
         var tripPaces = trips
-            .Select(t => (DistanceKm: (t.Distance ?? 0) / 1000.0, Moving: metrics[t.ID].Moving))
+            .Select(t => (DistanceKm: metrics[t.ID].Distance / 1000.0, Moving: metrics[t.ID].Moving))
             .Where(x => x.DistanceKm >= 0.1 && x.Moving.TotalSeconds > 0)
             .Select(x => x.Moving.TotalSeconds / x.DistanceKm)
             .ToList();
@@ -115,23 +114,23 @@ public class StatisticsService : IStatisticsService
 
         return new StatisticsSnapshot
         {
-            WeekDistanceKm = Math.Round(currentWeekTrips.Sum(t => t.Distance ?? 0) / 1000.0, 1),
-            LastWeekDistanceKm = Math.Round(lastWeekTrips.Sum(t => t.Distance ?? 0) / 1000.0, 1),
+            WeekDistanceKm = Math.Round(currentWeekTrips.Sum(t => metrics[t.ID].Distance) / 1000.0, 1),
+            LastWeekDistanceKm = Math.Round(lastWeekTrips.Sum(t => metrics[t.ID].Distance) / 1000.0, 1),
             WeekTrips = currentWeekTrips.Count,
             WeekActiveDays = currentWeekTrips.Select(t => t.StartTime.LocalDateTime.Date).Distinct().Count(),
             WeekMovingTime = TimeSpan.FromSeconds(currentWeekTrips.Sum(t => metrics[t.ID].Moving.TotalSeconds)),
             WeekElevationGainM = Math.Round(currentWeekTrips.Sum(t => metrics[t.ID].ElevationGain)),
-            TotalDistanceKm = Math.Round(trips.Sum(t => t.Distance ?? 0) / 1000.0, 1),
+            TotalDistanceKm = Math.Round(metrics.Values.Sum(m => m.Distance) / 1000.0, 1),
             TotalTrips = trips.Count,
-            YearDistanceKm = Math.Round(yearTrips.Sum(t => t.Distance ?? 0) / 1000.0, 1),
+            YearDistanceKm = Math.Round(yearTrips.Sum(t => metrics[t.ID].Distance) / 1000.0, 1),
             YearTrips = yearTrips.Count,
-            AverageDistanceKm = Math.Round(trips.Select(t => t.Distance ?? 0).DefaultIfEmpty(0).Average() / 1000.0, 1),
+            AverageDistanceKm = Math.Round(metrics.Values.Select(m => m.Distance).DefaultIfEmpty(0).Average() / 1000.0, 1),
             AverageMovingTime = trips.Count > 0
                 ? TimeSpan.FromSeconds(totalMovingSeconds / trips.Count)
                 : TimeSpan.Zero,
             AveragePaceSecondsPerKm = tripPaces.Count > 0 ? tripPaces.Average() : null,
-            LongestTripKm = Math.Round(trips.Select(t => t.Distance ?? 0).DefaultIfEmpty(0).Max() / 1000.0, 1),
-            FastestAverageSpeedKmh = Math.Round(trips.Select(t => t.AverageSpeed ?? 0).DefaultIfEmpty(0).Max() * 3.6, 1),
+            LongestTripKm = Math.Round(metrics.Values.Select(m => m.Distance).DefaultIfEmpty(0).Max() / 1000.0, 1),
+            FastestAverageSpeedKmh = Math.Round(metrics.Values.Select(m => m.AverageSpeed).DefaultIfEmpty(0).Max() * 3.6, 1),
             MaxAltitudeM = Math.Round(trips.Select(t => t.MaxAltitude ?? 0).DefaultIfEmpty(0).Max()),
             FastestPaceSecondsPerKm = tripPaces.Count > 0 ? tripPaces.Min() : null,
             MostElevationGainM = Math.Round(metrics.Values.Select(m => m.ElevationGain).DefaultIfEmpty(0).Max()),

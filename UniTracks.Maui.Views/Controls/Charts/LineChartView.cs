@@ -58,9 +58,44 @@ public class LineChartView : GraphicsView
         nameof(Series), typeof(IReadOnlyList<ComparisonCurve>), typeof(LineChartView), null,
         propertyChanged: (b, _, _) => ((LineChartView)b).Invalidate());
 
+    /// <summary>
+    /// Optional per-series missing-value markers. Used by comparison paces, where an unavailable
+    /// kilometre is represented by a non-positive placeholder. Normal speed and altitude charts
+    /// keep zero as a valid measurement.
+    /// </summary>
+    public static readonly BindableProperty MissingValuesProperty = BindableProperty.Create(
+        nameof(MissingValues), typeof(IList<IList<bool>>), typeof(LineChartView), null,
+        propertyChanged: (b, _, _) => ((LineChartView)b).Invalidate());
+
+    public static readonly BindableProperty PrimaryMissingValuesProperty = BindableProperty.Create(
+        nameof(PrimaryMissingValues), typeof(IList<bool>), typeof(LineChartView), null,
+        propertyChanged: (b, _, _) => ((LineChartView)b).Invalidate());
+
+    public static readonly BindableProperty SecondaryMissingValuesProperty = BindableProperty.Create(
+        nameof(SecondaryMissingValues), typeof(IList<bool>), typeof(LineChartView), null,
+        propertyChanged: (b, _, _) => ((LineChartView)b).Invalidate());
+
     public LineChartView()
     {
         Drawable = new LineChartDrawable(this);
+    }
+
+    public IList<IList<bool>>? MissingValues
+    {
+        get => (IList<IList<bool>>?)GetValue(MissingValuesProperty);
+        set => SetValue(MissingValuesProperty, value);
+    }
+
+    public IList<bool>? PrimaryMissingValues
+    {
+        get => (IList<bool>?)GetValue(PrimaryMissingValuesProperty);
+        set => SetValue(PrimaryMissingValuesProperty, value);
+    }
+
+    public IList<bool>? SecondaryMissingValues
+    {
+        get => (IList<bool>?)GetValue(SecondaryMissingValuesProperty);
+        set => SetValue(SecondaryMissingValuesProperty, value);
     }
 
     public IReadOnlyList<ComparisonCurve>? Series
@@ -111,6 +146,10 @@ public class LineChartView : GraphicsView
         set => SetValue(InvertYProperty, value);
     }
 
+    private bool HasMissingValues =>
+        PrimaryMissingValues?.Contains(true) == true
+        || SecondaryMissingValues?.Contains(true) == true;
+
     private sealed class LineChartDrawable : IDrawable
     {
         private const float Padding = 4f;
@@ -138,27 +177,28 @@ public class LineChartView : GraphicsView
                 return;
             }
 
-            var primaryRaw = owner.PrimaryValues is null ? new List<double>() : Smooth(owner.PrimaryValues);
-            var secondaryRaw = owner.SecondaryValues is null ? new List<double>() : Smooth(owner.SecondaryValues);
+            var primaryRaw = Smooth(owner.PrimaryValues ?? new List<double>(), owner.PrimaryMissingValues);
+            var secondaryRaw = Smooth(owner.SecondaryValues ?? new List<double>(), owner.SecondaryMissingValues);
 
             // One scale for both series when they share a unit, so equal values land on equal
             // heights and the gap between the curves is the actual difference.
             double sharedMin = 0;
             double sharedMax = 0;
-            if (owner.SharedScale)
+            var measured = owner.SharedScale
+                ? MeasuredValues(primaryRaw, owner.PrimaryMissingValues)
+                    .Concat(MeasuredValues(secondaryRaw, owner.SecondaryMissingValues))
+                    .ToList()
+                : new List<double>();
+            if (owner.SharedScale && measured.Count > 0)
             {
-                var all = primaryRaw.Concat(secondaryRaw).ToList();
-                if (all.Count > 0)
-                {
-                    sharedMin = all.Min();
-                    sharedMax = all.Max();
-                }
+                sharedMin = measured.Min();
+                sharedMax = measured.Max();
             }
 
-            var secondary = Normalize(secondaryRaw, sharedMin, sharedMax);
+            var secondary = Normalize(secondaryRaw, sharedMin, sharedMax, owner.SecondaryMissingValues);
             if (secondary is { Count: > 1 })
             {
-                var secondaryPath = BuildPath(secondary, width, height);
+                var secondaryPath = BuildSeriesPath(secondary, owner.SecondaryMissingValues, width, height);
                 canvas.StrokeColor = owner.SecondaryColor;
                 canvas.StrokeSize = 1.5f;
                 canvas.StrokeDashPattern = new[] { 4f, 3f };
@@ -166,25 +206,24 @@ public class LineChartView : GraphicsView
                 canvas.StrokeDashPattern = null;
             }
 
-            var primary = Normalize(primaryRaw, sharedMin, sharedMax);
+            var primary = Normalize(primaryRaw, sharedMin, sharedMax, owner.PrimaryMissingValues);
             if (primary is not { Count: > 1 })
             {
                 return;
             }
 
-            var linePath = BuildPath(primary, width, height);
-
-            var fillPath = BuildPath(primary, width, height);
-            fillPath.LineTo(Padding + width, Padding + height);
-            fillPath.LineTo(Padding, Padding + height);
-            fillPath.Close();
-
-            canvas.FillColor = owner.FillColor;
-            canvas.FillPath(fillPath);
+            if (owner.HasMissingValues)
+            {
+                DrawAreaSegments(canvas, primary, owner.PrimaryMissingValues, width, height);
+            }
+            else
+            {
+                DrawArea(canvas, primary, width, height);
+            }
 
             canvas.StrokeColor = owner.LineColor;
             canvas.StrokeSize = 2.5f;
-            canvas.DrawPath(linePath);
+            canvas.DrawPath(BuildSeriesPath(primary, owner.PrimaryMissingValues, width, height));
         }
 
         /// <summary>
@@ -195,24 +234,26 @@ public class LineChartView : GraphicsView
         private void DrawSeries(ICanvas canvas, IReadOnlyList<ComparisonCurve> series, float width, float height)
         {
             var smoothed = series
-                .Select(curve => curve.Values.Count == 0 ? null : Smooth(curve.Values.ToList()))
+                .Select((curve, index) => Smooth(
+                    curve.Values.ToList(),
+                    owner.MissingValues is { } missing && index < missing.Count ? missing[index] : null))
                 .ToList();
 
-            var all = smoothed.Where(values => values is not null).SelectMany(values => values!).ToList();
+            var all = smoothed.SelectMany(values => values).ToList();
             if (all.Count == 0)
             {
                 return;
             }
 
-            // A missing kilometre is stored as 0; letting those zeros into the pool would squash all
-            // curves onto the top edge, so the scale is taken from the real values only.
-            var measured = all.Where(value => value > 0).ToList();
+            // Missing comparison kilometres must not drag the shared pace scale to zero.
+            var measured = MeasuredValues(smoothed, owner.MissingValues);
             double sharedMin = measured.Count > 0 ? measured.Min() : all.Min();
             double sharedMax = measured.Count > 0 ? measured.Max() : all.Max();
 
             for (int index = 0; index < series.Count; index++)
             {
-                var normalized = Normalize(smoothed[index], sharedMin, sharedMax);
+                var missing = owner.MissingValues is { } masks && index < masks.Count ? masks[index] : null;
+                var normalized = Normalize(smoothed[index], sharedMin, sharedMax, missing);
                 if (normalized is not { Count: > 1 })
                 {
                     continue;
@@ -220,31 +261,124 @@ public class LineChartView : GraphicsView
 
                 canvas.StrokeColor = Color.FromArgb(series[index].ColorHex);
                 canvas.StrokeSize = 2.5f;
-                canvas.DrawPath(BuildPath(normalized, width, height));
+                canvas.DrawPath(BuildSeriesPath(normalized, missing, width, height));
             }
         }
 
-        private static PathF BuildPath(IReadOnlyList<float> normalized, float width, float height)
+        /// <summary>Starts a new segment after an unmeasured value instead of joining across the gap.</summary>
+        private static PathF BuildSeriesPath(
+            IReadOnlyList<float> normalized,
+            IList<bool>? missing,
+            float width,
+            float height)
         {
             var path = new PathF();
+            bool drawing = false;
+
             for (int i = 0; i < normalized.Count; i++)
             {
+                if (IsMissing(missing, i))
+                {
+                    drawing = false;
+                    continue;
+                }
+
                 float x = Padding + width * i / (normalized.Count - 1);
                 float y = Padding + height * (1f - normalized[i]);
-                if (i == 0)
+                if (drawing)
                 {
-                    path.MoveTo(x, y);
+                    path.LineTo(x, y);
                 }
                 else
                 {
-                    path.LineTo(x, y);
+                    path.MoveTo(x, y);
+                    drawing = true;
                 }
             }
 
             return path;
         }
 
-        private List<float>? Normalize(IList<double>? values, double sharedMin = 0, double sharedMax = 0)
+        private void DrawArea(
+            ICanvas canvas,
+            IReadOnlyList<float> normalized,
+            float width,
+            float height)
+        {
+            var fill = new PathF();
+            for (int index = 0; index < normalized.Count; index++)
+            {
+                float x = Padding + width * index / (normalized.Count - 1);
+                float y = Padding + height * (1f - normalized[index]);
+                if (index == 0)
+                {
+                    fill.MoveTo(x, y);
+                }
+                else
+                {
+                    fill.LineTo(x, y);
+                }
+            }
+
+            fill.LineTo(Padding + width, Padding + height);
+            fill.LineTo(Padding, Padding + height);
+            fill.Close();
+            canvas.FillColor = owner.FillColor;
+            canvas.FillPath(fill);
+        }
+
+        private void DrawAreaSegments(
+            ICanvas canvas,
+            IReadOnlyList<float> normalized,
+            IList<bool>? missing,
+            float width,
+            float height)
+        {
+            canvas.FillColor = owner.FillColor;
+
+            for (int start = 0; start < normalized.Count - 1; start++)
+            {
+                if (IsMissing(missing, start))
+                {
+                    continue;
+                }
+
+                int end = start + 1;
+                while (end < normalized.Count && !IsMissing(missing, end))
+                {
+                    end++;
+                }
+                end--;
+
+                if (end <= start)
+                {
+                    continue;
+                }
+
+                var fill = new PathF();
+                float firstX = Padding + width * start / (normalized.Count - 1);
+                float lastX = Padding + width * end / (normalized.Count - 1);
+                fill.MoveTo(firstX, Padding + height);
+                fill.LineTo(firstX, Padding + height * (1f - normalized[start]));
+
+                for (int index = start + 1; index <= end; index++)
+                {
+                    float x = Padding + width * index / (normalized.Count - 1);
+                    fill.LineTo(x, Padding + height * (1f - normalized[index]));
+                }
+
+                fill.LineTo(lastX, Padding + height);
+                fill.Close();
+                canvas.FillPath(fill);
+                start = end - 1;
+            }
+        }
+
+        private List<float>? Normalize(
+            IList<double>? values,
+            double sharedMin = 0,
+            double sharedMax = 0,
+            IList<bool>? missing = null)
         {
             if (values is not { Count: > 0 })
             {
@@ -259,10 +393,21 @@ public class LineChartView : GraphicsView
                 min = sharedMin;
                 max = sharedMax;
             }
+            else if (sharedMin > 0)
+            {
+                min = sharedMin;
+                max = sharedMin;
+            }
             else
             {
-                min = values.Min();
-                max = values.Max();
+                var measuredValues = MeasuredValues(values, missing);
+                if (measuredValues.Count == 0)
+                {
+                    return null;
+                }
+
+                min = measuredValues.Min();
+                max = measuredValues.Max();
             }
 
             double range = Math.Max(max - min, 0.0001);
@@ -282,24 +427,73 @@ public class LineChartView : GraphicsView
 
         private bool InvertY => owner.InvertY;
 
-        private static List<double> Smooth(IList<double> values)
+        private static List<double> Smooth(IList<double> values, IList<bool>? missing = null)
         {
             var result = new List<double>(values.Count);
             int half = SmoothingWindow / 2;
             for (int i = 0; i < values.Count; i++)
             {
+                // Missing pace values are left untouched and excluded from neighbours' windows.
+                // Ordinary speed and altitude charts do not pass a mask: zero stays a real value.
+                if (IsMissing(missing, i))
+                {
+                    result.Add(0);
+                    continue;
+                }
+
                 int from = Math.Max(0, i - half);
                 int to = Math.Min(values.Count - 1, i + half);
                 double sum = 0;
+                int count = 0;
                 for (int j = from; j <= to; j++)
                 {
+                    if (IsMissing(missing, j))
+                    {
+                        continue;
+                    }
+
                     sum += values[j];
+                    count++;
                 }
 
-                result.Add(sum / (to - from + 1));
+                result.Add(count > 0 ? sum / count : 0);
             }
 
             return result;
+        }
+
+        private static bool IsMissing(IList<bool>? missing, int index) =>
+            missing is not null && index < missing.Count && missing[index];
+
+        private static List<double> MeasuredValues(
+            IList<double> values,
+            IList<bool>? missing = null)
+        {
+            var result = new List<double>(values.Count);
+            for (int index = 0; index < values.Count; index++)
+            {
+                if (!IsMissing(missing, index))
+                {
+                    result.Add(values[index]);
+                }
+            }
+
+            return result;
+        }
+
+        private static IReadOnlyList<double> MeasuredValues(
+            IReadOnlyList<List<double>> series,
+            IList<IList<bool>>? masks)
+        {
+            var values = new List<double>();
+            for (int index = 0; index < series.Count; index++)
+            {
+                values.AddRange(MeasuredValues(
+                    series[index],
+                    masks is not null && index < masks.Count ? masks[index] : null));
+            }
+
+            return values;
         }
     }
 }

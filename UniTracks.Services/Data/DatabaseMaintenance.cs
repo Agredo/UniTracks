@@ -1,5 +1,6 @@
 using System.Text;
 using AgredoApplication.MVVM.Services.Abstractions.IO;
+using UniTracks.Data.Importing;
 using UniTracks.Models.Constants;
 
 namespace UniTracks.Services.Data;
@@ -13,6 +14,12 @@ public sealed class DatabaseMaintenance : IDatabaseMaintenance
     /// <summary>Marker written next to the database when an import waits for the next start.</summary>
     public const string ImportPendingSuffix = ".import-pending";
 
+    /// <summary>
+    /// Where an iOS backup is rebuilt in the SQLite format before it replaces the database. The
+    /// conversion never writes into the live file, so a failed conversion leaves the data intact.
+    /// </summary>
+    public const string ImportConvertedSuffix = ".import-converted";
+
     /// <summary>Marker written next to the database when a reset waits for the next start.</summary>
     public const string ResetPendingSuffix = ".reset-pending";
 
@@ -23,6 +30,16 @@ public sealed class DatabaseMaintenance : IDatabaseMaintenance
     private const int KeepBackupCount = 3;
 
     private static readonly string[] SidecarSuffixes = ["-wal", "-shm", "-log"];
+
+    private static readonly string[] ConvertedSidecarSuffixes = ["-wal", "-shm", "-journal"];
+
+    /// <summary>Store layout of a database file, decided by its header.</summary>
+    private enum DatabaseFormat
+    {
+        Unknown,
+        Sqlite,
+        LiteDb,
+    }
 
     private readonly IFileSystem fileSystem;
     private readonly bool useLiteDatabase;
@@ -81,9 +98,16 @@ public sealed class DatabaseMaintenance : IDatabaseMaintenance
                 return "Vorgemerkt: alle Daten werden beim nächsten Start der App gelöscht.";
             }
 
-            return File.Exists(ImportPendingPath)
-                ? "Vorgemerkt: der Import wird beim nächsten Start der App übernommen."
-                : string.Empty;
+            if (!File.Exists(ImportPendingPath))
+            {
+                return string.Empty;
+            }
+
+            // A backup from the other store is rebuilt during the import, which is worth saying:
+            // it explains the extra moment at the next start.
+            return CanConvert(DetectFormat(ImportPendingPath))
+                ? "Vorgemerkt: der Import wird beim nächsten Start der App übernommen und dabei aus dem iOS-Format konvertiert."
+                : "Vorgemerkt: der Import wird beim nächsten Start der App übernommen.";
         }
     }
 
@@ -120,10 +144,20 @@ public sealed class DatabaseMaintenance : IDatabaseMaintenance
                 return "Die ausgewählte Datei wurde nicht gefunden.";
             }
 
-            if (!IsValidDatabaseFile(sourceFilePath))
+            var format = DetectFormat(sourceFilePath);
+
+            if (format == DatabaseFormat.Unknown)
             {
-                var expected = useLiteDatabase ? "LiteDB-Datei (iOS)" : "SQLite-Datei";
-                return $"Die ausgewählte Datei ist keine UniTracks-Datenbank: erwartet wird eine {expected}.";
+                return "Die ausgewählte Datei ist keine UniTracks-Datenbank.";
+            }
+
+            if (format != ExpectedFormat && !CanConvert(format))
+            {
+                // iOS can only read its own document store, so a SQLite backup of a desktop or
+                // Android installation cannot be opened there. The reverse direction is supported:
+                // an iOS backup is converted into the SQLite format when it is imported.
+                return "Die ausgewählte Datei ist eine SQLite-Datenbank (Android, Windows oder macOS). " +
+                    "Auf iOS kann sie nicht importiert werden – iOS nutzt das LiteDB-Format.";
             }
 
             // A staged reset would delete the import again, so the newer decision wins.
@@ -171,7 +205,9 @@ public sealed class DatabaseMaintenance : IDatabaseMaintenance
                 return new DatabaseOperationResult(false, null);
             }
 
-            if (importPending && !IsValidDatabaseFile(ImportPendingPath))
+            var importFormat = importPending ? DetectFormat(ImportPendingPath) : DatabaseFormat.Unknown;
+
+            if (importPending && importFormat == DatabaseFormat.Unknown)
             {
                 DeleteFileIfExists(ImportPendingPath);
                 return new DatabaseOperationResult(false, "Der vorgemerkte Import war keine gültige Datenbank und wurde verworfen.");
@@ -183,10 +219,7 @@ public sealed class DatabaseMaintenance : IDatabaseMaintenance
 
             if (importPending)
             {
-                BackupExistingDatabase();
-                File.Move(ImportPendingPath, DatabasePath, overwrite: true);
-                File.WriteAllText(LastImportPath, DateTimeOffset.Now.ToString("o"));
-                return new DatabaseOperationResult(true, "Import übernommen.");
+                return CanConvert(importFormat) ? ApplyConvertedImport() : ApplyFileImport();
             }
 
             // Reset: the database is removed so the app builds a fresh one. A dated copy stays
@@ -203,11 +236,73 @@ public sealed class DatabaseMaintenance : IDatabaseMaintenance
         }
     }
 
+    /// <summary>Swaps in a backup that already has the layout this platform uses.</summary>
+    private DatabaseOperationResult ApplyFileImport()
+    {
+        BackupExistingDatabase();
+        File.Move(ImportPendingPath, DatabasePath, overwrite: true);
+        File.WriteAllText(LastImportPath, DateTimeOffset.Now.ToString("o"));
+        return new DatabaseOperationResult(true, "Import übernommen.");
+    }
+
     /// <summary>
-    /// Checks the file header: "SQLite format 3\0" for SQLite, the LiteDB banner for LiteDB. A file
-    /// of the other kind is refused, because it could not be opened on this platform anyway.
+    /// Rebuilds an iOS backup (LiteDB) in the SQLite format and swaps the result in. The rebuilt
+    /// database is written next to the live one, so a failure here keeps the current data: the
+    /// existing file is only replaced after the conversion has finished.
     /// </summary>
-    public bool IsValidDatabaseFile(string path)
+    private DatabaseOperationResult ApplyConvertedImport()
+    {
+        var convertedPath = DatabasePath + ImportConvertedSuffix;
+
+        try
+        {
+            DeleteFileIfExists(convertedPath);
+
+            var summary = LiteDatabaseImporter.ImportIntoSqlite(ImportPendingPath, convertedPath);
+
+            // The rebuilt file must not carry a journal of its own over the live database.
+            foreach (var suffix in ConvertedSidecarSuffixes)
+            {
+                DeleteFileIfExists(convertedPath + suffix);
+            }
+
+            BackupExistingDatabase();
+            File.Move(convertedPath, DatabasePath, overwrite: true);
+            DeleteFileIfExists(ImportPendingPath);
+            File.WriteAllText(LastImportPath, DateTimeOffset.Now.ToString("o"));
+
+            return new DatabaseOperationResult(
+                true,
+                $"Import übernommen: {summary.Trips} Trips, {summary.Locations} Standortpunkte und " +
+                $"{summary.Fingerprints} Streckenabdrücke aus der iOS-Datenbank übernommen.");
+        }
+        catch (Exception exception)
+        {
+            // The live database is untouched; only the prepared copy and the staging file go.
+            DeleteFileIfExists(convertedPath);
+            DeleteFileIfExists(ImportPendingPath);
+            return new DatabaseOperationResult(false, $"Der Import der iOS-Datenbank ist fehlgeschlagen: {exception.Message}");
+        }
+    }
+
+    /// <summary>
+    /// Checks whether the file carries the header of the store this platform runs on. A file of the
+    /// other kind is not refused here — see <see cref="CanConvert"/> — but iOS cannot take over a
+    /// SQLite backup, and the raw swap only works for a matching file.
+    /// </summary>
+    public bool IsValidDatabaseFile(string path) => DetectFormat(path) == ExpectedFormat;
+
+    /// <summary>The store layout this platform maintains.</summary>
+    private DatabaseFormat ExpectedFormat => useLiteDatabase ? DatabaseFormat.LiteDb : DatabaseFormat.Sqlite;
+
+    /// <summary>True when a backup of the iOS app (LiteDB) is converted instead of being refused.</summary>
+    public bool ConvertsLiteBackups => CanConvert(DatabaseFormat.LiteDb);
+
+    /// <summary>
+    /// Reads the header: "SQLite format 3\0" for SQLite, the LiteDB banner for a LiteDB file. Only
+    /// the first <see cref="HeaderLength"/> bytes are looked at, so this stays cheap for a large file.
+    /// </summary>
+    private static DatabaseFormat DetectFormat(string path)
     {
         try
         {
@@ -217,21 +312,30 @@ public sealed class DatabaseMaintenance : IDatabaseMaintenance
 
             if (read < 16)
             {
-                return false;
+                return DatabaseFormat.Unknown;
             }
 
-            if (useLiteDatabase)
+            if (Encoding.ASCII.GetString(header, 0, 16) == "SQLite format 3\0")
             {
-                return Encoding.ASCII.GetString(header, 0, read).Contains("LiteDB", StringComparison.Ordinal);
+                return DatabaseFormat.Sqlite;
             }
 
-            return Encoding.ASCII.GetString(header, 0, 16) == "SQLite format 3\0";
+            return Encoding.ASCII.GetString(header, 0, read).Contains("LiteDB", StringComparison.Ordinal)
+                ? DatabaseFormat.LiteDb
+                : DatabaseFormat.Unknown;
         }
         catch (Exception)
         {
-            return false;
+            return DatabaseFormat.Unknown;
         }
     }
+
+    /// <summary>
+    /// True when a file of <paramref name="format"/> is not the store of this platform, but can be
+    /// rebuilt into it. Only an iOS backup (LiteDB) can be converted: the SQLite side runs EF Core,
+    /// which is unavailable on iOS, so the reverse direction has no implementation.
+    /// </summary>
+    private bool CanConvert(DatabaseFormat format) => format == DatabaseFormat.LiteDb && !useLiteDatabase;
 
     /// <inheritdoc />
     public async Task<string?> CreateExportCopyAsync()

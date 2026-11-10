@@ -54,9 +54,6 @@ public static class KilometerSplitCalculator
     /// <summary>Fix pairs closer together than this are GPS noise and contribute nothing.</summary>
     public const double MinimumSegmentDistanceMeters = 1.0;
 
-    /// <summary>Matches the trip statistics' walking/stopped cut-off so both agree on moving time.</summary>
-    private const double MovingThresholdMetersPerSecond = TripMetricsCalculator.MovingThresholdMs;
-
     public static IReadOnlyList<KilometerSplit> Compute(IReadOnlyList<LocationModel> track)
     {
         if (track is null || track.Count < 2)
@@ -83,15 +80,20 @@ public static class KilometerSplitCalculator
             var gap = current.Timestamp - previous.Timestamp;
             double segmentSeconds = gap.TotalSeconds;
 
-            // Skip unusable pairs wholesale: a step shorter than a single GPS wobble, a zero-length
-            // step, or a timestamp that does not advance all say nothing about pace.
+            // Skip unusable pairs wholesale: a stationary step, a step shorter than a single GPS
+            // wobble, a zero-length step, or a timestamp that does not advance says nothing about pace.
             if (segmentDistance < MinimumSegmentDistanceMeters || segmentSeconds <= 0)
             {
                 continue;
             }
 
-            bool isMoving = gap <= TripMetricsCalculator.MaxGap
-                && segmentDistance / segmentSeconds >= MovingThresholdMetersPerSecond;
+            bool isMoving = TripMetricsCalculator.IsMoving(previous, current);
+
+            // Time lost to a long GPS gap is unknown, not elapsed sporting activity.
+            if (gap > TripMetricsCalculator.MaxGap)
+            {
+                continue;
+            }
 
             double segmentMoving = isMoving ? segmentSeconds : 0;
             double altitudeChange = current.Altitude - previous.Altitude;

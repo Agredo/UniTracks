@@ -143,4 +143,10 @@ public class LiteDatabase : ILiteDatabase
 
     private static long Age(BsonValue id) =>
         id.Type == BsonType.ObjectId ? id.AsObjectId.Timestamp : long.MinValue;
+
+    /// <summary>
+    /// Releases the file, which LiteDB otherwise keeps open until the instance is collected. Without
+    /// this the database file cannot be replaced or deleted on Windows after an import.
+    /// </summary>
+    public void Dispose() => Database.Dispose();
 }

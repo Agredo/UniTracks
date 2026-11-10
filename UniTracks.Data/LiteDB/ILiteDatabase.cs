@@ -4,7 +4,7 @@ using LDB = LiteDB.LiteDatabase;
 
 namespace UniTracks.Data.LiteDB;
 
-public interface ILiteDatabase
+public interface ILiteDatabase : IDisposable
 {
     LDB Database { get; }
     ILiteCollection<Location> Locations { get; }

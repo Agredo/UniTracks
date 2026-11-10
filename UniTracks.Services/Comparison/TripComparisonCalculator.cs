@@ -125,35 +125,24 @@ public static class TripComparisonCalculator
     /// <summary>Distance spread relative to the shortest trip that makes a pace ranking misleading.</summary>
     private const double FairnessRelativeDistanceDifference = 0.15;
 
-    /// <summary>Builds one side from a trip and its track. Uses the trip's stored values when present.</summary>
+    /// <summary>Builds one side from a trip and its track. Both the totals and the splits use the raw track.</summary>
     public static TripComparisonSide CreateSide(Trip trip, IReadOnlyList<LocationModel> track)
     {
         var ordered = track.OrderBy(location => location.Timestamp).ToList();
-        var smoothed = Services.Location.TrackSmoother.Smooth(ordered);
+        var splits = KilometerSplitCalculator.Compute(ordered);
 
-        double distance = trip.Distance is > 0
-            ? trip.Distance.Value
-            : Services.Location.TrackSmoother.SmoothedDistanceMeters(ordered);
+        double distance = TripMetrics.DistanceMeters(trip, ordered);
 
-        var (moving, _) = Stats.TripMetricsCalculator.ComputeMovingAndStopped(ordered);
         double elevationGain = Stats.TripMetricsCalculator.ComputeElevationGain(ordered);
 
-        double elapsed = trip.TotalTime is > 0
-            ? trip.TotalTime.Value
-            : (trip.EndTime - trip.StartTime).TotalSeconds;
-        elapsed = Math.Max(0, elapsed);
-
-        double movingSeconds = trip.MovingTime is > 0 ? trip.MovingTime.Value : moving.TotalSeconds;
-        if (movingSeconds <= 0)
-        {
-            movingSeconds = elapsed;
-        }
+        double elapsed = TripMetrics.ElapsedSeconds(trip);
+        double movingSeconds = TripMetrics.MovingSeconds(trip, ordered);
 
         return new TripComparisonSide
         {
             Trip = trip,
-            Track = smoothed,
-            Splits = KilometerSplitCalculator.Compute(ordered),
+            Track = Services.Location.TrackSmoother.Smooth(ordered),
+            Splits = splits,
             DistanceMeters = distance,
             MovingSeconds = movingSeconds,
             ElapsedSeconds = elapsed,

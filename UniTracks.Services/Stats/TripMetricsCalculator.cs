@@ -2,8 +2,8 @@ namespace UniTracks.Services.Stats;
 
 /// <summary>
 /// Derives per-trip activity metrics (moving/stopped time, elevation gain) from the
-/// recorded GPS points. These are not stored on the trip, so every consumer (trip
-/// overview, statistics) shares this one implementation to stay consistent.
+/// recorded GPS points. Every consumer shares this implementation so overview, statistics,
+/// recording finalisation and comparison stay consistent.
 /// </summary>
 public static class TripMetricsCalculator
 {
@@ -15,6 +15,17 @@ public static class TripMetricsCalculator
 
     /// <summary>Positive altitude deltas smaller than this are treated as GPS noise (m).</summary>
     private const double ElevationNoiseThresholdM = 0.5;
+
+    public static bool IsMoving(Models.Location.Location previous, Models.Location.Location current)
+    {
+        var elapsed = current.Timestamp - previous.Timestamp;
+        // This predicate is shared with split time attribution. Distance thresholds belong to split
+        // segmentation, not to sensor-based movement: otherwise the time charged for a split could
+        // exceed the time used for the trip itself.
+        return elapsed > TimeSpan.Zero
+            && elapsed <= MaxGap
+            && current.Speed >= MovingThresholdMs;
+    }
 
     /// <param name="ordered">GPS points ordered by timestamp; needs at least two points.</param>
     public static (TimeSpan Moving, TimeSpan Stopped) ComputeMovingAndStopped(IReadOnlyList<Models.Location.Location> ordered)
@@ -30,7 +41,7 @@ public static class TripMetricsCalculator
                 continue;
             }
 
-            if (ordered[i].Speed >= MovingThresholdMs)
+            if (TripMetricsCalculator.IsMoving(ordered[i - 1], ordered[i]))
             {
                 movingSeconds += dt.TotalSeconds;
             }

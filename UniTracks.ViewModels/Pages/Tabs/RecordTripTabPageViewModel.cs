@@ -13,6 +13,7 @@ using UniTracks.Services.ApplicationModel.Permissions;
 using UniTracks.Services.Data;
 using UniTracks.Services.Dispatching;
 using UniTracks.Services.Location;
+using UniTracks.Services.Settings;
 using UniTracks.ViewModels.Controls.Popups;
 using UniTracks.ViewModels.PermissionUtils;
 using UniTracks.ViewModels.Recording;
@@ -29,6 +30,8 @@ public partial class RecordTripTabPageViewModel : ObservableObject
     public IDispatcher Dispatcher { get; }
     public IRepository Repository { get; }
     public IGpsDataStorageService GpsDataStorageService { get; }
+
+    public IRecordingSettings RecordingSettings { get; }
 
     /// <summary>
     /// Lock-screen controls of the running recording. Tapping one of them here is the same as tapping
@@ -49,6 +52,9 @@ public partial class RecordTripTabPageViewModel : ObservableObject
 
     private readonly Stopwatch stopWatch = new Stopwatch();
 
+    private bool restoringTripType;
+    private int tripTypeSelectionVersion;
+
     private readonly EventHandler stopWatchEventHandler;
 
     public RecordTripTabPageViewModel(
@@ -60,7 +66,8 @@ public partial class RecordTripTabPageViewModel : ObservableObject
         IDispatcher dispatcher,
         IRepository repository,
         IGpsDataStorageService gpsDataStorageService,
-        IRecordingRemoteControls remoteControls)
+        IRecordingRemoteControls remoteControls,
+        IRecordingSettings recordingSettings)
     {
         Navigation = navigation;
         PopupNavigation = popupNavigation;
@@ -71,6 +78,7 @@ public partial class RecordTripTabPageViewModel : ObservableObject
         Repository = repository;
         GpsDataStorageService = gpsDataStorageService;
         RemoteControls = remoteControls;
+        RecordingSettings = recordingSettings;
         DatabasePath = string.Empty;
         RecordIconSourceString = $"{ApplicationConstants.RawIconBasePath}{ApplicationIconConstants.PlayIcon}";
         RecordIconColor = WhiteColor;
@@ -285,13 +293,25 @@ public partial class RecordTripTabPageViewModel : ObservableObject
     partial void OnSelectedTripTypeChanged(TripType? value)
     {
         Context.TripType = value;
+        if (!restoringTripType)
+        {
+            tripTypeSelectionVersion++;
+            RecordingSettings.LastTripTypeId = value?.ID.ToString() ?? string.Empty;
+        }
+
+        // Restoring also supplies the next recording, but must not change a trip that is already open.
+        GpsDataStorageService.CurrentTripTypeId = value?.ID;
 
         // The type is not only a setting for the next trip: while a recording is running the trip row
         // already exists (it is written with the first GPS fix), so the change has to be written to it.
         // Otherwise the finished trip kept the type it had been created with and only a manual edit in
         // the trip overview took the new one over.
-        _ = ApplyTripTypeAsync(value);
         OnPropertyChanged(nameof(SelectedTripTypeName));
+
+        if (!restoringTripType)
+        {
+            _ = ApplyTripTypeAsync(value);
+        }
 
         if (value is null)
         {
@@ -335,35 +355,60 @@ public partial class RecordTripTabPageViewModel : ObservableObject
 
     private async Task LoadTripTypesAsync()
     {
-        var types = (await Repository.GetAllAsync<TripType>()).ToList();
-
-        // Order by usage: most recently used first, then highest usage count, then seed order.
-        // Read asynchronously: a filtered read still scans the whole trip collection (with the GPS
-        // points embedded in it), which used to block the UI thread every time this tab was opened.
-        var usage = (await Repository.GetAsync<Trip>(t => t.TripTypeId != null))
-            .GroupBy(t => t.TripTypeId!.Value)
-            .ToDictionary(
-                g => g.Key,
-                g => new { Count = g.Count(), Last = g.Max(t => t.StartTime) });
-
-        var ordered = types
-            .OrderByDescending(t => usage.TryGetValue(t.ID, out var u) ? u.Last : DateTimeOffset.MinValue)
-            .ThenByDescending(t => usage.TryGetValue(t.ID, out var u) ? u.Count : 0)
-            .ToList();
-
-        TripTypes.Clear();
-        FavoriteTripTypes.Clear();
-        foreach (var type in ordered)
+        int selectionVersion = tripTypeSelectionVersion;
+        try
         {
-            TripTypes.Add(type);
+            var types = (await Repository.GetAllAsync<TripType>()).ToList();
 
-            if (FavoriteTripTypes.Count < MaxFavoriteTripTypes)
+            // Order by usage: most recently used first, then highest usage count, then seed order.
+            // Read asynchronously: a filtered read still scans the whole trip collection (with the GPS
+            // points embedded in it), which used to block the UI thread every time this tab was opened.
+            var usage = (await Repository.GetAsync<Trip>(t => t.TripTypeId != null))
+                .GroupBy(t => t.TripTypeId!.Value)
+                .ToDictionary(
+                    g => g.Key,
+                    g => new { Count = g.Count(), Last = g.Max(t => t.StartTime) });
+
+            var ordered = types
+                .OrderByDescending(t => usage.TryGetValue(t.ID, out var u) ? u.Last : DateTimeOffset.MinValue)
+                .ThenByDescending(t => usage.TryGetValue(t.ID, out var u) ? u.Count : 0)
+                .ToList();
+
+            TripTypes.Clear();
+            FavoriteTripTypes.Clear();
+            foreach (var type in ordered)
             {
-                FavoriteTripTypes.Add(type);
+                TripTypes.Add(type);
+
+                if (FavoriteTripTypes.Count < MaxFavoriteTripTypes)
+                {
+                    FavoriteTripTypes.Add(type);
+                }
+            }
+
+            if (tripTypeSelectionVersion != selectionVersion)
+            {
+                // A selection or explicit reset made while loading is newer than the saved preference.
+                return;
+            }
+
+            restoringTripType = true;
+            try
+            {
+                var selected = RecordingSettings.LastTripTypeId;
+                SelectedTripType = Guid.TryParse(selected, out var lastTypeId)
+                    ? TripTypes.FirstOrDefault(type => type.ID == lastTypeId) ?? TripTypes.FirstOrDefault()
+                    : TripTypes.FirstOrDefault();
+            }
+            finally
+            {
+                restoringTripType = false;
             }
         }
-
-        SelectedTripType ??= TripTypes.FirstOrDefault();
+        catch (Exception exception)
+        {
+            Debug.WriteLine($"[UniTracks] Sportarten konnten nicht geladen werden: {exception}");
+        }
     }
 
     [RelayCommand]

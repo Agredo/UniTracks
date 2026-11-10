@@ -9,7 +9,7 @@ namespace UniTracks.Tests.Comparison;
 /// </summary>
 internal static class ComparisonFixtures
 {
-    private const double MetersPerDegreeLatitude = 111320.0;
+    private const double DegreesToRadians = Math.PI / 180.0;
 
     public static readonly DateTimeOffset DefaultStart = new(2026, 3, 1, 8, 0, 0, TimeSpan.FromHours(1));
 
@@ -38,13 +38,20 @@ internal static class ComparisonFixtures
 
         var track = new List<LocationModel>(steps + 1);
 
+        double angularStep = step / UniTracks.Services.Comparison.GeoMath.EarthRadiusMeters;
+
         for (int i = 0; i <= steps; i++)
         {
+            // On a sphere a due-north path follows a meridian: longitude stays constant and the
+            // angular distance changes only latitude. Do not mix destination formulas for different
+            // bearings; that turns this supposedly straight line into a diagonal.
+            double latitude = startLatitude + i * angularStep / DegreesToRadians;
+
             track.Add(new LocationModel
             {
                 ID = Guid.NewGuid(),
                 TripID = tripId,
-                Latitude = startLatitude + i * step / MetersPerDegreeLatitude,
+                Latitude = latitude,
                 Longitude = startLongitude,
                 Altitude = 100,
                 Accuracy = 5,

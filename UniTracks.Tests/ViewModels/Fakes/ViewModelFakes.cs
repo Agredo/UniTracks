@@ -382,6 +382,12 @@ internal sealed class FakeFileExportService : IFileExportService
     }
 }
 
+/// <summary>Persistent recording preference used by the type-selection tests.</summary>
+internal sealed class FakeRecordingSettings : UniTracks.Services.Settings.IRecordingSettings
+{
+    public string LastTripTypeId { get; set; } = string.Empty;
+}
+
 internal sealed class FakeGpsDataStorageService : IGpsDataStorageService
 {
     public Guid? CurrentTripTypeId { get; set; }
@@ -667,6 +673,8 @@ internal sealed class FakeDatabaseMaintenance : IDatabaseMaintenance
     public long DatabaseSizeBytes { get; set; } = 2 * 1024 * 1024;
 
     public bool HasPendingOperation { get; set; }
+
+    public bool ConvertsLiteBackups { get; set; }
 
     public string PendingOperationText { get; set; } = string.Empty;
 

@@ -203,6 +203,16 @@ public partial class TripComparisonPageViewModel : ObservableObject
     [ObservableProperty]
     private IReadOnlyList<ComparisonCurve>? curves;
 
+    /// <summary>Masks for unavailable comparison paces, parallel to <see cref="Curves"/>.</summary>
+    [ObservableProperty]
+    private IList<IList<bool>>? missingPaceValues;
+
+    [ObservableProperty]
+    private IList<bool> primaryMissingPaceValues = new List<bool>();
+
+    [ObservableProperty]
+    private IList<bool> secondaryMissingPaceValues = new List<bool>();
+
     [ObservableProperty]
     private IList<string> distanceAxisLabels = new List<string>();
 
@@ -338,6 +348,9 @@ public partial class TripComparisonPageViewModel : ObservableObject
             PaceSeriesA = new List<double>();
             PaceSeriesB = new List<double>();
             Curves = BuildCurves(comparison);
+            MissingPaceValues = Curves
+                .Select(curve => (IList<bool>)curve.Values.Select(value => value <= 0).ToList())
+                .ToList();
 
             Metrics = Array.Empty<MetricRow>();
             Splits = Array.Empty<SplitRow>();
@@ -350,6 +363,9 @@ public partial class TripComparisonPageViewModel : ObservableObject
             PaceSeriesA = comparison.PaceSeries[0].ToList();
             PaceSeriesB = comparison.PaceSeries[1].ToList();
             Curves = null;
+            MissingPaceValues = null;
+            PrimaryMissingPaceValues = PaceSeriesA.Select(value => value <= 0).ToList();
+            SecondaryMissingPaceValues = PaceSeriesB.Select(value => value <= 0).ToList();
 
             Metrics = BuildMetrics(baseline.Side, comparison.Members[1].Side).ToList();
             Splits = BuildPairSplits(comparison).ToList();
@@ -369,14 +385,14 @@ public partial class TripComparisonPageViewModel : ObservableObject
         HasComparison = true;
     }
 
-    /// <summary>One pace curve per run, gaps carried over so a missing kilometre draws no spike.</summary>
+    /// <summary>One pace curve per run; a missing kilometre stays a chart gap.</summary>
     private static IReadOnlyList<ComparisonCurve> BuildCurves(TripComparisonSet comparison)
     {
         var curves = new List<ComparisonCurve>(comparison.Count);
 
         for (int index = 0; index < comparison.Count; index++)
         {
-            var values = FillGaps(comparison.PaceSeries[index]);
+            var values = comparison.PaceSeries[index].ToList();
             if (!values.Any(value => value > 0))
             {
                 continue;
@@ -480,7 +496,7 @@ public partial class TripComparisonPageViewModel : ObservableObject
                     : split.Number.ToString(GermanCulture),
                 ValueA = FormatSeconds(split.SecondsPerMember[0]),
                 ValueB = FormatSeconds(split.SecondsPerMember[1]),
-                BIsFaster = split.DeltaSecondsPerMember[1] > 0,
+                BIsFaster = split.DeltaSecondsPerMember[1] < 0,
                 IsPartial = split.IsPartial,
             };
         }
@@ -527,7 +543,7 @@ public partial class TripComparisonPageViewModel : ObservableObject
             ValueA = FormatSpeed(a.AverageSpeedMetersPerSecond),
             ValueB = FormatSpeed(b.AverageSpeedMetersPerSecond),
             DeltaText = Signed(
-                b.AverageSpeedMetersPerSecond - a.AverageSpeedMetersPerSecond,
+                (b.AverageSpeedMetersPerSecond - a.AverageSpeedMetersPerSecond) * 3.6,
                 value => value.ToString("0.0", GermanCulture),
                 0.05),
             DeltaIsMeaningful = true,
@@ -552,31 +568,12 @@ public partial class TripComparisonPageViewModel : ObservableObject
             ValueA = FormatSpeed(a.MaxSpeedMetersPerSecond),
             ValueB = FormatSpeed(b.MaxSpeedMetersPerSecond),
             DeltaText = Signed(
-                b.MaxSpeedMetersPerSecond - a.MaxSpeedMetersPerSecond,
+                (b.MaxSpeedMetersPerSecond - a.MaxSpeedMetersPerSecond) * 3.6,
                 value => value.ToString("0.0", GermanCulture),
                 0.05),
             DeltaIsMeaningful = true,
             DeltaIsGoodForB = b.MaxSpeedMetersPerSecond > a.MaxSpeedMetersPerSecond,
         };
-    }
-
-    /// <summary>Kilometres without data take the pace of the kilometre before them.</summary>
-    private static IReadOnlyList<double> FillGaps(IReadOnlyList<double> values)
-    {
-        var filled = new List<double>(values.Count);
-        double last = values.FirstOrDefault(value => value > 0);
-
-        foreach (var value in values)
-        {
-            if (value > 0)
-            {
-                last = value;
-            }
-
-            filled.Add(last);
-        }
-
-        return filled;
     }
 
     /// <summary>Signed difference against A, or "gleich" when it stays inside the flat band.</summary>
