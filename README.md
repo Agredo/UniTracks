@@ -118,7 +118,7 @@ Zentrale Versionsverwaltung aller Pakete in `Directory.Build.props` / `projects.
 
 | Bereich | Technologie |
 |---|---|
-| Framework | .NET 11 / .NET MAUI 11 (Preview) |
+| Framework | .NET 11 / .NET MAUI 11 |
 | MVVM | CommunityToolkit.Mvvm 8.4 + AgredoApplication.MVVM.Services |
 | UI-Toolkit | CommunityToolkit.Maui 15 (Popups, Behaviors, `[BindableProperty]`-Generator) |
 | Karten | Mapsui.Maui 5.1 (SkiaSharp, OpenStreetMap-Tiles) |
