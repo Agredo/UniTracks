@@ -21,7 +21,7 @@
 
 		<!-- Central Package-Versions -->
 		<MauiVersion>11.0.0</MauiVersion>
-		<MauiCommunityToolkitVersion>15.0.1</MauiCommunityToolkitVersion>
+		<MauiCommunityToolkitVersion>17.0.0</MauiCommunityToolkitVersion>
 		<CommunityToolkitMvvmVersion>8.4.2</CommunityToolkitMvvmVersion>
 		<MicrosoftExtensionsLoggingDebugVersion>11.0.0</MicrosoftExtensionsLoggingDebugVersion>
 		<EntityFrameworkCoreVersion>11.0.0</EntityFrameworkCoreVersion>
