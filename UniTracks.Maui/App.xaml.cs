@@ -92,6 +92,12 @@ namespace UniTracks.Maui
         /// </summary>
         private async Task RunBackgroundJobsAsync()
         {
+            // Loaded fires when the shell is attached, not when the first frame is up - the trip list
+            // is still reading its first page at that moment. A migration moving a whole library of
+            // GPS points would take the database for itself and push that read past the ten seconds
+            // the iOS watchdog allows for a cold start, so it waits its turn.
+            await Task.Delay(TimeSpan.FromSeconds(1.5));
+
             try
             {
                 foreach (var migration in dataMigrations)

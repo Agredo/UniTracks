@@ -182,6 +182,22 @@ public sealed class TripPointStoreTests : IDisposable
         Assert.Equal(3, Assert.Single(await repository.GetAllAsync<Trip>(t => t.Locations)).Locations.Count);
     }
 
+    /// <summary>
+    /// The first start after the update reads the library while the migration is still moving the
+    /// points out of the documents. A trip that has not been moved yet must keep the points its
+    /// document carries instead of being handed over with an empty track.
+    /// </summary>
+    [Fact]
+    public async Task Read_BeforeTheMigration_KeepsTheEmbeddedPoints()
+    {
+        var unmoved = Trip(At(0), At(1), At(2));
+        TripDocuments.Insert(unmoved);
+
+        var listed = Assert.Single(await repository.GetAllAsync<Trip>(t => t.Locations));
+
+        Assert.Equal(3, listed.Locations.Count);
+    }
+
     [Fact]
     public async Task Delete_RemovesThePointsOfTheTrip()
     {

@@ -84,10 +84,17 @@ public sealed class TripPointStore : IDataMigration
     /// <summary>Attaches the stored points of one trip, oldest first.</summary>
     public Trip AttachPoints(Trip trip)
     {
-        trip.Locations = Points
+        // A document written by a build that still embedded its points keeps them until the migration
+        // has rewritten it - an empty collection therefore means "not moved yet", not "no track".
+        var stored = Points
             .Find(point => point.TripID == trip.ID)
             .OrderBy(point => point.Timestamp)
             .ToList();
+
+        if (stored.Count > 0)
+        {
+            trip.Locations = stored;
+        }
 
         return trip;
     }
@@ -123,9 +130,12 @@ public sealed class TripPointStore : IDataMigration
 
         foreach (var trip in trips)
         {
-            trip.Locations = byTrip.TryGetValue(trip.ID, out var track)
-                ? track.OrderBy(point => point.Timestamp).ToList()
-                : [];
+            // Same rule as the single-trip overload: no stored points means the document has not been
+            // migrated yet, so the points it still carries stay.
+            if (byTrip.TryGetValue(trip.ID, out var track))
+            {
+                trip.Locations = track.OrderBy(point => point.Timestamp).ToList();
+            }
         }
 
         return trips;
@@ -138,13 +148,19 @@ public sealed class TripPointStore : IDataMigration
     public void Remove(Guid tripId) => Points.DeleteMany(point => point.TripID == tripId);
 
     /// <summary>
-    /// Moves the points of documents written by builds that still embedded them into the collection.
-    /// Runs in the background and is a no-op once every trip passed through it.
+    /// Moves the points of documents written by builds that still embedded them into the collection
+    /// and makes sure the trip id is indexed. Runs in the background and is a no-op once every trip
+    /// passed through it.
     /// </summary>
-    public Task RunAsync() => Task.Run(MoveEmbeddedPoints);
+    public Task RunAsync() => Task.Run(MoveEmbeddedPointsAsync);
 
-    private void MoveEmbeddedPoints()
+    private async Task MoveEmbeddedPointsAsync()
     {
+        // By trip id, because that is how one trip's points are read (its overview, the fingerprint
+        // indexer) and how they are deleted with it. Built here rather than when the database opens:
+        // at this size it costs over a second, and that must not sit in front of the first frame.
+        Points.EnsureIndex(point => point.TripID);
+
         var skip = 0;
 
         while (true)
@@ -170,6 +186,10 @@ public sealed class TripPointStore : IDataMigration
             }
 
             skip += page.Count;
+
+            // One round touches up to 25 trips worth of points. Yielding here keeps the database free
+            // for the reads the user is triggering meanwhile instead of holding it for the whole run.
+            await Task.Yield();
         }
     }
 

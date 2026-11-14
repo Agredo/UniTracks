@@ -38,10 +38,9 @@ public class LiteDatabase : ILiteDatabase
         Database = new LDB(databasePath);
         Locations = Database.GetCollection<Location>();
 
-        // A trip's points are read by trip id (the overview of one trip, the fingerprint indexer).
-        // Without the index each of those reads scanned every point in the library.
-        Locations.EnsureIndex(location => location.TripID);
-
+        // No index is created here on purpose. Building it over an existing library costs about
+        // 1,3 s per 200.000 points, and this constructor runs before the first frame - long enough
+        // for the iOS watchdog to kill a cold start. TripPointStore builds it in the background.
         RepairLegacyKeys(Database);
     }
 
