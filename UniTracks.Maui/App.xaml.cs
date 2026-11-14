@@ -1,3 +1,4 @@
+using UniTracks.Data.Maintenance;
 using UniTracks.Data.Seeding;
 using UniTracks.Maui.Views;
 using UniTracks.Maui.Views.Pages;
@@ -12,11 +13,15 @@ namespace UniTracks.Maui
         private readonly IChangelogPresenter changelogPresenter;
         private readonly StartupDatabaseReport startupDatabaseReport;
         private readonly AgredoApplication.MVVM.Services.Abstractions.UI.IDialogService dialogService;
+        private readonly UniTracks.Services.Data.TripDistanceRecalculator distanceRecalculator;
+        private readonly ITripFingerprintBackfill fingerprintBackfill;
+        private readonly IReadOnlyList<IDataMigration> dataMigrations;
 
         public App(
             DatabaseInitializer databaseInitializer,
             UniTracks.Services.Data.TripDistanceRecalculator distanceRecalculator,
             ITripFingerprintBackfill fingerprintBackfill,
+            IEnumerable<IDataMigration> dataMigrations,
             IChangelogPresenter changelogPresenter,
             StartupDatabaseReport startupDatabaseReport,
             AgredoApplication.MVVM.Services.Abstractions.UI.IDialogService dialogService)
@@ -28,6 +33,9 @@ namespace UniTracks.Maui
             this.changelogPresenter = changelogPresenter;
             this.startupDatabaseReport = startupDatabaseReport;
             this.dialogService = dialogService;
+            this.distanceRecalculator = distanceRecalculator;
+            this.fingerprintBackfill = fingerprintBackfill;
+            this.dataMigrations = dataMigrations.ToList();
 
             // Seed the TripType catalog if the active repository is empty (relevant on iOS, where
             // the store is LiteDB and there is no EF Core HasData/migration seeding). The stores now
@@ -37,15 +45,9 @@ namespace UniTracks.Maui
             // shell is created keeps the first page from rendering an empty catalog.
             databaseInitializer.EnsureSeededAsync().GetAwaiter().GetResult();
 
-            // Recalculate legacy metrics so old average-speed samples and smoothed distances cannot
-            // keep disagreeing with the splits and overview.
-            _ = distanceRecalculator.RecalculateAsync();
-
-            // Indexes every trip that predates the comparison feature. Also fire-and-forget, because
-            // it only has to finish before the user opens the compare page - the page reports that
-            // indexing is still running and shows whatever is already there.
-            fingerprintBackfill.EnsureStarted();
-
+            // Everything that is not needed to draw the first page now waits for it. Until recently
+            // the distance recalculation and the fingerprint indexing started right here, and the
+            // trip list - the first thing the user sees - queued its own full scan behind them.
             var shell = new AppShell();
 
             // Subscribed before the shell becomes the main page: Loaded can fire as soon as the
@@ -80,6 +82,37 @@ namespace UniTracks.Maui
             }
 
             _ = ShowStartupNoticesAsync();
+            _ = RunBackgroundJobsAsync();
+        }
+
+        /// <summary>
+        /// One-off data migrations and the maintenance passes over the existing library, all started
+        /// once the shell is on screen. A migration runs first: it changes where the GPS points are
+        /// stored, and the passes below read exactly those.
+        /// </summary>
+        private async Task RunBackgroundJobsAsync()
+        {
+            try
+            {
+                foreach (var migration in dataMigrations)
+                {
+                    await migration.RunAsync();
+                }
+            }
+            catch (Exception exception)
+            {
+                // A failed migration must never take the app down; the data keeps working the way it
+                // is, and the next start tries again.
+                CrashLog.Write($"Data migration failed: {exception}");
+            }
+
+            // Recalculate legacy metrics so old average-speed samples and smoothed distances cannot
+            // keep disagreeing with the splits and overview.
+            _ = distanceRecalculator.RecalculateAsync();
+
+            // Indexes every trip that predates the comparison feature. The compare page reports that
+            // indexing is still running and shows whatever is already there.
+            fingerprintBackfill.EnsureStarted();
         }
 
         private async Task ShowStartupNoticesAsync()

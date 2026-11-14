@@ -28,8 +28,15 @@ public class EfRepository : IRepository
     // Read-through cache for whole-table reads, same purpose as the one in LiteDbRepository: the
     // statistics page, the games tab and the user page each re-read the same tables on every visit.
     // Here the include set is part of the key, because on EF it decides which navigations are
-    // materialised - a no-include list must never be handed out for an include request.
-    private readonly ConcurrentDictionary<(Type Entity, string Includes), (long Version, List<object> Rows)> fullReadCache = new();
+    // materialised - a no-include list must never be handed out for an include request. A cached read
+    // also knows which entity types it was derived from, so writing the GPS point of a running
+    // recording no longer throws away the cached trip list.
+    private readonly ConcurrentDictionary<(Type Entity, string Includes), CacheEntry> fullReadCache = new();
+
+    // Write counter per entity type - the granularity the cache above needs. The global DataVersion
+    // is still bumped on every write, because consumers outside the repository use it as a
+    // "something changed" stamp for their own caches.
+    private readonly ConcurrentDictionary<Type, long> writeVersions = new();
 
     private long dataVersion;
 
@@ -43,6 +50,9 @@ public class EfRepository : IRepository
     /// <inheritdoc />
     public long DataVersion => Interlocked.Read(ref dataVersion);
 
+    /// <summary>The number of writes the given entity type has seen; 0 when it was never written.</summary>
+    private long VersionOf(Type type) => writeVersions.TryGetValue(type, out var version) ? version : 0;
+
     public async Task<TEntity> Add<TEntity>(TEntity entity) where TEntity : class
     {
         await gate.WaitAsync().ConfigureAwait(false);
@@ -50,7 +60,7 @@ public class EfRepository : IRepository
         {
             var entry = _context.Set<TEntity>().Add(entity).Entity;
             await _context.SaveChangesAsync().ConfigureAwait(false);
-            Interlocked.Increment(ref dataVersion);
+            MarkWritten<TEntity>();
             return entry;
         }
         finally
@@ -86,7 +96,7 @@ public class EfRepository : IRepository
             }
 
             await _context.SaveChangesAsync().ConfigureAwait(false);
-            Interlocked.Increment(ref dataVersion);
+            MarkWritten<TEntity>();
             return entity;
         }
         finally
@@ -102,7 +112,7 @@ public class EfRepository : IRepository
         {
             _context.Remove(entity);
             await _context.SaveChangesAsync().ConfigureAwait(false);
-            Interlocked.Increment(ref dataVersion);
+            MarkWritten<TEntity>();
         }
         finally
         {
@@ -117,7 +127,7 @@ public class EfRepository : IRepository
         {
             _context.RemoveRange(entities);
             await _context.SaveChangesAsync().ConfigureAwait(false);
-            Interlocked.Increment(ref dataVersion);
+            MarkWritten<TEntity>();
         }
         finally
         {
@@ -196,37 +206,73 @@ public class EfRepository : IRepository
     private async Task<List<TEntity>> ReadAllCachedAsync<TEntity>(Expression<Func<TEntity, object>>[] includes) where TEntity : class
     {
         var key = CacheKey<TEntity>(includes);
-        if (TryGetCached<TEntity>(key, DataVersion, out var cached))
+        if (TryGetCached<TEntity>(key, out var cached))
         {
             return cached;
         }
 
-        var version = DataVersion;
+        // Sampled immediately before the read: a write that lands while it is running bumps its
+        // type's version past that sample, so the entry is stale on the next visit.
+        var dependencies = Dependencies<TEntity>(includes);
+        var versions = dependencies.Select(VersionOf).ToArray();
+
         var rows = await _context.Set<TEntity>().IncludeMultiple(includes).ToListAsync().ConfigureAwait(false);
-        fullReadCache[key] = (version, rows.Cast<object>().ToList());
+        fullReadCache[key] = new CacheEntry(dependencies, versions, rows.Cast<object>().ToList());
         return rows;
     }
 
     private List<TEntity> ReadAllCached<TEntity>(Expression<Func<TEntity, object>>[] includes) where TEntity : class
     {
         var key = CacheKey<TEntity>(includes);
-        if (TryGetCached<TEntity>(key, DataVersion, out var cached))
+        if (TryGetCached<TEntity>(key, out var cached))
         {
             return cached;
         }
 
-        var version = DataVersion;
+        var dependencies = Dependencies<TEntity>(includes);
+        var versions = dependencies.Select(VersionOf).ToArray();
+
         var rows = _context.Set<TEntity>().IncludeMultiple(includes).ToList();
-        fullReadCache[key] = (version, rows.Cast<object>().ToList());
+        fullReadCache[key] = new CacheEntry(dependencies, versions, rows.Cast<object>().ToList());
         return rows;
     }
 
     private static (Type Entity, string Includes) CacheKey<TEntity>(Expression<Func<TEntity, object>>[] includes) =>
         (typeof(TEntity), string.Join("|", includes.Select(include => include.ToString())));
 
-    private bool TryGetCached<TEntity>((Type Entity, string Includes) key, long version, out List<TEntity> rows) where TEntity : class
+    /// <summary>
+    /// The entity types a cached read was derived from: the entity itself and the navigations it
+    /// pulled in. Writing any of those makes the entry stale, writing anything else does not.
+    /// </summary>
+    private static Type[] Dependencies<TEntity>(Expression<Func<TEntity, object>>[] includes) where TEntity : class =>
+        [typeof(TEntity), .. includes.Select(NavigationType).Where(type => type != typeof(object))];
+
+    /// <summary>
+    /// The element type of the navigation an include names - <c>Location</c> for
+    /// <c>trip =&gt; trip.Locations</c>.
+    /// </summary>
+    private static Type NavigationType(LambdaExpression include)
     {
-        if (fullReadCache.TryGetValue(key, out var entry) && entry.Version == version)
+        var member = include.Body as MemberExpression
+            ?? (include.Body as UnaryExpression)?.Operand as MemberExpression;
+
+        if (member?.Type is not { } type)
+        {
+            return typeof(object);
+        }
+
+        return type.IsGenericType ? type.GetGenericArguments()[0] : type;
+    }
+
+    private void MarkWritten<TEntity>() where TEntity : class
+    {
+        Interlocked.Increment(ref dataVersion);
+        writeVersions.AddOrUpdate(typeof(TEntity), 1, static (_, version) => version + 1);
+    }
+
+    private bool TryGetCached<TEntity>((Type Entity, string Includes) key, out List<TEntity> rows) where TEntity : class
+    {
+        if (fullReadCache.TryGetValue(key, out var entry) && IsCurrent(entry))
         {
             rows = entry.Rows.Cast<TEntity>().ToList();
             return true;
@@ -235,4 +281,20 @@ public class EfRepository : IRepository
         rows = null!;
         return false;
     }
+
+    private bool IsCurrent(CacheEntry entry)
+    {
+        for (var index = 0; index < entry.Dependencies.Length; index++)
+        {
+            if (entry.Versions[index] != VersionOf(entry.Dependencies[index]))
+            {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    /// <summary>One cached full read: the rows plus the versions of everything they were derived from.</summary>
+    private sealed record CacheEntry(Type[] Dependencies, long[] Versions, List<object> Rows);
 }

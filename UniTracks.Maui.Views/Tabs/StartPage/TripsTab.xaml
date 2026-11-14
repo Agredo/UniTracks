@@ -68,186 +68,202 @@
             </Grid>
         </Border>
 
-        <RefreshView x:Name="Refresh" Grid.Row="1">
-            <CollectionView
-                x:Name="TracksCollectionView"
-                Background="Transparent"
-                RemainingItemsThreshold="3"
-                SelectionChanged="TracksCollectionView_SelectionChanged"
-                SelectionMode="Single">
+        <!-- The spinner sits above the list instead of inside it, so it can cover the empty view:
+             during the very first read the list genuinely has no items, and "Noch keine Trips"
+             would be wrong for as long as that read takes. -->
+        <Grid Grid.Row="1">
+            <RefreshView x:Name="Refresh">
+                <CollectionView
+                    x:Name="TracksCollectionView"
+                    Background="Transparent"
+                    RemainingItemsThreshold="3"
+                    SelectionChanged="TracksCollectionView_SelectionChanged"
+                    SelectionMode="Single">
 
-                <CollectionView.EmptyView>
-                    <Grid Padding="32" VerticalOptions="Center">
-                        <VerticalStackLayout
-                            x:Name="EmptyNoTrips"
-                            Spacing="12">
-                            <Border
-                                Background="{StaticResource AccentSoft}"
-                                HeightRequest="88"
-                                HorizontalOptions="Center"
-                                Stroke="{StaticResource AccentDim}"
-                                StrokeThickness="1"
-                                WidthRequest="88">
-                                <Border.StrokeShape>
-                                    <RoundRectangle CornerRadius="26" />
-                                </Border.StrokeShape>
-                                <Image
-                                    Aspect="AspectFit"
-                                    HeightRequest="44"
-                                    Source="run.png"
-                                    WidthRequest="44" />
-                            </Border>
-                            <Label
-                                HorizontalTextAlignment="Center"
-                                Style="{StaticResource TitleLabel}"
-                                Text="Noch keine Trips" />
-                            <Label
-                                HorizontalTextAlignment="Center"
-                                Style="{StaticResource SubtitleLabel}"
-                                Text="Starte deine erste Aufnahme im Record-Tab&#xA;und sammle deine ersten Kilometer." />
-                        </VerticalStackLayout>
-
-                        <!-- "Nothing recorded" and "nothing matches the filter" are different
-                             situations with different ways out, so they get different texts. -->
-                        <VerticalStackLayout
-                            x:Name="EmptyFilteredTrips"
+                    <CollectionView.EmptyView>
+                        <Grid
+                            x:Name="EmptyHost"
+                            Padding="32"
                             IsVisible="False"
-                            Spacing="12">
-                            <Border
-                                Background="{StaticResource AccentSoft}"
-                                HeightRequest="88"
-                                HorizontalOptions="Center"
-                                Stroke="{StaticResource AccentDim}"
-                                StrokeThickness="1"
-                                WidthRequest="88">
-                                <Border.StrokeShape>
-                                    <RoundRectangle CornerRadius="26" />
-                                </Border.StrokeShape>
-                                <Image
-                                    Aspect="AspectFit"
-                                    HeightRequest="44"
-                                    Source="search.png"
-                                    WidthRequest="44" />
-                            </Border>
-                            <Label
-                                HorizontalTextAlignment="Center"
-                                Style="{StaticResource TitleLabel}"
-                                Text="Keine Trips für diese Auswahl" />
-                            <Label
-                                HorizontalTextAlignment="Center"
-                                Style="{StaticResource SubtitleLabel}"
-                                Text="Passe die Filter an oder setze sie zurück,&#xA;um wieder alle Trips zu sehen." />
-                            <Button
-                                Clicked="OnResetFiltersClicked"
-                                HorizontalOptions="Center"
-                                Style="{StaticResource SecondaryButton}"
-                                Text="Filter zurücksetzen" />
-                        </VerticalStackLayout>
-                    </Grid>
-                </CollectionView.EmptyView>
+                            VerticalOptions="Center">
+                            <VerticalStackLayout
+                                x:Name="EmptyNoTrips"
+                                Spacing="12">
+                                <Border
+                                    Background="{StaticResource AccentSoft}"
+                                    HeightRequest="88"
+                                    HorizontalOptions="Center"
+                                    Stroke="{StaticResource AccentDim}"
+                                    StrokeThickness="1"
+                                    WidthRequest="88">
+                                    <Border.StrokeShape>
+                                        <RoundRectangle CornerRadius="26" />
+                                    </Border.StrokeShape>
+                                    <Image
+                                        Aspect="AspectFit"
+                                        HeightRequest="44"
+                                        Source="run.png"
+                                        WidthRequest="44" />
+                                </Border>
+                                <Label
+                                    HorizontalTextAlignment="Center"
+                                    Style="{StaticResource TitleLabel}"
+                                    Text="Noch keine Trips" />
+                                <Label
+                                    HorizontalTextAlignment="Center"
+                                    Style="{StaticResource SubtitleLabel}"
+                                    Text="Starte deine erste Aufnahme im Record-Tab&#xA;und sammle deine ersten Kilometer." />
+                            </VerticalStackLayout>
 
-                <CollectionView.Header>
-                    <Grid HeightRequest="8" />
-                </CollectionView.Header>
-                <CollectionView.Footer>
-                    <VerticalStackLayout Padding="16,4,16,20">
-                        <!-- The threshold above needs scrolling, so a screen tall enough to show the
-                             whole first block gets an explicit button instead. -->
-                        <Button
-                            x:Name="LoadMoreButton"
-                            Clicked="OnLoadMoreClicked"
-                            IsVisible="False"
-                            Style="{StaticResource SecondaryButton}"
-                            Text="Weitere Trips laden" />
-                    </VerticalStackLayout>
-                </CollectionView.Footer>
-
-                <CollectionView.ItemsLayout>
-                    <GridItemsLayout
-                        HorizontalItemSpacing="12"
-                        Orientation="Horizontal"
-                        VerticalItemSpacing="12" />
-                </CollectionView.ItemsLayout>
-
-                <CollectionView.ItemTemplate>
-                    <DataTemplate x:DataType="tripModels:Trip">
-                        <Grid Padding="16,0">
-                            <SwipeView>
-                                <SwipeView.RightItems>
-                                    <SwipeItems Mode="Reveal">
-                                        <SwipeItem
-                                            BackgroundColor="{StaticResource CardAlt}"
-                                            Invoked="OnRenameInvoked"
-                                            Text="Umbenennen" />
-                                        <SwipeItem
-                                            BackgroundColor="{StaticResource Record}"
-                                            Invoked="OnDeleteInvoked"
-                                            Text="Löschen" />
-                                    </SwipeItems>
-                                </SwipeView.RightItems>
-                                <views:TripCard
-                                    AverageSpeed="{Binding AverageSpeed}"
-                                    Distance="{Binding Distance}"
-                                    HeartRates="{Binding HeartRates}"
-                                    IsCompact="{Binding CompactLayout, Source={x:Reference Root}}"
-                                    MaxAltitude="{Binding MaxAltitude}"
-                                    MaxSpeed="{Binding MaxSpeed}"
-                                    MinAltitude="{Binding MinAltitude}"
-                                    MinSpeed="{Binding MinSpeed}"
-                                    Name="{Binding Name}"
-                                    TripDateTime="{Binding StartTime}"
-                                    TripType="{Binding TripType}"
-                                    Weather="{Binding Weather}">
-                                    <views:TripCard.Duration>
-                                        <MultiBinding Converter="{StaticResource DateTimeDifferenceConverter}">
-                                            <Binding Mode="OneWay" Path="EndTime" />
-                                            <Binding Mode="OneWay" Path="StartTime" />
-                                        </MultiBinding>
-                                    </views:TripCard.Duration>
-                                </views:TripCard>
-                            </SwipeView>
+                            <!-- "Nothing recorded" and "nothing matches the filter" are different
+                                 situations with different ways out, so they get different texts. -->
+                            <VerticalStackLayout
+                                x:Name="EmptyFilteredTrips"
+                                IsVisible="False"
+                                Spacing="12">
+                                <Border
+                                    Background="{StaticResource AccentSoft}"
+                                    HeightRequest="88"
+                                    HorizontalOptions="Center"
+                                    Stroke="{StaticResource AccentDim}"
+                                    StrokeThickness="1"
+                                    WidthRequest="88">
+                                    <Border.StrokeShape>
+                                        <RoundRectangle CornerRadius="26" />
+                                    </Border.StrokeShape>
+                                    <Image
+                                        Aspect="AspectFit"
+                                        HeightRequest="44"
+                                        Source="search.png"
+                                        WidthRequest="44" />
+                                </Border>
+                                <Label
+                                    HorizontalTextAlignment="Center"
+                                    Style="{StaticResource TitleLabel}"
+                                    Text="Keine Trips für diese Auswahl" />
+                                <Label
+                                    HorizontalTextAlignment="Center"
+                                    Style="{StaticResource SubtitleLabel}"
+                                    Text="Passe die Filter an oder setze sie zurück,&#xA;um wieder alle Trips zu sehen." />
+                                <Button
+                                    Clicked="OnResetFiltersClicked"
+                                    HorizontalOptions="Center"
+                                    Style="{StaticResource SecondaryButton}"
+                                    Text="Filter zurücksetzen" />
+                            </VerticalStackLayout>
                         </Grid>
-                    </DataTemplate>
-                </CollectionView.ItemTemplate>
+                    </CollectionView.EmptyView>
 
-                <VisualStateManager.VisualStateGroups>
-                    <VisualStateGroup x:Name="DisplayStates">
-                        <VisualState x:Name="Display1">
-                            <VisualState.StateTriggers>
-                                <AdaptiveTrigger MinWindowWidth="0" />
-                            </VisualState.StateTriggers>
-                            <VisualState.Setters>
-                                <Setter Property="ItemsLayout">
-                                    <Setter.Value>
-                                        <GridItemsLayout
-                                            HorizontalItemSpacing="12"
-                                            Orientation="Vertical"
-                                            Span="1"
-                                            VerticalItemSpacing="12" />
-                                    </Setter.Value>
-                                </Setter>
-                            </VisualState.Setters>
-                        </VisualState>
+                    <CollectionView.Header>
+                        <Grid HeightRequest="8" />
+                    </CollectionView.Header>
+                    <CollectionView.Footer>
+                        <VerticalStackLayout Padding="16,4,16,20">
+                            <!-- The threshold above needs scrolling, so a screen tall enough to show the
+                                 whole first block gets an explicit button instead. -->
+                            <Button
+                                x:Name="LoadMoreButton"
+                                Clicked="OnLoadMoreClicked"
+                                IsVisible="False"
+                                Style="{StaticResource SecondaryButton}"
+                                Text="Weitere Trips laden" />
+                        </VerticalStackLayout>
+                    </CollectionView.Footer>
 
-                        <VisualState x:Name="Display2">
-                            <VisualState.StateTriggers>
-                                <AdaptiveTrigger MinWindowWidth="900" />
-                            </VisualState.StateTriggers>
-                            <VisualState.Setters>
-                                <Setter Property="ItemsLayout">
-                                    <Setter.Value>
-                                        <GridItemsLayout
-                                            HorizontalItemSpacing="12"
-                                            Orientation="Vertical"
-                                            Span="2"
-                                            VerticalItemSpacing="12" />
-                                    </Setter.Value>
-                                </Setter>
-                            </VisualState.Setters>
-                        </VisualState>
-                    </VisualStateGroup>
-                </VisualStateManager.VisualStateGroups>
-            </CollectionView>
-        </RefreshView>
+                    <CollectionView.ItemsLayout>
+                        <GridItemsLayout
+                            HorizontalItemSpacing="12"
+                            Orientation="Horizontal"
+                            VerticalItemSpacing="12" />
+                    </CollectionView.ItemsLayout>
+
+                    <CollectionView.ItemTemplate>
+                        <DataTemplate x:DataType="tripModels:Trip">
+                            <Grid Padding="16,0">
+                                <SwipeView>
+                                    <SwipeView.RightItems>
+                                        <SwipeItems Mode="Reveal">
+                                            <SwipeItem
+                                                BackgroundColor="{StaticResource CardAlt}"
+                                                Invoked="OnRenameInvoked"
+                                                Text="Umbenennen" />
+                                            <SwipeItem
+                                                BackgroundColor="{StaticResource Record}"
+                                                Invoked="OnDeleteInvoked"
+                                                Text="Löschen" />
+                                        </SwipeItems>
+                                    </SwipeView.RightItems>
+                                    <views:TripCard
+                                        AverageSpeed="{Binding AverageSpeed}"
+                                        Distance="{Binding Distance}"
+                                        HeartRates="{Binding HeartRates}"
+                                        IsCompact="{Binding CompactLayout, Source={x:Reference Root}}"
+                                        MaxAltitude="{Binding MaxAltitude}"
+                                        MaxSpeed="{Binding MaxSpeed}"
+                                        MinAltitude="{Binding MinAltitude}"
+                                        MinSpeed="{Binding MinSpeed}"
+                                        Name="{Binding Name}"
+                                        TripDateTime="{Binding StartTime}"
+                                        TripType="{Binding TripType}"
+                                        Weather="{Binding Weather}">
+                                        <views:TripCard.Duration>
+                                            <MultiBinding Converter="{StaticResource DateTimeDifferenceConverter}">
+                                                <Binding Mode="OneWay" Path="EndTime" />
+                                                <Binding Mode="OneWay" Path="StartTime" />
+                                            </MultiBinding>
+                                        </views:TripCard.Duration>
+                                    </views:TripCard>
+                                </SwipeView>
+                            </Grid>
+                        </DataTemplate>
+                    </CollectionView.ItemTemplate>
+
+                    <VisualStateManager.VisualStateGroups>
+                        <VisualStateGroup x:Name="DisplayStates">
+                            <VisualState x:Name="Display1">
+                                <VisualState.StateTriggers>
+                                    <AdaptiveTrigger MinWindowWidth="0" />
+                                </VisualState.StateTriggers>
+                                <VisualState.Setters>
+                                    <Setter Property="ItemsLayout">
+                                        <Setter.Value>
+                                            <GridItemsLayout
+                                                HorizontalItemSpacing="12"
+                                                Orientation="Vertical"
+                                                Span="1"
+                                                VerticalItemSpacing="12" />
+                                        </Setter.Value>
+                                    </Setter>
+                                </VisualState.Setters>
+                            </VisualState>
+
+                            <VisualState x:Name="Display2">
+                                <VisualState.StateTriggers>
+                                    <AdaptiveTrigger MinWindowWidth="900" />
+                                </VisualState.StateTriggers>
+                                <VisualState.Setters>
+                                    <Setter Property="ItemsLayout">
+                                        <Setter.Value>
+                                            <GridItemsLayout
+                                                HorizontalItemSpacing="12"
+                                                Orientation="Vertical"
+                                                Span="2"
+                                                VerticalItemSpacing="12" />
+                                        </Setter.Value>
+                                    </Setter>
+                                </VisualState.Setters>
+                            </VisualState>
+                        </VisualStateGroup>
+                    </VisualStateManager.VisualStateGroups>
+                </CollectionView>
+            </RefreshView>
+
+            <ActivityIndicator
+                x:Name="LoadingIndicator"
+                HorizontalOptions="Center"
+                IsRunning="True"
+                IsVisible="True"
+                VerticalOptions="Center" />
+        </Grid>
     </Grid>
 </ContentView>

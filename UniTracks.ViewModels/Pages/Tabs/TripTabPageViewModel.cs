@@ -94,6 +94,14 @@ public partial class TripTabPageViewModel : ObservableObject
     [ObservableProperty]
     private bool refreshIndicatorVisible;
 
+    /// <summary>
+    /// True until the first read of the library has finished. The list is filled from one read, and
+    /// until it arrives the empty view would claim there are no trips at all - so the page shows a
+    /// spinner instead and only then decides between list and empty view.
+    /// </summary>
+    [ObservableProperty]
+    private bool isLoading = true;
+
     public TripTabPageViewModel(
         INavigationService navigation,
         IPopupNavigationService popupNavigation,
@@ -133,12 +141,24 @@ public partial class TripTabPageViewModel : ObservableObject
 
     private async Task GetTrips()
     {
+        try
+        {
+            await ReadTrips();
+        }
+        finally
+        {
+            IsLoading = false;
+        }
+    }
+
+    private async Task ReadTrips()
+    {
         // Read without the GPS points on purpose: a trip carries one point per second of recording,
         // so pulling them in for every trip made this the most expensive read in the app - while the
         // cards only need the trip's own values and its type. The overview reads the points of the
         // one trip it opens.
         var orderedTrips = (await Repository.GetAllAsync<Trip>(
-                trip => trip.TripType))
+                trip => trip.TripType!))
             .OrderByDescending(trip => trip.StartTime)
             .ToList();
 

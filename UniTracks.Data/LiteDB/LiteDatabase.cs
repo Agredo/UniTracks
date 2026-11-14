@@ -38,6 +38,10 @@ public class LiteDatabase : ILiteDatabase
         Database = new LDB(databasePath);
         Locations = Database.GetCollection<Location>();
 
+        // A trip's points are read by trip id (the overview of one trip, the fingerprint indexer).
+        // Without the index each of those reads scanned every point in the library.
+        Locations.EnsureIndex(location => location.TripID);
+
         RepairLegacyKeys(Database);
     }
 
