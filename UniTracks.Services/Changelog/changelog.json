@@ -1,6 +1,17 @@
 {
   "releases": [
     {
+      "version": "0.5.2",
+      "date": "2026-11-17",
+      "title": "Aktualisierte Bausteine",
+      "changes": [
+        {
+          "kind": "improvement",
+          "text": "Alle Bibliotheken, auf denen die App aufbaut, sind auf dem neuesten Stand: .NET MAUI 11.0.10, CommunityToolkit.Maui 17.0.0, Mapsui 5.2.0, SkiaSharp 3.119.4 und die Agredo-Bibliotheken 1.3.0. Das bringt Fehlerbehebungen und schnellere Bedienoberflächen mit, an der Bedienung selbst ändert sich nichts."
+        }
+      ]
+    },
+    {
       "version": "0.5.1",
       "date": "2026-11-10",
       "title": "Einheitliche Metriken & iOS-Import",

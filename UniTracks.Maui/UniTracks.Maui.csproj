@@ -17,8 +17,8 @@
 		<ApplicationId>com.agredoapplication.unitracks</ApplicationId>
 
 		<!-- Versions -->
-		<ApplicationDisplayVersion>0.5.1</ApplicationDisplayVersion>
-		<ApplicationVersion>7</ApplicationVersion>
+		<ApplicationDisplayVersion>0.5.2</ApplicationDisplayVersion>
+		<ApplicationVersion>8</ApplicationVersion>
 
 		<DefaultLanguage>de-DE</DefaultLanguage>
 	</PropertyGroup>
@@ -93,7 +93,7 @@
 		<PackageReference Include="Microsoft.Maui.Controls" Version="$(MauiVersion)" />
 		<PackageReference Include="CommunityToolkit.Maui" Version="$(MauiCommunityToolkitVersion)" />
 		<PackageReference Include="Microsoft.Extensions.Logging.Debug" Version="$(MicrosoftExtensionsLoggingDebugVersion)" />
-		<PackageReference Include="AgredoApplication.MVVM.Services.Maui" Version="$(AgredoMvvmServicesVersion)" />
+		<PackageReference Include="AgredoApplication.MVVM.Services.Maui" Version="$(AgredoMvvmServicesMauiVersion)" />
 	</ItemGroup>
 
 	<ItemGroup>

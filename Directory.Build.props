@@ -20,16 +20,17 @@
 		<Nullable>enable</Nullable>
 
 		<!-- Central Package-Versions -->
-		<MauiVersion>11.0.0</MauiVersion>
-		<MauiCommunityToolkitVersion>15.0.1</MauiCommunityToolkitVersion>
+		<MauiVersion>11.0.10</MauiVersion>
+		<MauiCommunityToolkitVersion>17.0.0</MauiCommunityToolkitVersion>
 		<CommunityToolkitMvvmVersion>8.4.2</CommunityToolkitMvvmVersion>
 		<MicrosoftExtensionsLoggingDebugVersion>11.0.0</MicrosoftExtensionsLoggingDebugVersion>
 		<EntityFrameworkCoreVersion>11.0.0</EntityFrameworkCoreVersion>
 		<LiteDBVersion>6.0.0-prerelease.81</LiteDBVersion>
-		<MapsuiMauiVersion>5.1.0</MapsuiMauiVersion>
+		<MapsuiMauiVersion>5.2.0</MapsuiMauiVersion>
 		<!-- Must match the SkiaSharp version pinned by Mapsui.Maui (see Mapsui nuspec). -->
-		<SkiaSharpVersion>3.119.2</SkiaSharpVersion>
+		<SkiaSharpVersion>3.119.4</SkiaSharpVersion>
 		<AgredoMvvmServicesVersion>1.2.0</AgredoMvvmServicesVersion>
+		<AgredoMvvmServicesMauiVersion>1.3.0</AgredoMvvmServicesMauiVersion>
 
 		<!-- Disable ReadyToRun precompilation to avoid Crossgen2/ILCompiler issues in Release -->
 		<PublishReadyToRun>false</PublishReadyToRun>

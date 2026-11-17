@@ -35,14 +35,14 @@ public partial class AboutPageViewModel : ObservableObject
         yield return new LibraryInfo
         {
             Name = ".NET MAUI (Microsoft.Maui.Controls)",
-            Version = "11.0.0-preview.7.26406.9",
+            Version = "11.0.10",
             License = "MIT",
             GitHubUrl = "https://github.com/dotnet/maui",
         };
         yield return new LibraryInfo
         {
             Name = "CommunityToolkit.Maui",
-            Version = "15.0.1",
+            Version = "17.0.0",
             License = "MIT",
             GitHubUrl = "https://github.com/CommunityToolkit/Maui",
         };
@@ -56,14 +56,14 @@ public partial class AboutPageViewModel : ObservableObject
         yield return new LibraryInfo
         {
             Name = "Mapsui.Maui",
-            Version = "5.1.0",
+            Version = "5.2.0",
             License = "MIT",
             GitHubUrl = "https://github.com/Mapsui/Mapsui",
         };
         yield return new LibraryInfo
         {
             Name = "SkiaSharp.Views.Maui.Controls",
-            Version = "3.119.2",
+            Version = "3.119.4",
             License = "MIT",
             GitHubUrl = "https://github.com/mono/SkiaSharp",
         };
@@ -77,35 +77,35 @@ public partial class AboutPageViewModel : ObservableObject
         yield return new LibraryInfo
         {
             Name = "Microsoft.EntityFrameworkCore.Sqlite",
-            Version = "11.0.0-preview.7.26381.103",
+            Version = "11.0.0",
             License = "MIT",
             GitHubUrl = "https://github.com/dotnet/efcore",
         };
         yield return new LibraryInfo
         {
             Name = "Microsoft.EntityFrameworkCore.Design",
-            Version = "11.0.0-preview.7.26381.103",
+            Version = "11.0.0",
             License = "MIT",
             GitHubUrl = "https://github.com/dotnet/efcore",
         };
         yield return new LibraryInfo
         {
             Name = "Microsoft.EntityFrameworkCore.Tools",
-            Version = "11.0.0-preview.7.26381.103",
+            Version = "11.0.0",
             License = "MIT",
             GitHubUrl = "https://github.com/dotnet/efcore",
         };
         yield return new LibraryInfo
         {
             Name = "SQLitePCLRaw.bundle_e_sqlite3",
-            Version = "2.1.13",
+            Version = "3.0.5",
             License = "Apache-2.0",
             GitHubUrl = "https://github.com/ericsink/SQLitePCL.raw",
         };
         yield return new LibraryInfo
         {
             Name = "Microsoft.Extensions.Logging.Debug",
-            Version = "11.0.0-preview.7.26381.103",
+            Version = "11.0.0",
             License = "MIT",
             GitHubUrl = "https://github.com/dotnet/runtime",
         };
@@ -139,7 +139,7 @@ public partial class AboutPageViewModel : ObservableObject
         yield return new LibraryInfo
         {
             Name = "AgredoApplication.MVVM.Services.Maui",
-            Version = "1.2.0",
+            Version = "1.3.0",
             License = "Proprietär (Agredo Application)",
         };
     }

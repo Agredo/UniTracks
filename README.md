@@ -120,8 +120,8 @@ Zentrale Versionsverwaltung aller Pakete in `Directory.Build.props` / `projects.
 |---|---|
 | Framework | .NET 11 / .NET MAUI 11 |
 | MVVM | CommunityToolkit.Mvvm 8.4 + AgredoApplication.MVVM.Services |
-| UI-Toolkit | CommunityToolkit.Maui 15 (Popups, Behaviors, `[BindableProperty]`-Generator) |
-| Karten | Mapsui.Maui 5.1 (SkiaSharp, OpenStreetMap-Tiles) |
+| UI-Toolkit | CommunityToolkit.Maui 17 (Popups, Behaviors, `[BindableProperty]`-Generator) |
+| Karten | Mapsui.Maui 5.2 (SkiaSharp, OpenStreetMap-Tiles) |
 | Game-Rendering | SkiaSharp 3.119 (prozedurale Vektor-Sprites, isometrische Karte) |
 | Datenbank | EF Core 11 (SQLite) + LiteDB |
 | Plattformen | Android 24+, iOS 16+, MacCatalyst 15+, Windows 10.0.17763+ |
