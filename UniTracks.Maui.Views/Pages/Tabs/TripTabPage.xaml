@@ -13,6 +13,7 @@
             CompactLayout="{Binding IsCompactLayout}"
             HasActiveFilters="{Binding HasActiveFilters}"
             HasMoreTrips="{Binding HasMoreTrips}"
+            IsLoading="{Binding IsLoading}"
             IsRefreshing="{Binding RefreshIndicatorVisible}"
             LoadMore="{Binding LoadMoreTripsCommand}"
             OpenFilters="{Binding OpenFiltersCommand}"

@@ -6,6 +6,7 @@ using Microsoft.Maui.ApplicationModel;
 using Microsoft.Maui.LifecycleEvents;
 using SkiaSharp.Views.Maui.Controls.Hosting;
 using UniTracks.Data.LiteDB;
+using UniTracks.Data.Maintenance;
 using UniTracks.Data.Repository;
 using UniTracks.Data.Seeding;
 using UniTracks.Data.SQLite;
@@ -275,6 +276,11 @@ public static class MauiProgram
             return new LiteDatabase(databasePath);
         });
         services.AddSingleton<IRepository, LiteDbRepository>();
+        services.AddSingleton<TripPointStore>();
+
+        // Moves the GPS points that old builds embedded in the trip document into their own
+        // collection. Runs in the background after the first page is up, see IDataMigration.
+        services.AddSingleton<IDataMigration>(sp => sp.GetRequiredService<TripPointStore>());
         services.AddSingleton<IDatabaseMaintenance>(sp => new DatabaseMaintenance(
             sp.GetRequiredService<AgredoApplication.MVVM.Services.Abstractions.IO.IFileSystem>(),
             useLiteDatabase: true));

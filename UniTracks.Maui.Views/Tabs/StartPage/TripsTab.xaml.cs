@@ -40,6 +40,10 @@ public partial class TripsTab : ContentView
     [BindableProperty(PropertyChangedMethodName = nameof(OnIsRefreshingPropertyChanged), DefaultBindingMode = BindingMode.TwoWay)]
     public partial bool IsRefreshing { get; set; }
 
+    /// <summary>True while the first read of the library is running; shows the spinner.</summary>
+    [BindableProperty(PropertyChangedMethodName = nameof(OnIsLoadingPropertyChanged))]
+    public partial bool IsLoading { get; set; }
+
     [BindableProperty]
     public partial bool CompactLayout { get; set; }
 
@@ -83,6 +87,12 @@ public partial class TripsTab : ContentView
     {
         var tab = (TripsTab)bindable;
         tab.IsRefreshingChanged((bool)newValue);
+    }
+
+    private static void OnIsLoadingPropertyChanged(BindableObject bindable, object oldValue, object newValue)
+    {
+        var tab = (TripsTab)bindable;
+        tab.LoadingChanged((bool)newValue);
     }
 
     private static void OnLoadMorePropertyChanged(BindableObject bindable, object oldValue, object newValue)
@@ -205,6 +215,15 @@ public partial class TripsTab : ContentView
     private void IsRefreshingChanged(bool newValue)
     {
         Refresh.IsRefreshing = newValue;
+    }
+
+    private void LoadingChanged(bool isLoading)
+    {
+        LoadingIndicator.IsRunning = isLoading;
+        LoadingIndicator.IsVisible = isLoading;
+
+        // A read that has not delivered yet is not the same as an empty library.
+        EmptyHost.IsVisible = !isLoading;
     }
 
     private TripTabPageViewModel? ViewModel => BindingContext as TripTabPageViewModel;
