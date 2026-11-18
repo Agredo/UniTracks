@@ -25,7 +25,7 @@
 		<CommunityToolkitMvvmVersion>8.4.2</CommunityToolkitMvvmVersion>
 		<MicrosoftExtensionsLoggingDebugVersion>11.0.0</MicrosoftExtensionsLoggingDebugVersion>
 		<EntityFrameworkCoreVersion>11.0.0</EntityFrameworkCoreVersion>
-		<LiteDBVersion>6.0.0-prerelease.81</LiteDBVersion>
+		<LiteDBVersion>6.0.0-prerelease.355</LiteDBVersion>
 		<MapsuiMauiVersion>5.2.0</MapsuiMauiVersion>
 		<!-- Must match the SkiaSharp version pinned by Mapsui.Maui (see Mapsui nuspec). -->
 		<SkiaSharpVersion>3.119.4</SkiaSharpVersion>
