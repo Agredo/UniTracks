@@ -3,6 +3,7 @@ using System.Globalization;
 using AgredoApplication.MVVM.Services.Abstractions.Navigation;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using UniTracks.Models.Comparison;
 using UniTracks.Models.Trip;
 using UniTracks.Services.Comparison;
 
@@ -163,6 +164,31 @@ public partial class TripComparePageViewModel : ObservableObject
     [ObservableProperty]
     private bool isSelectionFull;
 
+    /// <summary>Pace of every same-type attempt in order, so progress is visible at a glance.</summary>
+    [ObservableProperty]
+    private IReadOnlyList<ComparisonCurve>? trendCurves;
+
+    [ObservableProperty]
+    private bool hasTrendChart;
+
+    [ObservableProperty]
+    private IList<string> trendAxisLabels = new List<string>();
+
+    [ObservableProperty]
+    private string trendChartTitle = "TEMPO JE LAUF";
+
+    [ObservableProperty]
+    private string trendAxisUnit = "min/km";
+
+    [ObservableProperty]
+    private bool isPaceTrend = true;
+
+    [ObservableProperty]
+    private bool invertTrendAxis = true;
+
+    [ObservableProperty]
+    private string trendChartCaption = string.Empty;
+
     public ObservableCollection<RouteAttemptItem> Attempts { get; } = new();
 
     /// <summary>Trips that partly share this route; shown on their own so they cannot be mistaken for repeats.</summary>
@@ -231,6 +257,7 @@ public partial class TripComparePageViewModel : ObservableObject
         IsIndexing = report.IsIndexing;
 
         Headline = report.History.Headline;
+        BuildTrendChart(report);
         TrendText = BuildTrendText(report);
         HasTrend = !string.IsNullOrEmpty(TrendText);
         RecentMedianText = BuildRecentMedianText(report);
@@ -261,6 +288,53 @@ public partial class TripComparePageViewModel : ObservableObject
         HasComparableEffort = report.ComparableEffort.Count > 0;
         HasNothing = !HasSameRoute && !HasSimilarRoutes && !HasComparableEffort;
         EmptyText = BuildEmptyText(report);
+    }
+
+    /// <summary>
+    /// Draws one point per same-type attempt; foreign types are left out because km/h and min/km
+    /// cannot share an axis.
+    /// </summary>
+    private void BuildTrendChart(TripComparisonReport report)
+    {
+        var own = report.History.Attempts
+            .Where(attempt => attempt.IsSameTripType && attempt.PaceSecondsPerKilometer > 0)
+            .ToList();
+
+        if (own.Count < 2)
+        {
+            HasTrendChart = false;
+            TrendCurves = null;
+            TrendAxisLabels = new List<string>();
+            TrendChartCaption = string.Empty;
+            return;
+        }
+
+        var displayType = report.Trip.TripType;
+
+        TrendCurves = new List<ComparisonCurve>
+        {
+            new()
+            {
+                Name = TripDisplay.RateLabel(displayType),
+                ColorHex = TripComparisonPalette.ColorFor(0),
+                Values = own
+                    .Select(attempt => TripDisplay.RateValue(displayType, attempt.PaceSecondsPerKilometer))
+                    .ToList(),
+            },
+        };
+
+        TrendAxisLabels = own
+            .Select(attempt => attempt.Trip.StartTime.LocalDateTime.ToString("dd.MM.", GermanCulture))
+            .ToList();
+
+        TrendChartTitle = TripDisplay.RateChartTitle(displayType);
+        TrendAxisUnit = TripDisplay.RateAxisUnit(displayType);
+        IsPaceTrend = TripDisplay.IsPace(displayType);
+        InvertTrendAxis = IsPaceTrend;
+        TrendChartCaption = $"Tatsächliches Tempo je Versuch, ältester links. {own.Count} Versuche auf dieser Strecke.";
+
+        // A single point is not a trend, so the chart only appears from the second attempt on.
+        HasTrendChart = true;
     }
 
     /// <summary>

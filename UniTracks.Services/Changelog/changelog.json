@@ -1,6 +1,29 @@
 {
   "releases": [
     {
+      "version": "0.5.3",
+      "date": "2026-11-20",
+      "title": "Vier neue Diagramme",
+      "changes": [
+        {
+          "kind": "improvement",
+          "text": "Der Vergleich zeigt jetzt ein Höhenprofil: alle Trips über dieselbe Distanz, in den Farben der Karte. Man sieht auf einen Blick, welcher Lauf den Anstieg wo hatte, statt nur eine Summe zu lesen."
+        },
+        {
+          "kind": "improvement",
+          "text": "Unter den Kilometer-Splits stehen die Unterschiede als Balken um eine Nulllinie: nach oben langsamer, nach unten schneller, in Sekunden pro Kilometer gegen den ersten Trip. Dadurch erkennt man sofort, ab welchem Kilometer ein Lauf weggebrochen ist."
+        },
+        {
+          "kind": "improvement",
+          "text": "Auf der Vergleichsseite gibt es ein Diagramm \"Tempo je Lauf\": ein Punkt pro Versuch derselben Strecke, ältester links, in der Einheit der Sportart. Der Fortschritt ist damit sichtbar, nicht nur als Textzeile."
+        },
+        {
+          "kind": "improvement",
+          "text": "Die Analyse-Seite nennt Bestzeiten: der schnellste 1-km-, 5-km- und 10-km-Abschnitt des Trips, soweit die Distanz reicht. Standzeit zählt nicht mit, ein GPS-Loch wird nie überbrückt. Im Vergleich stehen dieselben Werte als Kennzahlen-Zeile."
+        }
+      ]
+    },
+    {
       "version": "0.5.2",
       "date": "2026-11-17",
       "title": "Aktualisierte Bausteine",
@@ -101,25 +124,25 @@
         {
           "kind": "fix",
           "text": "Das Scrollen in Popups mit langen Listen (\"Was ist neu?\", Sportarten-Suche, Kilometer-Splits) ruckelte auf manchen Android-Geräten. Die Karten in diesen Popups werden jetzt einfacher gezeichnet, dadurch läuft das Scrollen flüssig."
-                  },
-                  {
-                    "kind": "feature",
-                    "text": "Alle Sportarten heißen jetzt deutsch: Aus \"Cycling\" wird \"Radfahren\", aus \"Run\" wird \"Laufen\", aus \"Soccer\" wird \"Fußball\" und so weiter - die App war schon überall deutsch, nur die Sportarten waren es nicht. Die Suche versteht zusätzlich die Wörter, die man umgangssprachlich tippt: \"Fahrrad\", \"Rennrad\" oder \"MTB\" finden die Rad-Sportarten, \"Joggen\" findet \"Laufen\", \"Hund\" findet \"Gassi gehen\", \"Fussball\" findet \"Fußball\"."
-                  },
-                  {
-                    "kind": "fix",
-                    "text": "Die Sportart gilt jetzt für den ganzen laufenden Trip: Wählst du während der Aufnahme eine andere Sportart, steht sie sofort auch in der Trip-Liste. Bisher übernahm der beendete Trip die Sportart, die beim ersten GPS-Punkt eingestellt war, und musste erst in der Trip-Übersicht von Hand geändert werden."
-                  },
-                  {
-                    "kind": "improvement",
-                    "text": "Die Trip-Liste lädt schneller und bleibt auch mit vielen Trips flüssig: Sie baut nur noch die letzten 15 Karten auf und lädt beim Scrollen jeweils 15 weitere nach. Beim Öffnen eines Trips werden dessen GPS-Punkte separat geladen, sodass Karte und Profil unverändert erscheinen."
-                  },
-                  {
-                    "kind": "improvement",
-                    "text": "Trips filtern: Über den Knopf oben rechts in der Trip-Übersicht lässt sich die Liste eingrenzen - nach Sportart, Zeitraum, Dauer und Streckenlänge. Die Sportarten stehen als Chips mit ihrer Anzahl da, die Werte lassen sich mehrfach auswählen und werden kombiniert. Beim Auswählen zeigt der Knopf im Blatt sofort, wie viele Trips übrig bleiben, bevor du übernimmst; ein Zähler am Filter-Knopf und ein eigener Hinweis in der leeren Liste zeigen, wenn gerade gefiltert wird. Der Filter bleibt beim nächsten Start erhalten und lässt sich mit »Filter zurücksetzen« wieder aufheben."
-                  }
-                ]
-              },
+        },
+        {
+          "kind": "feature",
+          "text": "Alle Sportarten heißen jetzt deutsch: Aus \"Cycling\" wird \"Radfahren\", aus \"Run\" wird \"Laufen\", aus \"Soccer\" wird \"Fußball\" und so weiter - die App war schon überall deutsch, nur die Sportarten waren es nicht. Die Suche versteht zusätzlich die Wörter, die man umgangssprachlich tippt: \"Fahrrad\", \"Rennrad\" oder \"MTB\" finden die Rad-Sportarten, \"Joggen\" findet \"Laufen\", \"Hund\" findet \"Gassi gehen\", \"Fussball\" findet \"Fußball\"."
+        },
+        {
+          "kind": "fix",
+          "text": "Die Sportart gilt jetzt für den ganzen laufenden Trip: Wählst du während der Aufnahme eine andere Sportart, steht sie sofort auch in der Trip-Liste. Bisher übernahm der beendete Trip die Sportart, die beim ersten GPS-Punkt eingestellt war, und musste erst in der Trip-Übersicht von Hand geändert werden."
+        },
+        {
+          "kind": "improvement",
+          "text": "Die Trip-Liste lädt schneller und bleibt auch mit vielen Trips flüssig: Sie baut nur noch die letzten 15 Karten auf und lädt beim Scrollen jeweils 15 weitere nach. Beim Öffnen eines Trips werden dessen GPS-Punkte separat geladen, sodass Karte und Profil unverändert erscheinen."
+        },
+        {
+          "kind": "improvement",
+          "text": "Trips filtern: Über den Knopf oben rechts in der Trip-Übersicht lässt sich die Liste eingrenzen - nach Sportart, Zeitraum, Dauer und Streckenlänge. Die Sportarten stehen als Chips mit ihrer Anzahl da, die Werte lassen sich mehrfach auswählen und werden kombiniert. Beim Auswählen zeigt der Knopf im Blatt sofort, wie viele Trips übrig bleiben, bevor du übernimmst; ein Zähler am Filter-Knopf und ein eigener Hinweis in der leeren Liste zeigen, wenn gerade gefiltert wird. Der Filter bleibt beim nächsten Start erhalten und lässt sich mit »Filter zurücksetzen« wieder aufheben."
+        }
+      ]
+    },
     {
       "version": "0.4",
       "date": "2026-09-13",

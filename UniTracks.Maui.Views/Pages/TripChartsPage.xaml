@@ -155,6 +155,63 @@
                 </Border>
             </VerticalStackLayout>
 
+            <!-- Best efforts -->
+            <VerticalStackLayout IsVisible="{Binding HasBestEfforts}" Spacing="8">
+                <Label Style="{StaticResource SectionHeader}" Text="BESTZEITEN" />
+                <Border Padding="14" Style="{StaticResource CardBorder}">
+                    <VerticalStackLayout Spacing="10">
+                        <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="12">
+                            <Label Grid.Column="0" Style="{StaticResource StatLabel}" Text="STRECKE" />
+                            <Label
+                                Grid.Column="1"
+                                HorizontalTextAlignment="End"
+                                Style="{StaticResource StatLabel}"
+                                Text="ZEIT" />
+                            <Label
+                                Grid.Column="2"
+                                HorizontalTextAlignment="End"
+                                Style="{StaticResource StatLabel}"
+                                Text="Ø" />
+                        </Grid>
+                        <VerticalStackLayout
+                            BindableLayout.ItemsSource="{Binding BestEfforts}"
+                            Spacing="8">
+                            <BindableLayout.ItemTemplate>
+                                <DataTemplate x:DataType="vm:BestEffortRow">
+                                    <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="12">
+                                        <Label
+                                            Grid.Column="0"
+                                            FontSize="13"
+                                            Text="{Binding DistanceText}"
+                                            TextColor="{StaticResource TextSecondary}"
+                                            VerticalOptions="Center" />
+                                        <Label
+                                            Grid.Column="1"
+                                            FontSize="13"
+                                            HorizontalTextAlignment="End"
+                                            Text="{Binding TimeText}"
+                                            TextColor="{StaticResource TextPrimary}"
+                                            VerticalOptions="Center" />
+                                        <Label
+                                            Grid.Column="2"
+                                            FontSize="13"
+                                            HorizontalTextAlignment="End"
+                                            Text="{Binding RateText}"
+                                            TextColor="{StaticResource TextMuted}"
+                                            VerticalOptions="Center" />
+                                    </Grid>
+                                </DataTemplate>
+                            </BindableLayout.ItemTemplate>
+                        </VerticalStackLayout>
+                    </VerticalStackLayout>
+                </Border>
+                <Label
+                    FontSize="11"
+                    HorizontalTextAlignment="Center"
+                    Text="Schnellste zusammenhängende Strecke dieses Trips, ohne Standzeit."
+                    TextColor="{StaticResource TextMuted}" />
+            </VerticalStackLayout>
+
         </VerticalStackLayout>
     </ScrollView>
 </ContentPage>

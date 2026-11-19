@@ -22,6 +22,9 @@ public sealed record TripComparisonSide
 
     public required double ElevationGainMeters { get; init; }
 
+    /// <summary>Fastest 1 km, 5 km and 10 km inside this trip, whichever the distance covers.</summary>
+    public required IReadOnlyList<Stats.BestEffort> BestEfforts { get; init; }
+
     public required double MaxSpeedMetersPerSecond { get; init; }
 
     /// <summary>Actual distance over moving time, in seconds per kilometre; never climb-adjusted.</summary>
@@ -140,6 +143,13 @@ public static class TripComparisonCalculator
     /// <summary>Distance spread relative to the shortest trip that makes a pace ranking misleading.</summary>
     private const double FairnessRelativeDistanceDifference = 0.15;
 
+    /// <summary>Support points of the shared elevation profile; enough for a smooth line, few enough to stay cheap.</summary>
+    private const int ElevationProfilePoints = 120;
+
+    /// <summary>Axis labels read with a decimal comma, matching the rest of the app.</summary>
+    private static readonly System.Globalization.CultureInfo GermanCulture =
+        System.Globalization.CultureInfo.GetCultureInfo("de-DE");
+
     /// <summary>Builds one side from a trip and its track. Both the totals and the splits use the raw track.</summary>
     public static TripComparisonSide CreateSide(Trip trip, IReadOnlyList<LocationModel> track)
     {
@@ -166,6 +176,7 @@ public static class TripComparisonCalculator
             ElapsedSeconds = elapsed,
             PausedSeconds = pausedSeconds,
             ElevationGainMeters = elevationGain,
+            BestEfforts = Stats.BestEffortCalculator.Compute(ordered),
             MaxSpeedMetersPerSecond = trip.MaxSpeed ?? 0,
             EquivalentPaceSecondsPerKilometer = EffortModel.EquivalentPaceSecondsPerKilometer(
                 distance, movingSeconds, elapsed, elevationGain),
@@ -207,12 +218,16 @@ public static class TripComparisonCalculator
                 .ToList())
             .ToList();
 
+        var elevation = BuildElevationProfiles(sides);
+
         return new TripComparisonSet
         {
             Members = members,
             Splits = splits,
             DistanceAxisLabels = labels,
             PaceSeries = series,
+            ElevationSeries = elevation.Series,
+            ElevationAxisLabels = elevation.Labels,
             Ranking = ranking,
             Verdict = SetVerdict(members, ranking),
             VerdictDetail = SetVerdictDetail(members, ranking),
@@ -513,5 +528,114 @@ public static class TripComparisonCalculator
         }
 
         return notes.Count == 0 ? null : string.Join(" ", notes);
+    }
+
+    /// <summary>
+    /// Altitude of every trip over the distance they all covered, so the profiles line up with each
+    /// other instead of each one filling its own axis. Empty when a profile cannot be drawn.
+    /// </summary>
+    private static (List<string> Labels, List<IReadOnlyList<double>> Series) BuildElevationProfiles(
+        IReadOnlyList<TripComparisonSide> sides)
+    {
+        var empty = (new List<string>(), new List<IReadOnlyList<double>>());
+
+        if (sides.Any(side => side.Track.Count < 2))
+        {
+            return empty;
+        }
+
+        var cumulative = sides.Select(side => CumulativeDistances(side.Track)).ToList();
+
+        double shared = sides
+            .Select((side, index) => Math.Min(side.DistanceMeters, cumulative[index][^1]))
+            .Min();
+
+        if (shared < 100)
+        {
+            return empty;
+        }
+
+        var series = new List<IReadOnlyList<double>>(sides.Count);
+        for (int index = 0; index < sides.Count; index++)
+        {
+            var track = sides[index].Track;
+            var distances = cumulative[index];
+            var values = new List<double>(ElevationProfilePoints);
+
+            for (int point = 0; point < ElevationProfilePoints; point++)
+            {
+                double target = shared * point / (ElevationProfilePoints - 1);
+                values.Add(AltitudeAt(track, distances, target));
+            }
+
+            series.Add(values);
+        }
+
+        var labels = new List<string>(ElevationProfilePoints);
+        for (int point = 0; point < ElevationProfilePoints; point++)
+        {
+            double kilometers = shared * point / (ElevationProfilePoints - 1) / 1000.0;
+            labels.Add(kilometers.ToString(kilometers < 10 ? "0.0" : "0", GermanCulture));
+        }
+
+        return (labels, series);
+    }
+
+    private static double[] CumulativeDistances(IReadOnlyList<LocationModel> track)
+    {
+        var cumulative = new double[track.Count];
+        for (int index = 1; index < track.Count; index++)
+        {
+            var previous = track[index - 1];
+            var current = track[index];
+            cumulative[index] = cumulative[index - 1] + GeoMath.HaversineMeters(
+                previous.Latitude,
+                previous.Longitude,
+                current.Latitude,
+                current.Longitude);
+        }
+
+        return cumulative;
+    }
+
+    /// <summary>Altitude at an exact distance, linearly interpolated between the two nearest fixes.</summary>
+    private static double AltitudeAt(
+        IReadOnlyList<LocationModel> track,
+        double[] cumulative,
+        double target)
+    {
+        if (target <= 0)
+        {
+            return track[0].Altitude;
+        }
+
+        if (target >= cumulative[^1])
+        {
+            return track[^1].Altitude;
+        }
+
+        int low = 0;
+        int high = cumulative.Length - 1;
+        while (low + 1 < high)
+        {
+            int middle = (low + high) / 2;
+            if (cumulative[middle] <= target)
+            {
+                low = middle;
+            }
+            else
+            {
+                high = middle;
+            }
+        }
+
+        double span = cumulative[high] - cumulative[low];
+        if (span <= 0)
+        {
+            return track[high].Altitude;
+        }
+
+        double fraction = (target - cumulative[low]) / span;
+        return track[low].Altitude + (track[high].Altitude - track[low].Altitude) * fraction;
     }
 }

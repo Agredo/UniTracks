@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8" ?>
+﻿<?xml version="1.0" encoding="utf-8" ?>
 <ContentPage
     x:Class="UniTracks.Maui.Views.Pages.TripComparisonPage"
     xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
@@ -309,6 +309,24 @@
                     TextColor="{StaticResource TextMuted}" />
             </VerticalStackLayout>
 
+            <!-- Elevation profile over the shared distance -->
+            <VerticalStackLayout IsVisible="{Binding HasElevationProfile}" Spacing="8">
+                <Label Style="{StaticResource SectionHeader}" Text="HÖHENPROFIL" />
+                <Border Padding="14,14,10,10" Style="{StaticResource CardBorder}">
+                    <charts:AxisLineChartView
+                        HeightRequest="200"
+                        Series="{Binding ElevationCurves}"
+                        XLabels="{Binding ElevationAxisLabels}"
+                        YFormat="0"
+                        YUnit="m" />
+                </Border>
+                <Label
+                    FontSize="11"
+                    HorizontalTextAlignment="Center"
+                    Text="{Binding ElevationCaption}"
+                    TextColor="{StaticResource TextMuted}" />
+            </VerticalStackLayout>
+
             <!-- Kilometre splits: A/B table for exactly two trips -->
             <VerticalStackLayout IsVisible="{Binding ShowPairSplits}" Spacing="8">
                 <Label Style="{StaticResource SectionHeader}" Text="KILOMETER-SPLITS" />
@@ -391,6 +409,25 @@
                         </VerticalStackLayout>
                     </VerticalStackLayout>
                 </Border>
+            </VerticalStackLayout>
+
+            <!-- Split difference as bars around zero: up means slower, down means faster -->
+            <VerticalStackLayout IsVisible="{Binding HasSplitDeltas}" Spacing="8">
+                <Label Style="{StaticResource SectionHeader}" Text="SPLIT-UNTERSCHIED" />
+                <Border Padding="14,14,10,10" Style="{StaticResource CardBorder}">
+                    <charts:DivergingBarChartView
+                        HeightRequest="180"
+                        FasterColor="{StaticResource Accent}"
+                        ItemsSource="{Binding SplitDeltas}"
+                        LabelColor="{StaticResource TextMuted}"
+                        SlowerColor="{StaticResource Warning}"
+                        ValueColor="{StaticResource TextSecondary}" />
+                </Border>
+                <Label
+                    FontSize="11"
+                    HorizontalTextAlignment="Center"
+                    Text="{Binding SplitDeltaCaption}"
+                    TextColor="{StaticResource TextMuted}" />
             </VerticalStackLayout>
 
             <!-- Kilometre splits: one column per run when more than two trips are compared -->

@@ -81,6 +81,18 @@ public sealed record TripComparisonSet
     /// <summary>Pace curve per member, in the same order as <see cref="Members"/>.</summary>
     public required IReadOnlyList<IReadOnlyList<double>> PaceSeries { get; init; }
 
+    /// <summary>
+    /// Altitude curve per member over the distance all members covered, in the same order as
+    /// <see cref="Members"/>. Empty when no profile can be drawn.
+    /// </summary>
+    public required IReadOnlyList<IReadOnlyList<double>> ElevationSeries { get; init; }
+
+    /// <summary>Kilometre captions for <see cref="ElevationSeries"/>; empty together with it.</summary>
+    public required IReadOnlyList<string> ElevationAxisLabels { get; init; }
+
+    /// <summary>True when an elevation profile can be drawn for every compared trip.</summary>
+    public bool HasElevationProfile => ElevationSeries.Count > 0 && ElevationSeries[0].Count > 1;
+
     /// <summary>Ranking by actual pace, fastest first.</summary>
     public required IReadOnlyList<TripComparisonRank> Ranking { get; init; }
 

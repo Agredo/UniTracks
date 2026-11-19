@@ -3,8 +3,10 @@ using AgredoApplication.MVVM.Services.Abstractions.Navigation;
 using CommunityToolkit.Mvvm.ComponentModel;
 using UniTracks.Models.Comparison;
 using UniTracks.Models.Location;
+using UniTracks.Models.Stats;
 using UniTracks.Models.Trip;
 using UniTracks.Services.Comparison;
+using UniTracks.Services.Stats;
 
 namespace UniTracks.ViewModels.Pages;
 
@@ -229,6 +231,26 @@ public partial class TripComparisonPageViewModel : ObservableObject
     [ObservableProperty]
     private IList<IList<bool>>? missingPaceValues;
 
+    /// <summary>Altitude curve per trip over the distance all of them covered.</summary>
+    [ObservableProperty]
+    private IReadOnlyList<ComparisonCurve>? elevationCurves;
+
+    [ObservableProperty]
+    private bool hasElevationProfile;
+
+    [ObservableProperty]
+    private string elevationCaption = string.Empty;
+
+    /// <summary>Difference per kilometre against the basis, drawn as bars around a zero line.</summary>
+    [ObservableProperty]
+    private IReadOnlyList<ChartEntry>? splitDeltas;
+
+    [ObservableProperty]
+    private bool hasSplitDeltas;
+
+    [ObservableProperty]
+    private string splitDeltaCaption = string.Empty;
+
     [ObservableProperty]
     private IList<string> distanceAxisLabels = new List<string>();
 
@@ -371,6 +393,18 @@ public partial class TripComparisonPageViewModel : ObservableObject
             .Select(curve => (IList<bool>)curve.Values.Select(value => value <= 0).ToList())
             .ToList();
 
+        ElevationCurves = BuildElevationCurves(comparison);
+        HasElevationProfile = comparison.HasElevationProfile && ElevationCurves.Count > 0;
+        ElevationCaption = HasElevationProfile
+            ? "Höhe über der Distanz, die alle Trips gemeinsam gelaufen sind."
+            : string.Empty;
+
+        SplitDeltas = BuildSplitDeltas(comparison);
+        HasSplitDeltas = comparison.HasSplits && IsPair && SplitDeltas.Count > 0;
+        SplitDeltaCaption = HasSplitDeltas
+            ? $"Sekunden pro Kilometer gegen {baseline.Name}: oben langsamer, unten schneller."
+            : string.Empty;
+
         if (IsMulti)
         {
             Metrics = Array.Empty<MetricRow>();
@@ -425,6 +459,55 @@ public partial class TripComparisonPageViewModel : ObservableObject
         }
 
         return curves;
+    }
+
+    /// <summary>Altitude curve per trip, in member colours so the profile matches map and pace chart.</summary>
+    private static IReadOnlyList<ComparisonCurve> BuildElevationCurves(TripComparisonSet comparison)
+    {
+        if (!comparison.HasElevationProfile)
+        {
+            return Array.Empty<ComparisonCurve>();
+        }
+
+        var curves = new List<ComparisonCurve>(comparison.Count);
+        for (int index = 0; index < comparison.Count; index++)
+        {
+            var values = comparison.ElevationSeries[index].ToList();
+            if (values.Count < 2 || values.Max() - values.Min() <= 0.5)
+            {
+                continue;
+            }
+
+            curves.Add(new ComparisonCurve
+            {
+                Name = comparison.Members[index].Name,
+                ColorHex = comparison.Members[index].ColorHex,
+                Values = values,
+            });
+        }
+
+        return curves;
+    }
+
+    /// <summary>Per kilometre: how many seconds the second trip needs more (positive) or less (negative).</summary>
+    private static IReadOnlyList<ChartEntry> BuildSplitDeltas(TripComparisonSet comparison)
+    {
+        if (!comparison.HasSplits || comparison.Count < 2)
+        {
+            return Array.Empty<ChartEntry>();
+        }
+
+        var entries = new List<ChartEntry>(comparison.Splits.Count);
+        foreach (var split in comparison.Splits)
+        {
+            entries.Add(new ChartEntry
+            {
+                Label = split.Number.ToString(CultureInfo.InvariantCulture),
+                Value = Math.Round(split.DeltaSecondsPerMember[1], 1),
+            });
+        }
+
+        return entries;
     }
 
     /// <summary>All trips by actual pace, fastest first, with the difference to the basis.</summary>
@@ -626,6 +709,30 @@ public partial class TripComparisonPageViewModel : ObservableObject
             DeltaIsMeaningful = false,
         };
 
+        // Best efforts are per trip, so they are only comparable when both runs cover the distance.
+        foreach (double distance in BestEffortCalculator.DefaultDistances)
+        {
+            var effortA = FindBestEffort(a, distance);
+            var effortB = FindBestEffort(b, distance);
+            if (effortA is null && effortB is null)
+            {
+                continue;
+            }
+
+            bool both = effortA is not null && effortB is not null;
+            double deltaSeconds = both ? effortB!.Seconds - effortA!.Seconds : 0;
+
+            yield return new MetricRow
+            {
+                Label = "Bester " + FormatEffortDistance(distance),
+                ValueA = effortA is null ? "–" : FormatSeconds(effortA.Seconds),
+                ValueB = effortB is null ? "–" : FormatSeconds(effortB.Seconds),
+                DeltaText = both ? Signed(deltaSeconds, FormatSeconds, 1.0) : string.Empty,
+                DeltaIsMeaningful = both && Math.Abs(deltaSeconds) >= 1.0,
+                DeltaIsGoodForB = both && deltaSeconds < 0,
+            };
+        }
+
         var averageA = AverageHeartRate(a);
         var averageB = AverageHeartRate(b);
         if (averageA > 0 && averageB > 0)
@@ -699,6 +806,14 @@ public partial class TripComparisonPageViewModel : ObservableObject
             ? time.ToString(@"h\:mm\:ss", GermanCulture)
             : time.ToString(@"m\:ss", GermanCulture);
     }
+
+    private static BestEffort? FindBestEffort(TripComparisonSide side, double distanceMeters) =>
+        side.BestEfforts.FirstOrDefault(effort => Math.Abs(effort.DistanceMeters - distanceMeters) < 1);
+
+    private static string FormatEffortDistance(double meters) =>
+        meters >= 1000
+            ? (meters / 1000).ToString("0", GermanCulture) + " km"
+            : Math.Round(meters).ToString("0", GermanCulture) + " m";
 
     private static string FormatDistance(double meters)
         => meters >= 1000

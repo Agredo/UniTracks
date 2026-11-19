@@ -1,8 +1,9 @@
-<?xml version="1.0" encoding="utf-8" ?>
+﻿<?xml version="1.0" encoding="utf-8" ?>
 <ContentPage
     x:Class="UniTracks.Maui.Views.Pages.TripComparePage"
     xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
     xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    xmlns:charts="clr-namespace:UniTracks.Maui.Views.Controls.Charts;assembly=UniTracks.Maui.Views"
     xmlns:vm="clr-namespace:UniTracks.ViewModels.Pages;assembly=UniTracks.ViewModels"
     Title="Vergleich"
     x:DataType="vm:TripComparePageViewModel">
@@ -109,6 +110,25 @@
                             TextColor="{StaticResource TextSecondary}" />
                     </VerticalStackLayout>
                 </Border>
+
+                <!-- Progress over every attempt of this route -->
+                <VerticalStackLayout IsVisible="{Binding HasTrendChart}" Spacing="8">
+                    <Label Style="{StaticResource SectionHeader}" Text="{Binding TrendChartTitle}" />
+                    <Border Padding="14,14,10,10" Style="{StaticResource CardBorder}">
+                        <charts:AxisLineChartView
+                            HeightRequest="180"
+                            InvertY="{Binding InvertTrendAxis}"
+                            IsPaceScale="{Binding IsPaceTrend}"
+                            Series="{Binding TrendCurves}"
+                            XLabels="{Binding TrendAxisLabels}"
+                            YUnit="{Binding TrendAxisUnit}" />
+                    </Border>
+                    <Label
+                        FontSize="11"
+                        HorizontalTextAlignment="Center"
+                        Text="{Binding TrendChartCaption}"
+                        TextColor="{StaticResource TextMuted}" />
+                </VerticalStackLayout>
 
                 <VerticalStackLayout BindableLayout.ItemsSource="{Binding Attempts}" Spacing="8">
                     <BindableLayout.ItemTemplate>

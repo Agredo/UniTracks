@@ -9,6 +9,16 @@ using LocationModel = UniTracks.Models.Location.Location;
 
 namespace UniTracks.ViewModels.Pages;
 
+/// <summary>One line of the best-effort list: a distance, the time for it and the pace.</summary>
+public sealed record BestEffortRow
+{
+    public required string DistanceText { get; init; }
+
+    public required string TimeText { get; init; }
+
+    public required string RateText { get; init; }
+}
+
 /// <summary>
 /// Detail view for a single trip: all derived stats plus speed/altitude/pace
 /// profiles rendered as full charts with labelled axes.
@@ -89,6 +99,12 @@ public partial class TripChartsPageViewModel : ObservableObject
 
     [ObservableProperty]
     private IList<string> timeAxisLabels = new List<string>();
+
+    [ObservableProperty]
+    private bool hasBestEfforts;
+
+    /// <summary>Fastest 1 km, 5 km and 10 km inside this trip, ascending by distance.</summary>
+    public IReadOnlyList<BestEffortRow> BestEfforts { get; private set; } = Array.Empty<BestEffortRow>();
 
     public TripChartsPageViewModel(INavigationService navigation)
     {
@@ -181,6 +197,7 @@ public partial class TripChartsPageViewModel : ObservableObject
         }
 
         BuildProfiles(locations);
+        ApplyBestEfforts(trip, locations);
 
         AverageSpeedText = Math.Round(
             TripMetrics.AverageSpeedMetersPerSecond(trip, locations) * 3.6, 1)
@@ -258,6 +275,26 @@ public partial class TripChartsPageViewModel : ObservableObject
 
         return labels;
     }
+
+    private void ApplyBestEfforts(Trip trip, List<LocationModel> locations)
+    {
+        BestEfforts = BestEffortCalculator.Compute(locations)
+            .Select(effort => new BestEffortRow
+            {
+                DistanceText = FormatEffortDistance(effort.DistanceMeters),
+                TimeText = FormatDuration(TimeSpan.FromSeconds(Math.Round(effort.Seconds))),
+                RateText = TripDisplay.FormatRate(trip.TripType, effort.PaceSecondsPerKilometer),
+            })
+            .ToList();
+
+        HasBestEfforts = BestEfforts.Count > 0;
+        OnPropertyChanged(nameof(BestEfforts));
+    }
+
+    private static string FormatEffortDistance(double meters) =>
+        meters >= 1000
+            ? (meters / 1000).ToString("0", GermanCulture) + " km"
+            : Math.Round(meters).ToString("0", GermanCulture) + " m";
 
     private static string FormatDuration(TimeSpan duration) =>
         duration.TotalHours >= 1
