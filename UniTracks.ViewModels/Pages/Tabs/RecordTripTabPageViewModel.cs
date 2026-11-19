@@ -137,10 +137,11 @@ public partial class RecordTripTabPageViewModel : ObservableObject
     public ObservableCollection<TripType> TripTypes { get; } = new();
 
     /// <summary>
-    /// The types offered as one-tap chips: the most relevant ones by usage, with a freshly picked
-    /// type floating to the front. The full list stays reachable through the search popup.
+    /// The types offered as one-tap chips: the recently picked types, newest first, with a fresh pick
+    /// floating to the front. The order is persisted, so the row survives an app restart; usage is only
+    /// used to fill the row on the first start after the history has been introduced.
     /// </summary>
-    public ObservableCollection<TripType> FavoriteTripTypes { get; } = new();
+    public ObservableCollection<RecordTripTypeChip> FavoriteTripTypes { get; } = new();
 
     /// <summary>How many quick-pick chips fit the context bar.</summary>
     private const int MaxFavoriteTripTypes = 4;
@@ -275,9 +276,9 @@ public partial class RecordTripTabPageViewModel : ObservableObject
     }
 
     [RelayCommand]
-    private void SelectTripType(TripType tripType)
+    private void SelectTripType(RecordTripTypeChip chip)
     {
-        SelectedTripType = tripType;
+        SelectedTripType = chip.Type;
     }
 
     [RelayCommand]
@@ -313,27 +314,72 @@ public partial class RecordTripTabPageViewModel : ObservableObject
             _ = ApplyTripTypeAsync(value);
         }
 
-        if (value is null)
-        {
-            return;
-        }
+        SyncFavoriteChips(value);
+    }
 
-        // The full list keeps its stable usage order; only the quick-pick chips float the freshly
-        // picked type to the front so frequent types stay one tap away.
-        int favoriteIndex = FavoriteTripTypes.IndexOf(value);
-
-        if (favoriteIndex > 0)
+    /// <summary>
+    /// Keeps the quick-pick row in step with the selection: the picked type moves to the front and is
+    /// highlighted, and the new order is persisted so it survives a restart. The full list keeps its
+    /// stable usage order; only the chips follow the history.
+    /// </summary>
+    private void SyncFavoriteChips(TripType? value)
+    {
+        if (value is not null)
         {
-            FavoriteTripTypes.Move(favoriteIndex, 0);
-        }
-        else if (favoriteIndex < 0)
-        {
-            FavoriteTripTypes.Insert(0, value);
+            int index = IndexOfFavorite(value.ID);
 
-            while (FavoriteTripTypes.Count > MaxFavoriteTripTypes)
+            if (index > 0)
             {
-                FavoriteTripTypes.RemoveAt(FavoriteTripTypes.Count - 1);
+                FavoriteTripTypes.Move(index, 0);
             }
+            else if (index < 0)
+            {
+                FavoriteTripTypes.Insert(0, new RecordTripTypeChip(value));
+
+                while (FavoriteTripTypes.Count > MaxFavoriteTripTypes)
+                {
+                    FavoriteTripTypes.RemoveAt(FavoriteTripTypes.Count - 1);
+                }
+            }
+        }
+
+        foreach (var chip in FavoriteTripTypes)
+        {
+            chip.IsSelected = value is not null && chip.ID == value.ID;
+        }
+
+        if (value is not null)
+        {
+            PersistFavoriteTripTypes();
+        }
+    }
+
+    private int IndexOfFavorite(Guid id)
+    {
+        for (int i = 0; i < FavoriteTripTypes.Count; i++)
+        {
+            if (FavoriteTripTypes[i].ID == id)
+            {
+                return i;
+            }
+        }
+
+        return -1;
+    }
+
+    /// <summary>
+    /// Writes the visible history back to the settings. Called from a property change, so it must not
+    /// throw: a failing preference write may not take the selection with it.
+    /// </summary>
+    private void PersistFavoriteTripTypes()
+    {
+        try
+        {
+            RecordingSettings.RecentTripTypeIds = FavoriteTripTypes.Select(chip => chip.ID).ToList();
+        }
+        catch (Exception exception)
+        {
+            Debug.WriteLine($"[UniTracks] Zuletzt verwendete Sportarten konnten nicht gespeichert werden: {exception}");
         }
     }
 
@@ -379,12 +425,9 @@ public partial class RecordTripTabPageViewModel : ObservableObject
             foreach (var type in ordered)
             {
                 TripTypes.Add(type);
-
-                if (FavoriteTripTypes.Count < MaxFavoriteTripTypes)
-                {
-                    FavoriteTripTypes.Add(type);
-                }
             }
+
+            BuildFavoriteTripTypes(ordered);
 
             if (tripTypeSelectionVersion != selectionVersion)
             {
@@ -408,6 +451,42 @@ public partial class RecordTripTabPageViewModel : ObservableObject
         catch (Exception exception)
         {
             Debug.WriteLine($"[UniTracks] Sportarten konnten nicht geladen werden: {exception}");
+        }
+    }
+
+    /// <summary>
+    /// Builds the quick-pick row: the persisted history first — a type that was picked but never
+    /// recorded keeps its place — and the most used types fill the remaining slots. Runs before the
+    /// selection is restored, so every chip starts unselected.
+    /// </summary>
+    private void BuildFavoriteTripTypes(IReadOnlyList<TripType> ordered)
+    {
+        var byId = ordered.ToDictionary(type => type.ID);
+
+        foreach (var recentId in RecordingSettings.RecentTripTypeIds)
+        {
+            if (FavoriteTripTypes.Count >= MaxFavoriteTripTypes)
+            {
+                return;
+            }
+
+            if (byId.TryGetValue(recentId, out var recent) && IndexOfFavorite(recentId) < 0)
+            {
+                FavoriteTripTypes.Add(new RecordTripTypeChip(recent));
+            }
+        }
+
+        foreach (var type in ordered)
+        {
+            if (FavoriteTripTypes.Count >= MaxFavoriteTripTypes)
+            {
+                return;
+            }
+
+            if (IndexOfFavorite(type.ID) < 0)
+            {
+                FavoriteTripTypes.Add(new RecordTripTypeChip(type));
+            }
         }
     }
 

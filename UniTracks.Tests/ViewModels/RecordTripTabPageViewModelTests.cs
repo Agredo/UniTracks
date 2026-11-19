@@ -490,6 +490,65 @@ public sealed class RecordTripTabPageViewModelTests
     }
 
     [Fact]
+    public void SelectedTripType_IsRememberedInTheQuickPickHistory_AcrossPageInstances()
+    {
+        var first = NewTripType("A");
+        var second = NewTripType("B");
+        var third = NewTripType("C");
+        var settings = new FakeRecordingSettings();
+
+        var firstPage = new Fixture(repository => repository.Seed(first, second, third), settings);
+        firstPage.ViewModel.SelectedTripType = third;
+        firstPage.ViewModel.SelectedTripType = second;
+
+        // The picks, not the recorded trips, define the history.
+        Assert.Equal(new[] { second.ID, third.ID, first.ID }, settings.RecentTripTypeIds);
+
+        // A fresh page (i.e. the next app start) opens with the stored order instead of the usage order.
+        var nextPage = new Fixture(repository => repository.Seed(first, second, third), settings);
+
+        Assert.Equal(
+            new[] { second.ID, third.ID, first.ID },
+            nextPage.ViewModel.FavoriteTripTypes.Select(chip => chip.ID));
+    }
+
+    [Fact]
+    public void QuickPick_KeepsATypeThatWasPickedButNeverRecorded()
+    {
+        var run = NewTripType("A");
+        var walk = NewTripType("B");
+        var settings = new FakeRecordingSettings();
+
+        // No trips at all: the type exists only in the picked history.
+        var firstPage = new Fixture(repository => repository.Seed(run, walk), settings);
+        firstPage.ViewModel.SelectedTripType = walk;
+
+        var nextPage = new Fixture(repository => repository.Seed(run, walk), settings);
+
+        Assert.Equal(new[] { walk.ID, run.ID }, nextPage.ViewModel.FavoriteTripTypes.Select(chip => chip.ID));
+        Assert.Equal(walk.ID, nextPage.ViewModel.SelectedTripType?.ID);
+    }
+
+    [Fact]
+    public void QuickPick_MarksOnlyTheActiveTypeAsSelected()
+    {
+        var first = NewTripType("A");
+        var second = NewTripType("B");
+        var fixture = new Fixture(repository => repository.Seed(first, second));
+
+        fixture.ViewModel.SelectedTripType = second;
+
+        // The active chip floats to the front and is the only highlighted one.
+        Assert.Equal(
+            new[] { true, false },
+            fixture.ViewModel.FavoriteTripTypes.Select(chip => chip.IsSelected));
+
+        fixture.ViewModel.SelectedTripType = null;
+
+        Assert.All(fixture.ViewModel.FavoriteTripTypes, chip => Assert.False(chip.IsSelected));
+    }
+
+    [Fact]
     public void SelectedTripType_IsRestoredAndSavedForTheNextRecordingPage()
     {
         var first = NewTripType("A");

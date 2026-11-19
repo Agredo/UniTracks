@@ -386,6 +386,9 @@ internal sealed class FakeFileExportService : IFileExportService
 internal sealed class FakeRecordingSettings : UniTracks.Services.Settings.IRecordingSettings
 {
     public string LastTripTypeId { get; set; } = string.Empty;
+
+    /// <summary>The persisted history, as the real settings store would hand it back.</summary>
+    public IReadOnlyList<Guid> RecentTripTypeIds { get; set; } = Array.Empty<Guid>();
 }
 
 internal sealed class FakeGpsDataStorageService : IGpsDataStorageService
