@@ -46,38 +46,38 @@
                     </Border>
                     <Border Grid.Column="1" Grid.Row="0" Style="{StaticResource ChipBorder}">
                         <VerticalStackLayout Spacing="2">
-                            <Label Style="{StaticResource StatLabel}" Text="DAUER" />
-                            <Label
-                                FontFamily="OpenSansSemibold"
-                                FontSize="16"
-                                Text="{Binding DurationText}" />
-                        </VerticalStackLayout>
-                    </Border>
-                    <Border Grid.Column="2" Grid.Row="0" Style="{StaticResource ChipBorder}">
-                        <VerticalStackLayout Spacing="2">
-                            <Label Style="{StaticResource StatLabel}" Text="&#xD8; KM/H" />
-                            <Label
-                                FontFamily="OpenSansSemibold"
-                                FontSize="16"
-                                Text="{Binding AverageSpeedText}" />
-                        </VerticalStackLayout>
-                    </Border>
-                    <Border Grid.Column="3" Grid.Row="0" Style="{StaticResource ChipBorder}">
-                        <VerticalStackLayout Spacing="2">
-                            <Label Style="{StaticResource StatLabel}" Text="MAX KM/H" />
-                            <Label
-                                FontFamily="OpenSansSemibold"
-                                FontSize="16"
-                                Text="{Binding MaxSpeedText}" />
-                        </VerticalStackLayout>
-                    </Border>
-                    <Border Grid.Column="0" Grid.Row="1" Style="{StaticResource ChipBorder}">
-                        <VerticalStackLayout Spacing="2">
                             <Label Style="{StaticResource StatLabel}" Text="BEWEGUNG" />
                             <Label
                                 FontFamily="OpenSansSemibold"
                                 FontSize="16"
                                 Text="{Binding MovingTimeText}" />
+                        </VerticalStackLayout>
+                    </Border>
+                    <Border Grid.Column="2" Grid.Row="0" Style="{StaticResource ChipBorder}">
+                        <VerticalStackLayout Spacing="2">
+                            <Label Style="{StaticResource StatLabel}" Text="{Binding PaceLabel}" />
+                            <Label
+                                FontFamily="OpenSansSemibold"
+                                FontSize="16"
+                                Text="{Binding PaceText}" />
+                        </VerticalStackLayout>
+                    </Border>
+                    <Border Grid.Column="3" Grid.Row="0" Style="{StaticResource ChipBorder}">
+                        <VerticalStackLayout Spacing="2">
+                            <Label Style="{StaticResource StatLabel}" Text="HÖHENMETER" />
+                            <Label
+                                FontFamily="OpenSansSemibold"
+                                FontSize="14"
+                                Text="{Binding ElevationGainText}" />
+                        </VerticalStackLayout>
+                    </Border>
+                    <Border Grid.Column="0" Grid.Row="1" Style="{StaticResource ChipBorder}">
+                        <VerticalStackLayout Spacing="2">
+                            <Label Style="{StaticResource StatLabel}" Text="GESAMT" />
+                            <Label
+                                FontFamily="OpenSansSemibold"
+                                FontSize="16"
+                                Text="{Binding DurationText}" />
                         </VerticalStackLayout>
                     </Border>
                     <Border Grid.Column="1" Grid.Row="1" Style="{StaticResource ChipBorder}">
@@ -91,7 +91,7 @@
                     </Border>
                     <Border Grid.Column="2" Grid.Row="1" Style="{StaticResource ChipBorder}">
                         <VerticalStackLayout Spacing="2">
-                            <Label Style="{StaticResource StatLabel}" Text="HÖHE" />
+                            <Label Style="{StaticResource StatLabel}" Text="HÖHENBEREICH" />
                             <Label
                                 FontFamily="OpenSansSemibold"
                                 FontSize="14"
@@ -101,11 +101,11 @@
                     </Border>
                     <Border Grid.Column="3" Grid.Row="1" Style="{StaticResource ChipBorder}">
                         <VerticalStackLayout Spacing="2">
-                            <Label Style="{StaticResource StatLabel}" Text="PACE /KM" />
+                            <Label Style="{StaticResource StatLabel}" Text="MAX. GPS" />
                             <Label
                                 FontFamily="OpenSansSemibold"
                                 FontSize="16"
-                                Text="{Binding PaceText}" />
+                                Text="{Binding MaxSpeedText}" />
                         </VerticalStackLayout>
                     </Border>
                 </Grid>
@@ -141,7 +141,7 @@
 
             <!-- Pace chart -->
             <VerticalStackLayout IsVisible="{Binding HasPaceProfile}" Spacing="8">
-                <Label Style="{StaticResource SectionHeader}" Text="PACE (MIN/KM)" />
+                <Label Style="{StaticResource SectionHeader}" Text="{Binding PaceChartTitle}" />
                 <Border Padding="14,14,10,10" Style="{StaticResource CardBorder}">
                     <charts:AxisLineChartView
                         HeightRequest="200"
@@ -149,8 +149,9 @@
                         LineColor="#4D9FE7"
                         Values="{Binding PaceProfile}"
                         XLabels="{Binding TimeAxisLabels}"
-                        YFormat="0.0"
-                        YUnit="min" />
+                        InvertY="True"
+                        IsPaceScale="True"
+                        YUnit="{Binding PaceAxisUnit}" />
                 </Border>
             </VerticalStackLayout>
 

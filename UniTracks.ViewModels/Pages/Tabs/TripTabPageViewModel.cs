@@ -1,4 +1,5 @@
 using System.Collections.ObjectModel;
+using AgredoApplication.MVVM.Services.Abstractions.Application;
 using AgredoApplication.MVVM.Services.Abstractions.IO;
 using AgredoApplication.MVVM.Services.Abstractions.Navigation;
 using CommunityToolkit.Mvvm.ComponentModel;
@@ -7,6 +8,7 @@ using UniTracks.Data.Repository;
 using UniTracks.Models.Trip;
 using UniTracks.Services.Comparison;
 using UniTracks.Services.Data;
+using UniTracks.Services.Dispatching;
 using UniTracks.Services.Location;
 using UniTracks.Services.Settings;
 using UniTracks.ViewModels.Controls.Popups;
@@ -111,7 +113,9 @@ public partial class TripTabPageViewModel : ObservableObject
         IRepository repository,
         ITripFingerprintService fingerprints,
         ITripCardLayoutSettings tripCardLayoutSettings,
-        ITripFilterSettings tripFilterSettings)
+        ITripFilterSettings tripFilterSettings,
+        IMainThread? mainThread = null,
+        TripDistanceRecalculator? distanceRecalculator = null)
     {
         Navigation = navigation;
         PopupNavigation = popupNavigation;
@@ -124,6 +128,27 @@ public partial class TripTabPageViewModel : ObservableObject
         TripFilterSettings = tripFilterSettings;
         DatabasePath = repository.DatabasePath;
         IsCompactLayout = tripCardLayoutSettings.IsCompact;
+
+        if (distanceRecalculator is not null)
+        {
+            var weakSelf = new WeakReference<TripTabPageViewModel>(this);
+            distanceRecalculator.Changed += (_, _) =>
+            {
+                if (!weakSelf.TryGetTarget(out var viewModel))
+                {
+                    return;
+                }
+
+                if (mainThread is not null)
+                {
+                    mainThread.BeginInvokeOnMainThread(() => _ = viewModel.GetTrips());
+                }
+                else
+                {
+                    _ = viewModel.GetTrips();
+                }
+            };
+        }
 
         // Restore before the first read, so the list never flashes the unfiltered trips.
         Filters = TripFilterStorage.Read(tripFilterSettings);
@@ -158,7 +183,9 @@ public partial class TripTabPageViewModel : ObservableObject
         // cards only need the trip's own values and its type. The overview reads the points of the
         // one trip it opens.
         var orderedTrips = (await Repository.GetAllAsync<Trip>(
-                trip => trip.TripType!))
+                trip => trip.TripType!,
+                trip => trip.Weather!,
+                trip => trip.HeartRates!))
             .OrderByDescending(trip => trip.StartTime)
             .ToList();
 

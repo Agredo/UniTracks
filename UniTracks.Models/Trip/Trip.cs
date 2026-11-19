@@ -22,6 +22,7 @@ public record Trip
     public double? MinSpeed { get; set; }
     public double? MaxAltitude { get; set; }
     public double? MinAltitude { get; set; }
+    public double? ElevationGain { get; set; }
     public double? MaxAccuracy { get; set; }
     public double? MinAccuracy { get; set; }
     public double? MaxSpeedAccuracy { get; set; }

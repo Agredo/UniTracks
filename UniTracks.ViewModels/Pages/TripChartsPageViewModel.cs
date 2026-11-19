@@ -58,6 +58,18 @@ public partial class TripChartsPageViewModel : ObservableObject
     private string paceText = "-";
 
     [ObservableProperty]
+    private string paceLabel = "PACE /KM";
+
+    [ObservableProperty]
+    private string elevationGainText = "-";
+
+    [ObservableProperty]
+    private string paceChartTitle = "TEMPOVERLAUF";
+
+    [ObservableProperty]
+    private string paceAxisUnit = "min/km";
+
+    [ObservableProperty]
     private bool hasSpeedProfile;
 
     [ObservableProperty]
@@ -94,7 +106,7 @@ public partial class TripChartsPageViewModel : ObservableObject
 
     private void ApplyTripStats(Trip trip)
     {
-        TripName = TripDisplay.TimeOfDayName(trip.StartTime);
+        TripName = TripDisplay.Name(trip);
         DateText = trip.StartTime.LocalDateTime.ToString("dddd, dd. MMMM yyyy · HH:mm", GermanCulture);
 
         var locations = trip.Locations?
@@ -129,6 +141,10 @@ public partial class TripChartsPageViewModel : ObservableObject
             MaxSpeedText = Math.Round(maxSpeed * 3.6, 1).ToString("0.0", GermanCulture);
         }
 
+        PaceLabel = TripDisplay.RateLabel(trip.TripType);
+        PaceChartTitle = TripDisplay.RateChartTitle(trip.TripType);
+        PaceAxisUnit = TripDisplay.RateAxisUnit(trip.TripType);
+
         ApplyLocationStats(trip);
     }
 
@@ -152,13 +168,16 @@ public partial class TripChartsPageViewModel : ObservableObject
         double minAltitude = trip.MinAltitude ?? locations.Min(l => l.Altitude);
         double maxAltitude = trip.MaxAltitude ?? locations.Max(l => l.Altitude);
         AltitudeText = $"{Math.Round(minAltitude)}–{Math.Round(maxAltitude)} m";
+        double elevationGain = trip.ElevationGain
+            ?? TripMetricsCalculator.ComputeElevationGain(locations);
+        ElevationGainText = Math.Round(elevationGain).ToString("0", GermanCulture) + " m";
 
         double distanceMeters = TripMetrics.DistanceMeters(trip, locations);
-        double distanceKm = distanceMeters / 1000.0;
-        if (distanceKm > 0.05 && movingSeconds > 0)
+        if (distanceMeters > 50 && movingSeconds > 0)
         {
-            var pace = TimeSpan.FromSeconds(movingSeconds / distanceKm);
-            PaceText = $"{(int)pace.TotalMinutes}:{pace.Seconds:00}";
+            PaceText = TripDisplay.FormatRate(
+                trip.TripType,
+                TripDisplay.SecondsPerKilometer(distanceMeters, movingSeconds));
         }
 
         BuildProfiles(locations);
@@ -195,11 +214,31 @@ public partial class TripChartsPageViewModel : ObservableObject
 
         // Pace is only meaningful while actually moving — cap at 20 min/km so
         // standstill outliers don't flatten the whole chart.
-        var pace = sampled
-            .Select(l => l.Speed * 3.6 > 1.0 ? Math.Min(60.0 / (l.Speed * 3.6), 20.0) : 20.0)
-            .ToList();
-        HasPaceProfile = pace.Any(p => p < 19.9);
-        PaceProfile = pace;
+        if (TripDisplay.IsPace(Trip?.TripType))
+        {
+            double maximumSecondsPerKilometer =
+                TripDisplay.RateKind(Trip?.TripType) == TripRateKind.PacePer100Meters
+                    ? 100 * 60
+                    : 60 * 60;
+            var pace = sampled
+                .Select(location =>
+                {
+                    double secondsPerKilometer = location.Speed > 0
+                        ? Math.Min(1000.0 / location.Speed, maximumSecondsPerKilometer)
+                        : maximumSecondsPerKilometer;
+                    return TripDisplay.RateValue(Trip?.TripType, secondsPerKilometer);
+                })
+                .ToList();
+            HasPaceProfile = pace.Any(value => value < TripDisplay.RateValue(
+                Trip?.TripType,
+                maximumSecondsPerKilometer));
+            PaceProfile = pace;
+        }
+        else
+        {
+            HasPaceProfile = false;
+            PaceProfile = new List<double>();
+        }
 
         TimeAxisLabels = BuildTimeAxisLabels(sampled);
     }

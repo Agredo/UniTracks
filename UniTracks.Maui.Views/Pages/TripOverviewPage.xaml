@@ -65,7 +65,7 @@
                     </Border>
                     <Border Grid.Column="1" Style="{StaticResource ChipBorder}">
                         <VerticalStackLayout Spacing="2">
-                            <Label Style="{StaticResource StatLabel}" Text="DAUER" />
+                            <Label Style="{StaticResource StatLabel}" Text="{Binding DurationLabel}" />
                             <Label
                                 FontFamily="OpenSansSemibold"
                                 FontSize="16"
@@ -74,7 +74,7 @@
                     </Border>
                     <Border Grid.Column="2" Style="{StaticResource ChipBorder}">
                         <VerticalStackLayout Spacing="2">
-                            <Label Style="{StaticResource StatLabel}" Text="&#xD8; KM/H" />
+                            <Label Style="{StaticResource StatLabel}" Text="{Binding AverageSpeedLabel}" />
                             <Label
                                 FontFamily="OpenSansSemibold"
                                 FontSize="16"
@@ -83,11 +83,11 @@
                     </Border>
                     <Border Grid.Column="3" Style="{StaticResource ChipBorder}">
                         <VerticalStackLayout Spacing="2">
-                            <Label Style="{StaticResource StatLabel}" Text="MAX KM/H" />
+                            <Label Style="{StaticResource StatLabel}" Text="HÖHENMETER" />
                             <Label
                                 FontFamily="OpenSansSemibold"
                                 FontSize="16"
-                                Text="{Binding MaxSpeedText}" />
+                                Text="{Binding ElevationGainText}" />
                         </VerticalStackLayout>
                     </Border>
                 </Grid>

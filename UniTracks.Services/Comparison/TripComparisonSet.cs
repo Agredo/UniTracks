@@ -17,6 +17,8 @@ public sealed record TripComparisonMember
 
     public string Name => Side.Name;
 
+    public double PaceSecondsPerKilometer => Side.PaceSecondsPerKilometer;
+
     /// <summary>Equivalent pace in seconds per kilometre; 0 when the trip has no usable data.</summary>
     public double EquivalentPaceSecondsPerKilometer => Side.EquivalentPaceSecondsPerKilometer;
 }
@@ -32,6 +34,11 @@ public sealed record SplitMatrixRow
     /// <summary>Difference against the basis per member, in seconds. 0 for the basis itself.</summary>
     public required IReadOnlyList<double> DeltaSecondsPerMember { get; init; }
 
+    /// <summary>Climb-adjusted pace per member, kept separate from the actual pace.</summary>
+    public required IReadOnlyList<double> EquivalentSecondsPerMember { get; init; }
+
+    public required IReadOnlyList<double> EquivalentDeltaSecondsPerMember { get; init; }
+
     /// <summary>True when any member's kilometre is a shorter remainder.</summary>
     public required bool IsPartial { get; init; }
 
@@ -39,7 +46,7 @@ public sealed record SplitMatrixRow
     public required int FastestMemberIndex { get; init; }
 }
 
-/// <summary>One line of the ranking: the member's place on the climb-adjusted pace.</summary>
+/// <summary>One line of the ranking: the member's place on actual pace.</summary>
 public sealed record TripComparisonRank
 {
     /// <summary>1 for the fastest run of the comparison.</summary>
@@ -47,7 +54,7 @@ public sealed record TripComparisonRank
 
     public required TripComparisonMember Member { get; init; }
 
-    /// <summary>Climb-adjusted pace against the basis, in seconds per kilometre. Negative is faster.</summary>
+    /// <summary>Actual pace against the basis, in seconds per kilometre. Negative is faster.</summary>
     public required double DeltaSecondsPerKilometer { get; init; }
 
     public bool IsFastest => Rank == 1;
@@ -74,7 +81,7 @@ public sealed record TripComparisonSet
     /// <summary>Pace curve per member, in the same order as <see cref="Members"/>.</summary>
     public required IReadOnlyList<IReadOnlyList<double>> PaceSeries { get; init; }
 
-    /// <summary>Ranking by climb-adjusted pace, fastest first.</summary>
+    /// <summary>Ranking by actual pace, fastest first.</summary>
     public required IReadOnlyList<TripComparisonRank> Ranking { get; init; }
 
     public required string Verdict { get; init; }
@@ -99,7 +106,7 @@ public sealed record TripComparisonSet
         get
         {
             var measurable = Members
-                .Select(member => member.EquivalentPaceSecondsPerKilometer)
+                .Select(member => member.PaceSecondsPerKilometer)
                 .Where(pace => pace > 0)
                 .ToList();
 

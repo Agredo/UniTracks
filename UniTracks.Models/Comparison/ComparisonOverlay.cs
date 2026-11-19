@@ -25,6 +25,6 @@ public sealed record ComparisonCurve
 
     public required string ColorHex { get; init; }
 
-    /// <summary>Climb-adjusted pace per kilometre, in seconds. Non-positive values are missing.</summary>
+    /// <summary>Actual tempo per kilometre, converted to the activity's display unit by the view model.</summary>
     public required IReadOnlyList<double> Values { get; init; }
 }

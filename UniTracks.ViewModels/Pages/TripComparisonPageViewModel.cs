@@ -36,6 +36,8 @@ public sealed record SplitRow
 
     public required string ValueB { get; init; }
 
+    public required string DeltaText { get; init; }
+
     /// <summary>B was faster on this split.</summary>
     public bool BIsFaster { get; init; }
 
@@ -54,7 +56,7 @@ public sealed record LeaderboardRow
     /// <summary>Moving time, e.g. "24:31".</summary>
     public required string TimeText { get; init; }
 
-    /// <summary>Climb-adjusted pace, e.g. "4:58 /km".</summary>
+    /// <summary>Actual activity rate, e.g. "4:58 /km" or "24,5 km/h".</summary>
     public required string PaceText { get; init; }
 
     /// <summary>"Basis" for the reference run, otherwise the pace difference against it.</summary>
@@ -82,6 +84,8 @@ public sealed record SplitCellRow
 
     /// <summary>This run was the fastest on this kilometre.</summary>
     public bool IsFastest { get; init; }
+
+    public bool IsPartial { get; init; }
 }
 
 /// <summary>One kilometre of the split matrix, with a cell per run.</summary>
@@ -137,7 +141,13 @@ public partial class TripComparisonPageViewModel : ObservableObject
     [ObservableProperty]
     private string dateB = string.Empty;
 
-    /// <summary>Basis and number of runs, e.g. "Basis Morgenrunde · 4 Läufe".</summary>
+    [ObservableProperty]
+    private string contextA = string.Empty;
+
+    [ObservableProperty]
+    private string contextB = string.Empty;
+
+    /// <summary>Basis and number of trips, e.g. "Basis Morgenrunde · 4 Trips".</summary>
     [ObservableProperty]
     private string subtitle = string.Empty;
 
@@ -193,25 +203,31 @@ public partial class TripComparisonPageViewModel : ObservableObject
     [ObservableProperty]
     private IReadOnlyList<ComparisonTrack> otherTracks = Array.Empty<ComparisonTrack>();
 
-    [ObservableProperty]
-    private IList<double> paceSeriesA = new List<double>();
-
-    [ObservableProperty]
-    private IList<double> paceSeriesB = new List<double>();
-
-    /// <summary>One pace curve per run; empty for two trips, which keep the A/B chart they had.</summary>
+    /// <summary>One actual-tempo curve per trip.</summary>
     [ObservableProperty]
     private IReadOnlyList<ComparisonCurve>? curves;
+
+    [ObservableProperty]
+    private string rateChartTitle = "TEMPOVERLAUF";
+
+    [ObservableProperty]
+    private string rateAxisUnit = "min/km";
+
+    [ObservableProperty]
+    private bool invertRateAxis = true;
+
+    [ObservableProperty]
+    private bool isPaceRate = true;
+
+    [ObservableProperty]
+    private string rateChartCaption = string.Empty;
+
+    [ObservableProperty]
+    private string baselineColor = TripComparisonPalette.ColorFor(0);
 
     /// <summary>Masks for unavailable comparison paces, parallel to <see cref="Curves"/>.</summary>
     [ObservableProperty]
     private IList<IList<bool>>? missingPaceValues;
-
-    [ObservableProperty]
-    private IList<bool> primaryMissingPaceValues = new List<bool>();
-
-    [ObservableProperty]
-    private IList<bool> secondaryMissingPaceValues = new List<bool>();
 
     [ObservableProperty]
     private IList<string> distanceAxisLabels = new List<string>();
@@ -325,14 +341,22 @@ public partial class TripComparisonPageViewModel : ObservableObject
         var baseline = comparison.Baseline;
 
         Subtitle = IsMulti
-            ? $"Basis {baseline.Name} · {comparison.Count} Läufe"
+            ? $"Basis {baseline.Name} · {comparison.Count} Trips"
             : $"{NameA} gegen {NameB}";
 
         TrackA = baseline.Side.Track;
+        BaselineColor = baseline.ColorHex;
+        ContextA = BuildContext(baseline.Side);
         DistanceAxisLabels = comparison.DistanceAxisLabels.ToList();
+        RateChartTitle = TripDisplay.RateChartTitle(baseline.Side.Trip.TripType);
+        RateAxisUnit = TripDisplay.RateAxisUnit(baseline.Side.Trip.TripType);
+        IsPaceRate = TripDisplay.IsPace(baseline.Side.Trip.TripType);
+        InvertRateAxis = IsPaceRate;
+        RateChartCaption = IsPaceRate
+            ? $"Rohes Tempo in {RateAxisUnit}, ohne Glättung. Alle Kurven teilen Kilometer- und Wertachse."
+            : "Rohes Tempo in km/h, ohne Glättung. Alle Kurven teilen Kilometer- und Wertachse.";
 
-        // The basis keeps the speed colouring of the map, every other run is drawn plainly on top in
-        // its own colour; for two trips that is exactly the one overlay the page always had.
+        // Every trip gets one route colour, so colour means trip identity throughout the comparison.
         OtherTracks = comparison.Members
             .Skip(1)
             .Select(member => new ComparisonTrack
@@ -342,16 +366,13 @@ public partial class TripComparisonPageViewModel : ObservableObject
                 Locations = member.Side.Track,
             })
             .ToList();
+        Curves = BuildCurves(comparison);
+        MissingPaceValues = Curves
+            .Select(curve => (IList<bool>)curve.Values.Select(value => value <= 0).ToList())
+            .ToList();
 
         if (IsMulti)
         {
-            PaceSeriesA = new List<double>();
-            PaceSeriesB = new List<double>();
-            Curves = BuildCurves(comparison);
-            MissingPaceValues = Curves
-                .Select(curve => (IList<bool>)curve.Values.Select(value => value <= 0).ToList())
-                .ToList();
-
             Metrics = Array.Empty<MetricRow>();
             Splits = Array.Empty<SplitRow>();
             Leaderboard = BuildLeaderboard(comparison).ToList();
@@ -360,18 +381,12 @@ public partial class TripComparisonPageViewModel : ObservableObject
         }
         else
         {
-            PaceSeriesA = comparison.PaceSeries[0].ToList();
-            PaceSeriesB = comparison.PaceSeries[1].ToList();
-            Curves = null;
-            MissingPaceValues = null;
-            PrimaryMissingPaceValues = PaceSeriesA.Select(value => value <= 0).ToList();
-            SecondaryMissingPaceValues = PaceSeriesB.Select(value => value <= 0).ToList();
-
             Metrics = BuildMetrics(baseline.Side, comparison.Members[1].Side).ToList();
             Splits = BuildPairSplits(comparison).ToList();
             Leaderboard = Array.Empty<LeaderboardRow>();
             SplitMatrix = Array.Empty<SplitMatrixRow>();
             MatrixColumns = Array.Empty<SplitColumn>();
+            ContextB = BuildContext(comparison.Members[1].Side);
         }
 
         OnPropertyChanged(nameof(Metrics));
@@ -385,14 +400,17 @@ public partial class TripComparisonPageViewModel : ObservableObject
         HasComparison = true;
     }
 
-    /// <summary>One pace curve per run; a missing kilometre stays a chart gap.</summary>
+    /// <summary>One actual-tempo curve per run; a missing kilometre stays a chart gap.</summary>
     private static IReadOnlyList<ComparisonCurve> BuildCurves(TripComparisonSet comparison)
     {
         var curves = new List<ComparisonCurve>(comparison.Count);
+        var displayType = comparison.Baseline.Side.Trip.TripType;
 
         for (int index = 0; index < comparison.Count; index++)
         {
-            var values = comparison.PaceSeries[index].ToList();
+            var values = comparison.PaceSeries[index]
+                .Select(value => value > 0 ? TripDisplay.RateValue(displayType, value) : 0)
+                .ToList();
             if (!values.Any(value => value > 0))
             {
                 continue;
@@ -409,9 +427,12 @@ public partial class TripComparisonPageViewModel : ObservableObject
         return curves;
     }
 
-    /// <summary>All runs by climb-adjusted pace, fastest first, with the difference to the basis.</summary>
+    /// <summary>All trips by actual pace, fastest first, with the difference to the basis.</summary>
     private static IEnumerable<LeaderboardRow> BuildLeaderboard(TripComparisonSet comparison)
     {
+        var displayType = comparison.Baseline.Side.Trip.TripType;
+        double baselinePace = comparison.Baseline.PaceSecondsPerKilometer;
+
         foreach (var rank in comparison.Ranking)
         {
             var side = rank.Member.Side;
@@ -423,14 +444,18 @@ public partial class TripComparisonPageViewModel : ObservableObject
                 Name = rank.Member.Name,
                 ColorHex = rank.Member.ColorHex,
                 TimeText = FormatSeconds(side.MovingSeconds),
-                PaceText = FormatPace(rank.Member.EquivalentPaceSecondsPerKilometer),
-                DeltaText = rank.IsBaseline ? "Basis" : Signed(delta, FormatSeconds, 0.5),
+                PaceText = TripDisplay.FormatRateWithUnit(
+                    displayType,
+                    rank.Member.PaceSecondsPerKilometer),
+                DeltaText = rank.IsBaseline
+                    ? "Basis"
+                    : TripDisplay.FormatRateDelta(
+                        displayType,
+                        baselinePace,
+                        rank.Member.PaceSecondsPerKilometer,
+                        0.5),
                 DeltaIsFaster = !rank.IsBaseline && delta < -0.5,
-                MetaText = string.Join(
-                    " · ",
-                    side.Trip.StartTime.ToString("dd.MM.yyyy", GermanCulture),
-                    FormatDistance(side.DistanceMeters),
-                    Math.Round(side.ElevationGainMeters).ToString("0", GermanCulture) + " m hoch"),
+                MetaText = BuildContext(side),
                 IsBaseline = rank.IsBaseline,
                 IsFastest = rank.IsFastest,
             };
@@ -440,6 +465,8 @@ public partial class TripComparisonPageViewModel : ObservableObject
     /// <summary>One row per shared kilometre, one cell per run.</summary>
     private static IEnumerable<SplitMatrixRow> BuildSplitMatrix(TripComparisonSet comparison)
     {
+        var displayType = comparison.Baseline.Side.Trip.TripType;
+
         foreach (var row in comparison.Splits)
         {
             var cells = new List<SplitCellRow>(comparison.Count);
@@ -450,10 +477,17 @@ public partial class TripComparisonPageViewModel : ObservableObject
 
                 cells.Add(new SplitCellRow
                 {
-                    PaceText = FormatSeconds(row.SecondsPerMember[index]),
-                    DeltaText = index == 0 ? string.Empty : Signed(delta, FormatSeconds, 0.5),
+                    PaceText = TripDisplay.FormatRate(displayType, row.SecondsPerMember[index]),
+                    DeltaText = index == 0
+                        ? string.Empty
+                        : TripDisplay.FormatRateDelta(
+                            displayType,
+                            row.SecondsPerMember[0],
+                            row.SecondsPerMember[index],
+                            0.5),
                     DeltaIsFaster = index != 0 && delta < -0.5,
                     IsFastest = row.FastestMemberIndex == index,
+                    IsPartial = row.IsPartial,
                 });
             }
 
@@ -487,6 +521,8 @@ public partial class TripComparisonPageViewModel : ObservableObject
 
     private static IEnumerable<SplitRow> BuildPairSplits(TripComparisonSet comparison)
     {
+        var displayType = comparison.Baseline.Side.Trip.TripType;
+
         foreach (var split in comparison.Splits)
         {
             yield return new SplitRow
@@ -494,9 +530,14 @@ public partial class TripComparisonPageViewModel : ObservableObject
                 Kilometer = split.IsPartial
                     ? $"{split.Number} (teilw.)"
                     : split.Number.ToString(GermanCulture),
-                ValueA = FormatSeconds(split.SecondsPerMember[0]),
-                ValueB = FormatSeconds(split.SecondsPerMember[1]),
-                BIsFaster = split.DeltaSecondsPerMember[1] < 0,
+                ValueA = TripDisplay.FormatRate(displayType, split.SecondsPerMember[0]),
+                ValueB = TripDisplay.FormatRate(displayType, split.SecondsPerMember[1]),
+                DeltaText = TripDisplay.FormatRateDelta(
+                    displayType,
+                    split.SecondsPerMember[0],
+                    split.SecondsPerMember[1],
+                    0.5),
+                BIsFaster = split.DeltaSecondsPerMember[1] < -0.5,
                 IsPartial = split.IsPartial,
             };
         }
@@ -504,10 +545,11 @@ public partial class TripComparisonPageViewModel : ObservableObject
 
     private static IEnumerable<MetricRow> BuildMetrics(TripComparisonSide a, TripComparisonSide b)
     {
-        // Without a usable pace on both sides there is no meaningful pace difference.
-        var paceDelta = a.EquivalentPaceSecondsPerKilometer > 0 && b.EquivalentPaceSecondsPerKilometer > 0
-            ? b.EquivalentPaceSecondsPerKilometer - a.EquivalentPaceSecondsPerKilometer
-            : 0;
+        var displayType = a.Trip.TripType;
+        bool hasRate = a.PaceSecondsPerKilometer > 0 && b.PaceSecondsPerKilometer > 0;
+        bool meaningfulRate = hasRate
+            && Math.Abs(b.PaceSecondsPerKilometer - a.PaceSecondsPerKilometer)
+                >= TripComparisonCalculator.FlatBandSecondsPerKilometer;
 
         yield return new MetricRow
         {
@@ -520,7 +562,16 @@ public partial class TripComparisonPageViewModel : ObservableObject
 
         yield return new MetricRow
         {
-            Label = "Bewegungszeit",
+            Label = "Gesamtdauer",
+            ValueA = FormatSeconds(a.ElapsedSeconds),
+            ValueB = FormatSeconds(b.ElapsedSeconds),
+            DeltaText = Signed(b.ElapsedSeconds - a.ElapsedSeconds, FormatSeconds, 0.5),
+            DeltaIsMeaningful = false,
+        };
+
+        yield return new MetricRow
+        {
+            Label = "Bewegung",
             ValueA = FormatSeconds(a.MovingSeconds),
             ValueB = FormatSeconds(b.MovingSeconds),
             DeltaText = Signed(b.MovingSeconds - a.MovingSeconds, FormatSeconds, 0.5),
@@ -529,25 +580,38 @@ public partial class TripComparisonPageViewModel : ObservableObject
 
         yield return new MetricRow
         {
-            Label = "Pace (steigungsbereinigt)",
-            ValueA = FormatPace(a.EquivalentPaceSecondsPerKilometer),
-            ValueB = FormatPace(b.EquivalentPaceSecondsPerKilometer),
-            DeltaText = Signed(paceDelta, FormatSeconds, 0.5),
-            DeltaIsMeaningful = true,
-            DeltaIsGoodForB = paceDelta < 0,
+            Label = "Pause",
+            ValueA = FormatSeconds(a.PausedSeconds),
+            ValueB = FormatSeconds(b.PausedSeconds),
+            DeltaText = Signed(b.PausedSeconds - a.PausedSeconds, FormatSeconds, 0.5),
+            DeltaIsMeaningful = false,
         };
 
         yield return new MetricRow
         {
-            Label = "Ø Geschwindigkeit",
-            ValueA = FormatSpeed(a.AverageSpeedMetersPerSecond),
-            ValueB = FormatSpeed(b.AverageSpeedMetersPerSecond),
-            DeltaText = Signed(
-                (b.AverageSpeedMetersPerSecond - a.AverageSpeedMetersPerSecond) * 3.6,
-                value => value.ToString("0.0", GermanCulture),
-                0.05),
-            DeltaIsMeaningful = true,
-            DeltaIsGoodForB = b.AverageSpeedMetersPerSecond > a.AverageSpeedMetersPerSecond,
+            Label = TripDisplay.RateLabel(displayType),
+            ValueA = TripDisplay.FormatRate(displayType, a.PaceSecondsPerKilometer),
+            ValueB = TripDisplay.FormatRate(displayType, b.PaceSecondsPerKilometer),
+            DeltaText = TripDisplay.FormatRateDelta(
+                displayType,
+                a.PaceSecondsPerKilometer,
+                b.PaceSecondsPerKilometer),
+            DeltaIsMeaningful = meaningfulRate,
+            DeltaIsGoodForB = meaningfulRate && b.PaceSecondsPerKilometer < a.PaceSecondsPerKilometer,
+        };
+
+        yield return new MetricRow
+        {
+            Label = TripDisplay.IsPace(displayType)
+                ? "PACE, MODELL"
+                : "TEMPO, MODELL",
+            ValueA = TripDisplay.FormatRate(displayType, a.EquivalentPaceSecondsPerKilometer),
+            ValueB = TripDisplay.FormatRate(displayType, b.EquivalentPaceSecondsPerKilometer),
+            DeltaText = TripDisplay.FormatRateDelta(
+                displayType,
+                a.EquivalentPaceSecondsPerKilometer,
+                b.EquivalentPaceSecondsPerKilometer),
+            DeltaIsMeaningful = false,
         };
 
         yield return new MetricRow
@@ -562,19 +626,54 @@ public partial class TripComparisonPageViewModel : ObservableObject
             DeltaIsMeaningful = false,
         };
 
-        yield return new MetricRow
+        var averageA = AverageHeartRate(a);
+        var averageB = AverageHeartRate(b);
+        if (averageA > 0 && averageB > 0)
         {
-            Label = "Spitze",
-            ValueA = FormatSpeed(a.MaxSpeedMetersPerSecond),
-            ValueB = FormatSpeed(b.MaxSpeedMetersPerSecond),
-            DeltaText = Signed(
-                (b.MaxSpeedMetersPerSecond - a.MaxSpeedMetersPerSecond) * 3.6,
-                value => value.ToString("0.0", GermanCulture),
-                0.05),
-            DeltaIsMeaningful = true,
-            DeltaIsGoodForB = b.MaxSpeedMetersPerSecond > a.MaxSpeedMetersPerSecond,
-        };
+            yield return new MetricRow
+            {
+                Label = "Ø Puls",
+                ValueA = Math.Round(averageA).ToString("0", GermanCulture) + " bpm",
+                ValueB = Math.Round(averageB).ToString("0", GermanCulture) + " bpm",
+                DeltaText = Signed(averageB - averageA, value => Math.Round(value).ToString("0", GermanCulture), 0.5),
+                DeltaIsMeaningful = false,
+            };
+        }
     }
+
+    private static string BuildContext(TripComparisonSide side)
+    {
+        var parts = new List<string>
+        {
+            side.Trip.StartTime.ToString("dd.MM.yyyy", GermanCulture),
+            FormatDistance(side.DistanceMeters),
+            Math.Round(side.ElevationGainMeters).ToString("0", GermanCulture) + " m hoch",
+        };
+
+        if (!string.IsNullOrWhiteSpace(side.Trip.TripType?.Name))
+        {
+            parts.Insert(1, side.Trip.TripType.Name);
+        }
+
+        double averageHeartRate = AverageHeartRate(side);
+        if (averageHeartRate > 0)
+        {
+            parts.Add(Math.Round(averageHeartRate).ToString("0", GermanCulture) + " bpm");
+        }
+
+        if (side.Trip.Weather?.Count > 0)
+        {
+            double temperature = side.Trip.Weather.Average(weather => weather.Temperature);
+            parts.Add(Math.Round(temperature).ToString("0", GermanCulture) + "°");
+        }
+
+        return string.Join(" · ", parts);
+    }
+
+    private static double AverageHeartRate(TripComparisonSide side) =>
+        side.Trip.HeartRates?.Count > 0
+            ? side.Trip.HeartRates.Average(rate => rate.Rate)
+            : 0;
 
     /// <summary>Signed difference against A, or "gleich" when it stays inside the flat band.</summary>
     private static string Signed(double delta, Func<double, string> format, double flatBelow)
@@ -586,12 +685,6 @@ public partial class TripComparisonPageViewModel : ObservableObject
 
         return (delta > 0 ? "+" : "−") + format(Math.Abs(delta));
     }
-
-    private static string FormatPace(double secondsPerKilometer)
-        => secondsPerKilometer <= 0 ? "-" : FormatSeconds(secondsPerKilometer) + " /km";
-
-    private static string FormatSpeed(double metersPerSecond)
-        => (metersPerSecond * 3.6).ToString("0.0", GermanCulture) + " km/h";
 
     private static string FormatSeconds(double totalSeconds)
     {

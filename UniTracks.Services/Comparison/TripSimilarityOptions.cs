@@ -33,11 +33,11 @@ public sealed record TripSimilarityOptions
     /// <summary>Equivalent-length similarity two comparable trips need (0.75 = within 25 %).</summary>
     public double EffortMinimumDistanceSimilarity { get; init; } = 0.75;
 
-    /// <summary>Equivalent-speed similarity two comparable trips need (0.80 = within 20 %).</summary>
-    public double EffortMinimumScoreSimilarity { get; init; } = 0.80;
+    /// <summary>Distance similarity from here on is described as especially close.</summary>
+    public double EffortStrongDistanceSimilarity { get; init; } = 0.90;
 
-    /// <summary>Above this the trips are as close as day-to-day variation gets.</summary>
-    public double EffortStrongScoreSimilarity { get; init; } = 0.93;
+    /// <summary>Climb similarity from here on is described as especially close.</summary>
+    public double EffortStrongClimbSimilarity { get; init; } = 0.85;
 
     /// <summary>A trip below this length has too noisy an average to compare demands with.</summary>
     public double EffortMinimumDistanceMeters { get; init; } = 1000;
@@ -50,7 +50,7 @@ public sealed record TripSimilarityOptions
     /// <summary>
     /// Whether a match must be the same fine trip type. On by default, which is the safe reading:
     /// Walk and Run share the category "running", so a trip type of "run" must not quietly collect dog
-    /// walks on the same route. Turning this off is the user-facing "alle Lauftypen einbeziehen"
+    /// walks on the same route. Turning this off is the user-facing "andere Aktivitätstypen einbeziehen"
     /// filter — comparisons stay inside the sport family either way.
     /// </summary>
     public bool RequireSameTripType { get; init; } = true;
@@ -58,7 +58,7 @@ public sealed record TripSimilarityOptions
     /// <summary>
     /// Whether trips without a type may match typed trips. Off by default — a comparison across sport
     /// families is exactly the wrong answer, and "no type" says nothing about the family. The
-    /// "alle Lauftypen einbeziehen" toggle turns it on: a trip recorded without a Lauftyp is exactly
+    /// "andere Aktivitätstypen einbeziehen" toggle turns it on: a trip recorded without a type is exactly
     /// the case the switch is for, and leaving it strict made those trips look uncomparable.
     /// </summary>
     public bool UnknownTripTypeMatchesAnything { get; init; }
@@ -68,7 +68,7 @@ public sealed record TripSimilarityOptions
 
     /// <summary>
     /// The same options with the fine trip type filter switched on or off. Used by the
-    /// "alle Lauftypen einbeziehen" toggle so the whole feature relaxes in one place.
+    /// "andere Aktivitätstypen einbeziehen" toggle so the whole feature relaxes in one place.
     /// </summary>
     public TripSimilarityOptions WithTripTypeFilter(bool includeAllTripTypes) => this with
     {

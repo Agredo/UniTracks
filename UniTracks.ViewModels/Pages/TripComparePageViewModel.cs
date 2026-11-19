@@ -17,15 +17,17 @@ public sealed partial class RouteAttemptItem : ObservableObject
 
     public required string DateText { get; init; }
 
-    /// <summary>Equivalent pace as mm:ss, the value the rows are ordered by.</summary>
+    /// <summary>Actual rate in the activity's display unit.</summary>
     public required string PaceText { get; init; }
 
-    /// <summary>The same pace in seconds, used to pick the basis of a multiple comparison.</summary>
+    /// <summary>The actual seconds-per-kilometre value used to pick the comparison basis.</summary>
     public required double PaceSeconds { get; init; }
 
     public required string DistanceText { get; init; }
 
-    /// <summary>e.g. "+0:42" against the best time of the same trip type; empty for the best itself.</summary>
+    public required string BestLabel { get; init; }
+
+    /// <summary>Delta against the best actual rate of the same trip type; empty for the best itself.</summary>
     public required string DeltaText { get; init; }
 
     /// <summary>Name of the trip type when it differs from the opened trip's type.</summary>
@@ -65,11 +67,15 @@ public sealed record RelatedTripItem
 
     public string? TypeText { get; init; }
 
+    public string MetaText => string.IsNullOrWhiteSpace(TypeText)
+        ? DateText
+        : $"{DateText} · {TypeText}";
+
     public required Trip Trip { get; init; }
 }
 
 /// <summary>
-/// The comparison entry point for one trip: how often the route was run, how the times developed, and
+/// The comparison entry point for one trip: how often the route was recorded, how performance developed, and
 /// which other trips are worth comparing against.
 /// </summary>
 public partial class TripComparePageViewModel : ObservableObject
@@ -98,6 +104,12 @@ public partial class TripComparePageViewModel : ObservableObject
     [ObservableProperty]
     private bool hasTrend;
 
+    [ObservableProperty]
+    private string recentMedianText = string.Empty;
+
+    [ObservableProperty]
+    private bool hasRecentMedian;
+
     /// <summary>Explains which sport type the results are limited to.</summary>
     [ObservableProperty]
     private string? typeNotice;
@@ -110,8 +122,8 @@ public partial class TripComparePageViewModel : ObservableObject
     private bool isIndexing;
 
     /// <summary>
-    /// The "alle Lauftypen einbeziehen" filter. Relaxes the fine trip type so e.g. a Trail Run is
-    /// found for a Run — the sport family and the personal best stay strict regardless.
+    /// Relaxes the fine trip type so e.g. a Trail Run is found for a Run — the sport family and the
+    /// personal best stay strict regardless.
     /// </summary>
     [ObservableProperty]
     private bool includeAllTripTypes;
@@ -221,6 +233,8 @@ public partial class TripComparePageViewModel : ObservableObject
         Headline = report.History.Headline;
         TrendText = BuildTrendText(report);
         HasTrend = !string.IsNullOrEmpty(TrendText);
+        RecentMedianText = BuildRecentMedianText(report);
+        HasRecentMedian = !string.IsNullOrEmpty(RecentMedianText);
 
         Attempts.Clear();
         foreach (var attempt in report.History.Attempts)
@@ -250,8 +264,7 @@ public partial class TripComparePageViewModel : ObservableObject
     }
 
     /// <summary>
-    /// The trend line pairs the slope with what it means, plus the plain first-to-latest difference —
-    /// a slope alone means nothing to a runner.
+    /// The trend line pairs the slope with a change in the athlete's normal display unit.
     /// </summary>
     private static string BuildTrendText(TripComparisonReport report)
     {
@@ -260,10 +273,42 @@ public partial class TripComparePageViewModel : ObservableObject
             return string.Empty;
         }
 
-        double slope = report.History.TrendSecondsPerKilometerPerMonth;
-        string perMonth = $"{(slope >= 0 ? "+" : "−")}{FormatSeconds(Math.Abs(slope))} / Monat";
+        double baseline = report.History.RecentMedianPaceSecondsPerKilometer;
+        if (baseline <= 0)
+        {
+            baseline = report.History.Latest?.PaceSecondsPerKilometer
+                ?? report.History.Best?.PaceSecondsPerKilometer
+                ?? 0;
+        }
 
-        return $"{report.History.TrendLabel} · {perMonth}";
+        double slope = report.History.TrendSecondsPerKilometerPerMonth;
+        if (Math.Abs(slope) < RouteHistoryBuilder.FlatTrendBandSecondsPerKilometerPerMonth)
+        {
+            return report.History.TrendLabel;
+        }
+
+        string perMonth = TripDisplay.FormatRateDelta(
+            report.Trip.TripType,
+            baseline,
+            baseline + slope,
+            0.05);
+
+        string unit = TripDisplay.RateAxisUnit(report.Trip.TripType);
+        return $"{report.History.TrendLabel} · {perMonth} {unit} / Monat";
+    }
+
+    private static string BuildRecentMedianText(TripComparisonReport report)
+    {
+        if (report.History.RecentMedianAttemptCount < 3
+            || report.History.RecentMedianPaceSecondsPerKilometer <= 0)
+        {
+            return string.Empty;
+        }
+
+        return $"Median der letzten {report.History.RecentMedianAttemptCount}: "
+            + TripDisplay.FormatRateWithUnit(
+                report.Trip.TripType,
+                report.History.RecentMedianPaceSecondsPerKilometer);
     }
 
     private static string BuildEmptyText(TripComparisonReport report)
@@ -290,12 +335,23 @@ public partial class TripComparePageViewModel : ObservableObject
             Number = attempt.Number.ToString(GermanCulture),
             Name = TripDisplay.Name(attempt.Trip),
             DateText = attempt.Trip.StartTime.ToString("dd.MM.yyyy", GermanCulture),
-            PaceText = FormatPace(attempt.EquivalentPaceSecondsPerKilometer),
-            PaceSeconds = attempt.EquivalentPaceSecondsPerKilometer,
+            PaceText = TripDisplay.FormatRateWithUnit(
+                attempt.Trip.TripType,
+                attempt.PaceSecondsPerKilometer),
+            PaceSeconds = attempt.PaceSecondsPerKilometer,
             DistanceText = FormatDistance(attempt.Fingerprint.DistanceMeters),
-            DeltaText = attempt.IsBest || attempt.DeltaToBestSeconds <= 0.5
+            BestLabel = TripDisplay.IsPace(attempt.Trip.TripType)
+                ? "BESTE PACE"
+                : "BESTES TEMPO",
+            DeltaText = attempt.IsBest
+                || !attempt.IsSameTripType
+                || attempt.DeltaToBestSeconds <= 0.5
                 ? string.Empty
-                : $"+{FormatSeconds(attempt.DeltaToBestSeconds)}",
+                : TripDisplay.FormatRateDelta(
+                    attempt.Trip.TripType,
+                    attempt.PaceSecondsPerKilometer - attempt.DeltaToBestSeconds,
+                    attempt.PaceSecondsPerKilometer,
+                    0.5),
             ForeignTypeName = foreignName,
             IsBest = attempt.IsBest,
             IsCurrent = attempt.IsCurrent,
@@ -312,13 +368,13 @@ public partial class TripComparePageViewModel : ObservableObject
             Name = TripDisplay.Name(related.Trip),
             DateText = related.Trip.StartTime.ToString("dd.MM.yyyy", GermanCulture),
             DistanceText = FormatDistance(fingerprint.DistanceMeters),
-            PaceText = FormatPace(EffortModel.EquivalentPaceSecondsPerKilometer(
-                fingerprint.DistanceMeters,
-                fingerprint.MovingSeconds,
-                fingerprint.ElapsedSeconds,
-                fingerprint.ElevationGainMeters)),
+            PaceText = TripDisplay.FormatRateWithUnit(
+                related.Trip.TripType,
+                TripDisplay.SecondsPerKilometer(
+                    fingerprint.DistanceMeters,
+                    fingerprint.MovingSeconds)),
             ReasonText = related.Match.Label,
-            TypeText = fingerprint.TripIdentifier,
+            TypeText = related.TypeName ?? fingerprint.TripIdentifier,
             Trip = related.Trip,
         };
     }
@@ -383,7 +439,7 @@ public partial class TripComparePageViewModel : ObservableObject
         UpdateSelection();
     }
 
-    /// <summary>Compares the picked runs; the fastest picked run becomes the basis.</summary>
+    /// <summary>Compares the picked runs; the fastest picked trip becomes the basis.</summary>
     [RelayCommand]
     private async Task CompareSelected()
     {
@@ -404,23 +460,6 @@ public partial class TripComparePageViewModel : ObservableObject
         }
 
         await OpenComparison(picked[0].Trip, picked.Skip(1).Select(item => item.Trip).ToList());
-    }
-
-    /// <summary>Compares the opened trip against all similar routes at once.</summary>
-    [RelayCommand]
-    private async Task CompareSimilar()
-    {
-        if (Trip is null || SimilarTrips.Count == 0)
-        {
-            return;
-        }
-
-        var others = SimilarTrips
-            .Take(TripComparisonPalette.MaxMembers - 1)
-            .Select(item => item.Trip)
-            .ToList();
-
-        await OpenComparison(Trip, others);
     }
 
     private void UpdateSelection()
@@ -471,24 +510,6 @@ public partial class TripComparePageViewModel : ObservableObject
             { "parameter", Trip },
             { "other", item.Trip },
         });
-    }
-
-    private static string FormatPace(double secondsPerKilometer)
-    {
-        if (secondsPerKilometer <= 0)
-        {
-            return "-";
-        }
-
-        return $"{FormatSeconds(secondsPerKilometer)} /km";
-    }
-
-    private static string FormatSeconds(double totalSeconds)
-    {
-        var span = TimeSpan.FromSeconds(Math.Round(totalSeconds));
-        return span.TotalHours >= 1
-            ? span.ToString(@"h\:mm\:ss", GermanCulture)
-            : span.ToString(@"m\:ss", GermanCulture);
     }
 
     private static string FormatDistance(double meters) =>

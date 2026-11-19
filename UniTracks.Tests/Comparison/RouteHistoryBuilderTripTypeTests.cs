@@ -89,7 +89,8 @@ public class RouteHistoryBuilderTripTypeTests
 
         Assert.Equal(2, history.Attempts.Count);
         Assert.Equal(1, history.AttemptCount);
-        Assert.Contains("1× gelaufen", history.Headline);
+        Assert.Contains("1× auf dieser Strecke", history.Headline);
+        Assert.Contains("Beste Pace", history.Headline);
         Assert.Contains("anderer Typ", history.Headline);
     }
 
@@ -160,8 +161,26 @@ public class RouteHistoryBuilderTripTypeTests
 
         Assert.Single(history.Attempts);
         Assert.False(history.HasHistory);
-        Assert.StartsWith("1× gelaufen", history.Headline);
+        Assert.StartsWith("1× auf dieser Strecke", history.Headline);
         Assert.Empty(history.TrendLabel);
+    }
+
+    [Fact]
+    public void RecentMedian_UsesTheLastFiveSameTypeAttempts()
+    {
+        var attempts = Enumerable.Range(1, 7)
+            .Select(index => Source(
+                Run,
+                $"lauf {index}",
+                index,
+                movingSeconds: 1700 + index * 20,
+                typeName: "Run"))
+            .ToArray();
+
+        var history = Build(attempts[0], attempts.Skip(1).ToArray());
+
+        Assert.Equal(5, history.RecentMedianAttemptCount);
+        Assert.Equal(360, history.RecentMedianPaceSecondsPerKilometer, 6);
     }
 
     // ---- Helpers ----

@@ -16,6 +16,9 @@ public class TripDistanceRecalculator
     private readonly IRepository _repository;
     private bool _ran;
 
+    /// <summary>Raised when an existing-trip metric pass changed rows used by open summary screens.</summary>
+    public event EventHandler? Changed;
+
     public TripDistanceRecalculator(IRepository repository)
     {
         _repository = repository;
@@ -28,6 +31,8 @@ public class TripDistanceRecalculator
             return;
         }
         _ran = true;
+
+        bool changed = false;
 
         try
         {
@@ -48,20 +53,24 @@ public class TripDistanceRecalculator
                 // Long GPS gaps are unknown time, not a measured pause.
                 double stoppedSeconds = stopped.TotalSeconds;
                 double averageSpeed = movingSeconds > 0 ? distance / movingSeconds : 0;
+                double elevationGain = TripMetricsCalculator.ComputeElevationGain(ordered);
 
                 // Only write when a value actually changed, so repeat runs touch nothing.
                 if (trip.Distance is null || Math.Abs(trip.Distance.Value - distance) > 0.1
                     || trip.AverageSpeed is null || Math.Abs(trip.AverageSpeed.Value - averageSpeed) > 0.001
                     || trip.TotalTime is null || Math.Abs(trip.TotalTime.Value - elapsedSeconds) > 0.001
                     || trip.MovingTime is null || Math.Abs(trip.MovingTime.Value - movingSeconds) > 0.001
-                    || trip.StoppedTime is null || Math.Abs(trip.StoppedTime.Value - stoppedSeconds) > 0.001)
+                    || trip.StoppedTime is null || Math.Abs(trip.StoppedTime.Value - stoppedSeconds) > 0.001
+                    || trip.ElevationGain is null || Math.Abs(trip.ElevationGain.Value - elevationGain) > 0.1)
                 {
                     trip.Distance = distance;
                     trip.TotalTime = elapsedSeconds;
                     trip.MovingTime = movingSeconds;
                     trip.StoppedTime = stoppedSeconds;
                     trip.AverageSpeed = averageSpeed;
+                    trip.ElevationGain = elevationGain;
                     await _repository.Update<Trip>(trip);
+                    changed = true;
                 }
             }
         }
@@ -69,6 +78,13 @@ public class TripDistanceRecalculator
         {
             // Best-effort: a failure must never prevent app startup.
             Debug.WriteLine($"TripDistanceRecalculator failed: {ex}");
+        }
+        finally
+        {
+            if (changed)
+            {
+                Changed?.Invoke(this, EventArgs.Empty);
+            }
         }
     }
 }

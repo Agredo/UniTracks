@@ -24,6 +24,10 @@ public sealed record TripComparisonSide
 
     public required double MaxSpeedMetersPerSecond { get; init; }
 
+    /// <summary>Actual distance over moving time, in seconds per kilometre; never climb-adjusted.</summary>
+    public double PaceSecondsPerKilometer =>
+        TripDisplay.SecondsPerKilometer(DistanceMeters, MovingSeconds);
+
     /// <summary>Climb-adjusted pace, in seconds per kilometre. How the two sides are compared.</summary>
     public required double EquivalentPaceSecondsPerKilometer { get; init; }
 
@@ -33,6 +37,9 @@ public sealed record TripComparisonSide
 
     public double AverageSpeedMetersPerSecond =>
         MovingSeconds <= 0 ? 0 : DistanceMeters / MovingSeconds;
+
+    /// <summary>Recorded stop time; unlike elapsed-minus-moving, long GPS gaps are not called pauses.</summary>
+    public required double PausedSeconds { get; init; }
 }
 
 /// <summary>Difference between the two sides on one kilometre.</summary>
@@ -40,13 +47,17 @@ public sealed record SplitDelta
 {
     public required int Number { get; init; }
 
-    /// <summary>Equivalent pace of the reference trip on this kilometre, in seconds.</summary>
+    /// <summary>Raw pace of the reference trip on this kilometre, in seconds.</summary>
     public required double SecondsA { get; init; }
 
     public required double SecondsB { get; init; }
 
     /// <summary>Positive means the compared trip took longer on this kilometre.</summary>
     public required double DeltaSeconds { get; init; }
+
+    public required double EquivalentSecondsA { get; init; }
+
+    public required double EquivalentSecondsB { get; init; }
 
     public required double ElevationGainA { get; init; }
 
@@ -74,7 +85,7 @@ public sealed record TripComparison
     /// <summary>Axis captions for the pace series, e.g. "1", "2", "3".</summary>
     public required IReadOnlyList<string> DistanceAxisLabels { get; init; }
 
-    /// <summary>Equivalent pace per kilometre of side A, in seconds. 0 for missing kilometres.</summary>
+    /// <summary>Actual pace per kilometre of side A, in seconds. 0 for missing kilometres.</summary>
     public required IReadOnlyList<double> PaceSeriesA { get; init; }
 
     public required IReadOnlyList<double> PaceSeriesB { get; init; }
@@ -88,14 +99,18 @@ public sealed record TripComparison
 
     public double ElevationGainDeltaMeters => B.ElevationGainMeters - A.ElevationGainMeters;
 
+    /// <summary>Positive means B was slower per actual kilometre.</summary>
+    public double PaceDeltaSecondsPerKilometer =>
+        B.PaceSecondsPerKilometer - A.PaceSecondsPerKilometer;
+
     /// <summary>Positive means B was slower per equivalent kilometre.</summary>
     public double EquivalentPaceDeltaSecondsPerKilometer =>
         B.EquivalentPaceSecondsPerKilometer - A.EquivalentPaceSecondsPerKilometer;
 
     /// <summary>True when the compared trip was the faster one beyond the noise band.</summary>
-    public bool BIsFaster => EquivalentPaceDeltaSecondsPerKilometer < -TripComparisonCalculator.FlatBandSecondsPerKilometer;
+    public bool BIsFaster => PaceDeltaSecondsPerKilometer < -TripComparisonCalculator.FlatBandSecondsPerKilometer;
 
-    public bool AIsFaster => EquivalentPaceDeltaSecondsPerKilometer > TripComparisonCalculator.FlatBandSecondsPerKilometer;
+    public bool AIsFaster => PaceDeltaSecondsPerKilometer > TripComparisonCalculator.FlatBandSecondsPerKilometer;
 
     public required string Verdict { get; init; }
 
@@ -137,6 +152,9 @@ public static class TripComparisonCalculator
 
         double elapsed = TripMetrics.ElapsedSeconds(trip);
         double movingSeconds = TripMetrics.MovingSeconds(trip, ordered);
+        double pausedSeconds = trip.StoppedTime is { } stopped
+            ? Math.Max(0, stopped)
+            : Stats.TripMetricsCalculator.ComputeMovingAndStopped(ordered).Stopped.TotalSeconds;
 
         return new TripComparisonSide
         {
@@ -146,6 +164,7 @@ public static class TripComparisonCalculator
             DistanceMeters = distance,
             MovingSeconds = movingSeconds,
             ElapsedSeconds = elapsed,
+            PausedSeconds = pausedSeconds,
             ElevationGainMeters = elevationGain,
             MaxSpeedMetersPerSecond = trip.MaxSpeed ?? 0,
             EquivalentPaceSecondsPerKilometer = EffortModel.EquivalentPaceSecondsPerKilometer(
@@ -220,6 +239,8 @@ public static class TripComparisonCalculator
                 SecondsA = row.SecondsPerMember[0],
                 SecondsB = row.SecondsPerMember[1],
                 DeltaSeconds = row.DeltaSecondsPerMember[1],
+                EquivalentSecondsA = row.EquivalentSecondsPerMember[0],
+                EquivalentSecondsB = row.EquivalentSecondsPerMember[1],
                 ElevationGainA = a.Splits[index].ElevationGainMeters,
                 ElevationGainB = b.Splits[index].ElevationGainMeters,
                 IsPartial = row.IsPartial,
@@ -253,6 +274,9 @@ public static class TripComparisonCalculator
         for (int index = 0; index < shared; index++)
         {
             var seconds = sides
+                .Select(side => side.Splits[index].PaceSecondsPerKilometer)
+                .ToList();
+            var equivalentSeconds = sides
                 .Select(side => side.Splits[index].EquivalentPaceSecondsPerKilometer)
                 .ToList();
 
@@ -276,6 +300,10 @@ public static class TripComparisonCalculator
                 Number = sides[0].Splits[index].Number,
                 SecondsPerMember = seconds,
                 DeltaSecondsPerMember = seconds.Select(value => value - baseline).ToList(),
+                EquivalentSecondsPerMember = equivalentSeconds,
+                EquivalentDeltaSecondsPerMember = equivalentSeconds
+                    .Select(value => value - equivalentSeconds[0])
+                    .ToList(),
                 IsPartial = sides.Any(side => side.Splits[index].IsPartial),
                 FastestMemberIndex = fastest,
             });
@@ -287,20 +315,20 @@ public static class TripComparisonCalculator
     /// <summary>Fastest run first. A trip without usable pace data is ranked last, not first.</summary>
     private static List<TripComparisonRank> BuildRanking(IReadOnlyList<TripComparisonMember> members)
     {
-        double baseline = members[0].EquivalentPaceSecondsPerKilometer;
+        double baseline = members[0].PaceSecondsPerKilometer;
 
         return members
-            .OrderBy(member => member.EquivalentPaceSecondsPerKilometer <= 0 ? 1 : 0)
-            .ThenBy(member => member.EquivalentPaceSecondsPerKilometer <= 0
+            .OrderBy(member => member.PaceSecondsPerKilometer <= 0 ? 1 : 0)
+            .ThenBy(member => member.PaceSecondsPerKilometer <= 0
                 ? 0
-                : member.EquivalentPaceSecondsPerKilometer)
+                : member.PaceSecondsPerKilometer)
             .Select((member, position) => new TripComparisonRank
             {
                 Rank = position + 1,
                 Member = member,
-                DeltaSecondsPerKilometer = member.EquivalentPaceSecondsPerKilometer <= 0 || baseline <= 0
+                DeltaSecondsPerKilometer = member.PaceSecondsPerKilometer <= 0 || baseline <= 0
                     ? 0
-                    : member.EquivalentPaceSecondsPerKilometer - baseline,
+                    : member.PaceSecondsPerKilometer - baseline,
             })
             .ToList();
     }
@@ -317,21 +345,21 @@ public static class TripComparisonCalculator
             return Verdict(
                 baseline.Side,
                 other.Side,
-                other.EquivalentPaceSecondsPerKilometer - baseline.EquivalentPaceSecondsPerKilometer);
+                other.PaceSecondsPerKilometer - baseline.PaceSecondsPerKilometer);
         }
 
-        if (members.Any(member => member.EquivalentPaceSecondsPerKilometer <= 0))
+        if (members.Any(member => member.PaceSecondsPerKilometer <= 0))
         {
             return "Nicht vergleichbar";
         }
 
-        var paces = members.Select(member => member.EquivalentPaceSecondsPerKilometer).ToList();
+        var paces = members.Select(member => member.PaceSecondsPerKilometer).ToList();
         if (paces.Max() - paces.Min() < FlatBandSecondsPerKilometer)
         {
-            return $"Alle {members.Count} Läufe praktisch gleich schnell";
+            return $"Alle {members.Count} Trips praktisch gleich schnell";
         }
 
-        return $"{ranking[0].Member.Name} war der schnellste von {members.Count} Läufen";
+        return $"{ranking[0].Member.Name} war der schnellste von {members.Count} Trips";
     }
 
     private static string SetVerdictDetail(
@@ -346,10 +374,10 @@ public static class TripComparisonCalculator
             return VerdictDetail(
                 baseline.Side,
                 other.Side,
-                other.EquivalentPaceSecondsPerKilometer - baseline.EquivalentPaceSecondsPerKilometer);
+                other.PaceSecondsPerKilometer - baseline.PaceSecondsPerKilometer);
         }
 
-        if (members.Any(member => member.EquivalentPaceSecondsPerKilometer <= 0))
+        if (members.Any(member => member.PaceSecondsPerKilometer <= 0))
         {
             return "Für einen dieser Trips fehlen die Daten für einen Tempovergleich.";
         }
@@ -357,17 +385,24 @@ public static class TripComparisonCalculator
         var setBaseline = members[0];
         var fastest = ranking[0].Member;
         var slowest = ranking[ranking.Count - 1].Member;
-        double lead = Math.Abs(fastest.EquivalentPaceSecondsPerKilometer - setBaseline.EquivalentPaceSecondsPerKilometer);
-        double spread = slowest.EquivalentPaceSecondsPerKilometer - fastest.EquivalentPaceSecondsPerKilometer;
-        string range = $"zwischen schnellstem und langsamstem Lauf liegen {spread:0} s/km";
+        var displayType = setBaseline.Side.Trip.TripType;
+        string lead = TripDisplay.FormatRateMagnitude(
+            displayType,
+            setBaseline.PaceSecondsPerKilometer,
+            fastest.PaceSecondsPerKilometer);
+        string spread = TripDisplay.FormatRateMagnitude(
+            displayType,
+            fastest.PaceSecondsPerKilometer,
+            slowest.PaceSecondsPerKilometer);
+        string range = $"zwischen schnellstem und langsamstem Trip liegen {spread}";
 
         if (fastest.IsBaseline)
         {
             var next = ranking[1].Member;
-            return $"{fastest.Name} ist Ø {lead:0} s/km schneller als der nächste Lauf ({next.Name}); {range}.";
+            return $"{fastest.Name} war Ø {lead} schneller als der nächste Trip ({next.Name}); {range}.";
         }
 
-        return $"{fastest.Name} war Ø {lead:0} s/km schneller als {setBaseline.Name}; {range}.";
+        return $"{fastest.Name} war Ø {lead} schneller als {setBaseline.Name}; {range}.";
     }
 
     /// <summary>
@@ -392,7 +427,7 @@ public static class TripComparisonCalculator
             && (climbReference <= 0
                 || climbDifference / Math.Max(climbReference, 1) >= FairnessRelativeElevationDifference))
         {
-            notes.Add($"{mostClimb.Name} hatte {climbDifference:0} m mehr Höhenmeter als {leastClimb.Name} – die Paces sind entsprechend umgerechnet.");
+            notes.Add($"{mostClimb.Name} hatte {climbDifference:0} m mehr Höhenmeter als {leastClimb.Name}. Die Modell-Pace ist davon getrennt.");
         }
 
         var longest = members.MaxBy(member => member.Side.DistanceMeters)!;
@@ -402,7 +437,7 @@ public static class TripComparisonCalculator
         if (shortest.Side.DistanceMeters > 0
             && distanceDifference / shortest.Side.DistanceMeters >= FairnessRelativeDistanceDifference)
         {
-            notes.Add($"Die Läufe sind unterschiedlich lang ({shortest.Side.DistanceKilometers:0.0}–{longest.Side.DistanceKilometers:0.0} km) – die Pace ist über die ganze Strecke gerechnet.");
+            notes.Add($"Die Trips sind unterschiedlich lang ({shortest.Side.DistanceKilometers:0.0}–{longest.Side.DistanceKilometers:0.0} km); Roh-Pace allein beweist hier keinen Fortschritt.");
         }
 
         return notes.Count == 0 ? null : string.Join(" ", notes);
@@ -410,7 +445,7 @@ public static class TripComparisonCalculator
 
     private static string Verdict(TripComparisonSide a, TripComparisonSide b, double delta)
     {
-        if (a.EquivalentPaceSecondsPerKilometer <= 0 || b.EquivalentPaceSecondsPerKilometer <= 0)
+        if (a.PaceSecondsPerKilometer <= 0 || b.PaceSecondsPerKilometer <= 0)
         {
             return "Nicht vergleichbar";
         }
@@ -430,21 +465,24 @@ public static class TripComparisonCalculator
 
     private static string VerdictDetail(TripComparisonSide a, TripComparisonSide b, double delta)
     {
-        if (a.EquivalentPaceSecondsPerKilometer <= 0 || b.EquivalentPaceSecondsPerKilometer <= 0)
+        if (a.PaceSecondsPerKilometer <= 0 || b.PaceSecondsPerKilometer <= 0)
         {
             return "Für einen dieser Trips fehlen die Daten für einen Tempovergleich.";
         }
 
         double absolute = Math.Abs(delta);
-        string perKilometer = $"{absolute:0} s/km";
+        string rateDifference = TripDisplay.FormatRateMagnitude(
+            a.Trip.TripType,
+            a.PaceSecondsPerKilometer,
+            b.PaceSecondsPerKilometer);
 
         if (absolute < FlatBandSecondsPerKilometer)
         {
-            return $"Unterschied von nur {perKilometer} – im Bereich der normalen Streuung.";
+            return $"Unterschied von nur {rateDifference} – im Bereich der normalen Streuung.";
         }
 
         string faster = delta > 0 ? a.Name : b.Name;
-        return $"{faster} war Ø {perKilometer} schneller (auf gleichen Höhenaufwand umgerechnet).";
+        return $"{faster} war Ø {rateDifference} schneller. Die Modell-Pace ist separat markiert.";
     }
 
     /// <summary>
@@ -453,19 +491,27 @@ public static class TripComparisonCalculator
     /// </summary>
     private static string? FairnessNote(TripComparisonSide a, TripComparisonSide b)
     {
+        var notes = new List<string>();
         double difference = b.ElevationGainMeters - a.ElevationGainMeters;
         double absolute = Math.Abs(difference);
         double reference = Math.Min(a.ElevationGainMeters, b.ElevationGainMeters);
 
-        bool notable = absolute >= FairnessAbsoluteElevationDifferenceMeters
+        bool climbNotable = absolute >= FairnessAbsoluteElevationDifferenceMeters
             && (reference <= 0 || absolute / Math.Max(reference, 1) >= FairnessRelativeElevationDifference);
 
-        if (!notable)
+        if (climbNotable)
         {
-            return null;
+            string more = difference > 0 ? b.Name : a.Name;
+            notes.Add($"{more} hatte {absolute:0} m mehr Höhenmeter. Die Modell-Pace rechnet diese Differenz pauschal um.");
         }
 
-        string more = difference > 0 ? b.Name : a.Name;
-        return $"{more} hatte {absolute:0} m mehr Höhenmeter – der Tempovergleich ist entsprechend umgerechnet.";
+        double shortest = Math.Min(a.DistanceMeters, b.DistanceMeters);
+        double distanceDifference = Math.Abs(b.DistanceMeters - a.DistanceMeters);
+        if (shortest > 0 && distanceDifference / shortest >= FairnessRelativeDistanceDifference)
+        {
+            notes.Add($"Die Distanzen unterscheiden sich um {distanceDifference / 1000.0:0.0} km; die Pace allein beweist hier keinen Fortschritt.");
+        }
+
+        return notes.Count == 0 ? null : string.Join(" ", notes);
     }
 }

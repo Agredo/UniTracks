@@ -12,6 +12,9 @@ public sealed record RelatedTrip
     public required TripFingerprint Fingerprint { get; init; }
 
     public required TripMatch Match { get; init; }
+
+    /// <summary>Localized display name of the activity type, when the catalogue knows it.</summary>
+    public string? TypeName { get; init; }
 }
 
 /// <summary>Everything the comparison page needs for one trip, in the order it shows it.</summary>
@@ -129,7 +132,15 @@ public sealed class TripSimilarityService : ITripSimilarityService
         var current = await fingerprints.EnsureAsync(trip);
 
         var stored = await fingerprints.GetAllAsync();
-        var tripsById = (await repository.GetAllAsync<Trip>()).ToDictionary(candidate => candidate.ID);
+        var tripsById = (await repository.GetAllAsync<Trip>(
+                candidate => candidate.TripType!,
+                candidate => candidate.Weather!,
+                candidate => candidate.HeartRates!))
+            .ToDictionary(candidate => candidate.ID);
+        if (trip.TripType is null && tripsById.TryGetValue(trip.ID, out var loadedTrip))
+        {
+            trip.TripType = loadedTrip.TripType;
+        }
 
         cancellationToken.ThrowIfCancellationRequested();
 
@@ -157,17 +168,20 @@ public sealed class TripSimilarityService : ITripSimilarityService
         // otherwise quietly turn a different course into a personal best.
         var identical = ResolveAll(
             sameRouteMatches.Where(match => match.Score >= TripMatcher.IdenticalRouteScore),
-            tripsById);
+            tripsById,
+            typeNames);
 
         var similar = ResolveAll(
             sameRouteMatches.Where(match => match.Score < TripMatcher.IdenticalRouteScore),
-            tripsById);
+            tripsById,
+            typeNames);
 
         var sameRouteIds = sameRouteMatches.Select(match => match.Candidate.TripID).ToHashSet();
 
         var comparable = ResolveAll(
             TripMatcher.FindComparableEffort(current, stored, sameRouteIds, effective),
-            tripsById);
+            tripsById,
+            typeNames);
 
         var history = RouteHistoryBuilder.Build(
             trip,
@@ -207,13 +221,13 @@ public sealed class TripSimilarityService : ITripSimilarityService
     {
         if (string.IsNullOrEmpty(fingerprint.TripIdentifier))
         {
-            // A trip recorded without a Lauftyp used to be matchable only by other untyped trips, which
+            // A trip recorded without a type used to be matchable only by other untyped trips, which
             // on a normal library means by nothing at all. The filter is the way out, so it has to say
             // so - the strict wording above ("only untyped trips") named a restriction the toggle lifts.
             return includeAllTripTypes
-                ? "Für diesen Trip ist kein Lauftyp gespeichert. Der Filter ist an, deshalb werden auch "
-                    + "Trips mit einem Lauftyp verglichen; verglichen wird dann allein über Strecke und Leistung."
-                : "Für diesen Trip ist kein Lauftyp gespeichert. Andere Trips werden nur verglichen, "
+                ? "Für diesen Trip ist kein Aktivitätstyp gespeichert. Der Filter ist an, deshalb werden auch "
+                    + "getypte Trips verglichen; die Auswahl folgt dann allein Strecke und Umfang."
+                : "Für diesen Trip ist kein Aktivitätstyp gespeichert. Andere Trips werden nur verglichen, "
                     + "wenn sie ebenfalls keinen Typ haben — über den Filter lässt sich das aufheben.";
         }
 
@@ -226,7 +240,7 @@ public sealed class TripSimilarityService : ITripSimilarityService
         }
 
         return $"Alle Typen der Sportart „{fingerprint.TripCategory}\u201c werden einbezogen. "
-            + $"Bestzeit und Trend bleiben trotzdem auf „{own}\u201c bezogen.";
+            + $"Bestleistung und Trend bleiben trotzdem auf „{own}\u201c bezogen.";
     }
 
     /// <summary>Identifier → display name, e.g. "trailrun" → "Trail Run".</summary>
@@ -280,6 +294,25 @@ public sealed class TripSimilarityService : ITripSimilarityService
             .OrderBy(trip => trip.StartTime)
             .Take(TripComparisonPalette.MaxMembers - 1));
 
+        var contextIds = trips.Select(trip => trip.ID).ToList();
+        var contextById = (await repository.GetAsync<Trip>(
+                trip => contextIds.Contains(trip.ID),
+                trip => trip.TripType!,
+                trip => trip.Weather!,
+                trip => trip.HeartRates!))
+            .ToDictionary(trip => trip.ID);
+        foreach (var trip in trips)
+        {
+            if (!contextById.TryGetValue(trip.ID, out var stored))
+            {
+                continue;
+            }
+
+            trip.TripType ??= stored.TripType;
+            trip.Weather ??= stored.Weather;
+            trip.HeartRates ??= stored.HeartRates;
+        }
+
         var sides = new List<TripComparisonSide>(trips.Count);
 
         foreach (var trip in trips)
@@ -304,9 +337,19 @@ public sealed class TripSimilarityService : ITripSimilarityService
         return sides.Count < 2 ? null : TripComparisonCalculator.CompareSet(sides);
     }
 
-    private static RelatedTrip? Resolve(TripMatch match, IReadOnlyDictionary<Guid, Trip> tripsById) =>
+    private static RelatedTrip? Resolve(
+        TripMatch match,
+        IReadOnlyDictionary<Guid, Trip> tripsById,
+        IReadOnlyDictionary<string, string> typeNames) =>
         tripsById.TryGetValue(match.Candidate.TripID, out var trip)
-            ? new RelatedTrip { Trip = trip, Fingerprint = match.Candidate, Match = match }
+            ? new RelatedTrip
+            {
+                Trip = trip,
+                Fingerprint = match.Candidate,
+                Match = match,
+                TypeName = trip.TripType?.Name
+                    ?? Name(typeNames, match.Candidate.TripIdentifier),
+            }
             : null;
 
     /// <summary>
@@ -315,8 +358,9 @@ public sealed class TripSimilarityService : ITripSimilarityService
     /// </summary>
     private static List<RelatedTrip> ResolveAll(
         IEnumerable<TripMatch> matches,
-        IReadOnlyDictionary<Guid, Trip> tripsById) => matches
-            .Select(match => Resolve(match, tripsById))
+        IReadOnlyDictionary<Guid, Trip> tripsById,
+        IReadOnlyDictionary<string, string> typeNames) => matches
+            .Select(match => Resolve(match, tripsById, typeNames))
             .Where(related => related is not null)
             .Select(related => related!)
             .ToList();

@@ -15,12 +15,12 @@ public class TripDistanceRecalculatorTests
         var start = new DateTimeOffset(2026, 3, 1, 8, 0, 0, TimeSpan.Zero);
         var track = new List<LocationModel>
         {
-            Point(0, 0, 0),
-            Point(10, 10, 3),
-            Point(110, 10, 0),
-            Point(120, 10, 0),
-            Point(220, 20, 3),
-            Point(230, 30, 3),
+            Point(0, 0, 0, 100),
+            Point(10, 10, 3, 101),
+            Point(110, 10, 0, 100),
+            Point(120, 10, 0, 102),
+            Point(220, 20, 3, 102),
+            Point(230, 30, 3, 102),
         };
 
         repository.Seed(new Trip
@@ -31,7 +31,10 @@ public class TripDistanceRecalculatorTests
             Locations = track,
         });
 
-        await new TripDistanceRecalculator(repository).RecalculateAsync();
+        var recalculator = new TripDistanceRecalculator(repository);
+        bool changed = false;
+        recalculator.Changed += (_, _) => changed = true;
+        await recalculator.RecalculateAsync();
 
         var recalculated = await repository.GetByIdAsync<Trip>(tripId);
         Assert.NotNull(recalculated);
@@ -39,13 +42,16 @@ public class TripDistanceRecalculatorTests
         Assert.Equal(20, recalculated.MovingTime);
         Assert.Equal(10, recalculated.StoppedTime);
         Assert.Equal(recalculated.Distance!.Value / 20, recalculated.AverageSpeed!.Value, 6);
+        Assert.Equal(3, recalculated.ElevationGain);
+        Assert.True(changed);
 
-        LocationModel Point(int seconds, double latitude, double speed) => new()
+        LocationModel Point(int seconds, double latitude, double speed, double altitude) => new()
         {
             ID = Guid.NewGuid(),
             TripID = tripId,
             Latitude = 50 + latitude / 111320,
             Longitude = 8,
+            Altitude = altitude,
             Timestamp = start.AddSeconds(seconds),
             Speed = speed,
         };

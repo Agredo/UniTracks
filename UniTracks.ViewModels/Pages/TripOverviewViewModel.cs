@@ -7,6 +7,7 @@ using UniTracks.Data.Repository;
 using UniTracks.Models.Trip;
 using UniTracks.Services.Comparison;
 using UniTracks.Services.Settings;
+using UniTracks.Services.Stats;
 using UniTracks.ViewModels.Controls.Popups;
 using LocationModel = UniTracks.Models.Location.Location;
 
@@ -49,10 +50,16 @@ public partial class TripOverviewViewModel : ObservableObject
     private string durationText = "-";
 
     [ObservableProperty]
+    private string durationLabel = "DAUER";
+
+    [ObservableProperty]
     private string averageSpeedText = "-";
 
     [ObservableProperty]
-    private string maxSpeedText = "-";
+    private string averageSpeedLabel = "Ø KM/H";
+
+    [ObservableProperty]
+    private string elevationGainText = "-";
 
     /// <summary>Both overlay cards are shown/hidden together by tapping the map.</summary>
     [ObservableProperty]
@@ -175,23 +182,30 @@ public partial class TripOverviewViewModel : ObservableObject
             DistanceUnit = "m";
         }
 
-        TimeSpan duration = TimeSpan.FromSeconds(TripMetrics.ElapsedSeconds(trip));
+        double movingSeconds = TripMetrics.MovingSeconds(trip, locations);
+        TimeSpan duration = TimeSpan.FromSeconds(
+            movingSeconds > 0 ? movingSeconds : TripMetrics.ElapsedSeconds(trip));
         if (duration > TimeSpan.Zero)
         {
+            DurationLabel = movingSeconds > 0 ? "BEWEGUNG" : "DAUER";
             DurationText = duration.TotalHours >= 1
                 ? duration.ToString(@"h\:mm\:ss", GermanCulture)
                 : duration.ToString(@"mm\:ss", GermanCulture);
         }
 
-        if (trip.AverageSpeed is { } averageSpeed)
+        double pace = TripDisplay.SecondsPerKilometer(distanceMeters, movingSeconds);
+        if (pace <= 0 && trip.AverageSpeed is > 0)
         {
-            AverageSpeedText = Math.Round(averageSpeed * 3.6, 1).ToString("0.0", GermanCulture);
+            pace = 1000.0 / trip.AverageSpeed.Value;
         }
 
-        if (trip.MaxSpeed is { } maxSpeed)
-        {
-            MaxSpeedText = Math.Round(maxSpeed * 3.6, 1).ToString("0.0", GermanCulture);
-        }
+        AverageSpeedLabel = TripDisplay.RateLabel(trip.TripType);
+        AverageSpeedText = TripDisplay.FormatRate(trip.TripType, pace);
+        ElevationGainText = trip.ElevationGain is { } storedGain
+            ? Math.Round(storedGain).ToString("0", GermanCulture) + " m"
+            : locations.Count >= 2
+                ? Math.Round(TripMetricsCalculator.ComputeElevationGain(locations)).ToString("0", GermanCulture) + " m"
+                : "-";
 
         ApplyLocationStats(trip);
     }
@@ -220,12 +234,32 @@ public partial class TripOverviewViewModel : ObservableObject
     {
         if (trip.AverageSpeed is null || locations.Count >= 2)
         {
-            AverageSpeedText = FormatSpeed(TripMetrics.AverageSpeedMetersPerSecond(trip, locations));
+            double movingSeconds = TripMetrics.MovingSeconds(trip, locations);
+            double distanceMeters = TripMetrics.DistanceMeters(trip, locations);
+            AverageSpeedLabel = TripDisplay.RateLabel(trip.TripType);
+            AverageSpeedText = TripDisplay.FormatRate(
+                trip.TripType,
+                TripDisplay.SecondsPerKilometer(distanceMeters, movingSeconds));
+        }
+
+        if (locations.Count >= 2)
+        {
+            double movingSeconds = TripMetrics.MovingSeconds(trip, locations);
+            if (movingSeconds > 0)
+            {
+                DurationLabel = "BEWEGUNG";
+                DurationText = FormatDuration(TimeSpan.FromSeconds(movingSeconds));
+            }
+
+            ElevationGainText = Math.Round(
+                TripMetricsCalculator.ComputeElevationGain(locations)).ToString("0", GermanCulture) + " m";
         }
     }
 
-    private static string FormatSpeed(double metersPerSecond)
-        => Math.Round(metersPerSecond * 3.6, 1).ToString("0.0", GermanCulture);
+    private static string FormatDuration(TimeSpan duration) =>
+        duration.TotalHours >= 1
+            ? duration.ToString(@"h\:mm\:ss", GermanCulture)
+            : duration.ToString(@"mm\:ss", GermanCulture);
 
     /// <summary>Resamples the GPS points to at most 100 values so the charts stay cheap to draw.</summary>
     private void BuildProfiles(List<LocationModel> locations)

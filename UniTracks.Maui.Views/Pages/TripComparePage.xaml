@@ -25,11 +25,11 @@
                             <Label
                                 FontFamily="OpenSansSemibold"
                                 FontSize="14"
-                                Text="Alle Lauftypen einbeziehen"
+                                Text="Andere Aktivitätstypen einbeziehen"
                                 TextColor="{StaticResource TextPrimary}" />
                             <Label
                                 FontSize="12"
-                                Text="Bestzeit und Trend bleiben trotzdem auf deinen Lauftyp bezogen."
+                                Text="Bestleistung und Trend bleiben auf den Typ dieses Trips bezogen."
                                 TextColor="{StaticResource TextMuted}" />
                         </VerticalStackLayout>
                         <Switch
@@ -48,6 +48,11 @@
             </Border>
 
             <!-- Loading / indexing -->
+            <ActivityIndicator
+                HorizontalOptions="Center"
+                IsRunning="{Binding IsLoading}"
+                IsVisible="{Binding IsLoading}" />
+
             <VerticalStackLayout IsVisible="{Binding IsIndexing}" Spacing="6">
                 <ActivityIndicator HorizontalOptions="Center" IsRunning="{Binding IsIndexing}" />
                 <Label
@@ -97,6 +102,11 @@
                             IsVisible="{Binding HasTrend}"
                             Text="{Binding TrendText}"
                             TextColor="{StaticResource Accent}" />
+                        <Label
+                            FontSize="12"
+                            IsVisible="{Binding HasRecentMedian}"
+                            Text="{Binding RecentMedianText}"
+                            TextColor="{StaticResource TextSecondary}" />
                     </VerticalStackLayout>
                 </Border>
 
@@ -151,8 +161,14 @@
                                             <Label
                                                 FontSize="11"
                                                 IsVisible="{Binding IsBest}"
-                                                Text="BESTZEIT"
-                                                TextColor="{StaticResource Record}"
+                                                Text="{Binding BestLabel}"
+                                                TextColor="{StaticResource Accent}"
+                                                VerticalOptions="Center" />
+                                            <Label
+                                                FontSize="11"
+                                                IsVisible="{Binding IsCurrent}"
+                                                Text="AKTUELL"
+                                                TextColor="{StaticResource Accent}"
                                                 VerticalOptions="Center" />
                                             <Label
                                                 FontSize="11"
@@ -202,12 +218,12 @@
                         FontSize="11"
                         HorizontalTextAlignment="Center"
                         IsVisible="{Binding IsSelectionFull}"
-                        Text="Mehr als 8 Läufe passen nicht in einen Vergleich."
+                        Text="Mehr als 8 Trips passen nicht in einen Vergleich."
                         TextColor="{StaticResource Record}" />
                     <Label
                         FontSize="11"
                         HorizontalTextAlignment="Center"
-                        Text="{Binding SelectedCount, StringFormat='{0} ausgewählt · der schnellste Lauf wird die Basis'}"
+                        Text="{Binding SelectedCount, StringFormat='{0} ausgewählt · der schnellste Trip wird die Basis'}"
                         TextColor="{StaticResource TextMuted}" />
                 </VerticalStackLayout>
             </VerticalStackLayout>
@@ -215,25 +231,10 @@
             <!-- Similar routes: candidates that share ground without being the same route. A section of
                  their own, because they are not repeats and must not be read as attempts. -->
             <VerticalStackLayout IsVisible="{Binding HasSimilarRoutes}" Spacing="10">
-                <Grid ColumnDefinitions="*,Auto" ColumnSpacing="10">
-                    <Label
-                        Grid.Column="0"
-                        Style="{StaticResource SectionHeader}"
-                        Text="ÄHNLICHE STRECKEN"
-                        VerticalOptions="Center" />
-                    <Button
-                        Grid.Column="1"
-                        Command="{Binding CompareSimilarCommand}"
-                        FontSize="12"
-                        MinimumHeightRequest="32"
-                        Padding="12,4"
-                        Style="{StaticResource SecondaryButton}"
-                        Text="Alle vergleichen"
-                        VerticalOptions="Center" />
-                </Grid>
+                <Label Style="{StaticResource SectionHeader}" Text="ÄHNLICHE STRECKEN" />
                 <Label
                     FontSize="12"
-                    Text="Diese Trips verlaufen ganz oder teilweise auf denselben Wegen. Sie zählen nicht zur Bestzeit — tippe sie an, um sie direkt zu vergleichen."
+                    Text="Diese Trips verlaufen teilweise auf denselben Wegen. Sie zählen nicht zur Bestleistung; tippe einen an, um ihn direkt zu vergleichen."
                     TextColor="{StaticResource TextMuted}" />
 
                 <VerticalStackLayout BindableLayout.ItemsSource="{Binding SimilarTrips}" Spacing="8">
@@ -249,7 +250,7 @@
                                             TextColor="{StaticResource TextPrimary}" />
                                         <Label
                                             FontSize="12"
-                                            Text="{Binding DateText}"
+                                            Text="{Binding MetaText}"
                                             TextColor="{StaticResource TextMuted}" />
                                         <Label
                                             FontSize="11"
@@ -286,7 +287,7 @@
                 <Label Style="{StaticResource SectionHeader}" Text="VERGLEICHBARER UMFANG" />
                 <Label
                     FontSize="12"
-                    Text="Andere Strecken mit ähnlicher Länge und Anstrengung — zum Vergleichen der Leistung."
+                    Text="Andere Strecken mit ähnlicher Distanz und ähnlichem Höhenprofil. Das Tempo darf bewusst abweichen."
                     TextColor="{StaticResource TextMuted}" />
 
                 <VerticalStackLayout BindableLayout.ItemsSource="{Binding ComparableTrips}" Spacing="8">
@@ -302,7 +303,7 @@
                                             TextColor="{StaticResource TextPrimary}" />
                                         <Label
                                             FontSize="12"
-                                            Text="{Binding DateText}"
+                                            Text="{Binding MetaText}"
                                             TextColor="{StaticResource TextMuted}" />
                                         <Label
                                             FontSize="11"

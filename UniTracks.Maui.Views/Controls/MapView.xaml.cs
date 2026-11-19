@@ -140,6 +140,34 @@ public partial class MapView : ContentView
         set => SetValue(ComparisonRoutesProperty, value);
     }
 
+    public static readonly BindableProperty PrimaryRouteColorHexProperty = BindableProperty.Create(
+        nameof(PrimaryRouteColorHex),
+        typeof(string),
+        typeof(MapView),
+        null,
+        propertyChanged: OnPrimaryRouteColorHexPropertyChanged);
+
+    /// <summary>
+    /// Optional uniform colour for the main route. Comparison views use it so every trip is encoded
+    /// with the same meaning on the map; leaving it null keeps the normal speed colouring.
+    /// </summary>
+    public string? PrimaryRouteColorHex
+    {
+        get => (string?)GetValue(PrimaryRouteColorHexProperty);
+        set => SetValue(PrimaryRouteColorHexProperty, value);
+    }
+
+    private static void OnPrimaryRouteColorHexPropertyChanged(
+        BindableObject bindable,
+        object oldValue,
+        object newValue)
+    {
+        if (bindable is MapView mapView && mapView.drawnLocations is { Count: > 0 } locations)
+        {
+            mapView.DrawRoute(locations);
+        }
+    }
+
     private static void OnComparisonRoutesPropertyChanged(BindableObject bindable, object oldValue, object newValue)
     {
         if (bindable is MapView mapView)
@@ -299,7 +327,22 @@ public partial class MapView : ContentView
         // arrows with the section of track they sit on.
         var speeds = projected.Length > 1 ? ComputeSegmentSpeeds(smoothed) : [];
 
-        if (projected.Length > 1)
+        if (projected.Length > 1 && !string.IsNullOrWhiteSpace(PrimaryRouteColorHex))
+        {
+            var line = new LineString(projected
+                .Select(point => new Coordinate(point.x, point.y))
+                .ToArray());
+            var feature = new GeometryFeature(line);
+            feature.Styles.Add(new Mapsui.Styles.VectorStyle
+            {
+                Line = new Mapsui.Styles.Pen(ToMapsuiColor(Color.FromArgb(PrimaryRouteColorHex)), 5)
+                {
+                    PenStrokeCap = Mapsui.Styles.PenStrokeCap.Round
+                }
+            });
+            routeLayer.Features = new[] { feature };
+        }
+        else if (projected.Length > 1)
         {
             var minSpeed = speeds.Min();
             var maxSpeed = speeds.Max();
@@ -331,7 +374,10 @@ public partial class MapView : ContentView
         {
             var dotStyle = new Mapsui.Styles.VectorStyle
             {
-                Fill = new Mapsui.Styles.Brush(new Mapsui.Styles.Color(255, 0, 0))
+                Fill = new Mapsui.Styles.Brush(
+                    string.IsNullOrWhiteSpace(PrimaryRouteColorHex)
+                        ? new Mapsui.Styles.Color(255, 0, 0)
+                        : ToMapsuiColor(Color.FromArgb(PrimaryRouteColorHex)))
             };
             routeLayer.Style = dotStyle;
             routeLayer.Features = new[] { new PointFeature(projected[0].x, projected[0].y) };
@@ -339,9 +385,12 @@ public partial class MapView : ContentView
 
         ControlMapView.Map.Layers.Add(routeLayer);
 
-        // Direction of travel: arrows that march from start to finish along the smoothed track,
-        // plus a checkered finish flag on the last point.
-        CreateDirectionLayer(projected, speeds, TotalMetres(smoothed));
+        // Direction and speed colours are useful for a single trip, but in comparison mode the route
+        // colour belongs to the athlete's selected trip and must not carry a second meaning.
+        if (string.IsNullOrWhiteSpace(PrimaryRouteColorHex))
+        {
+            CreateDirectionLayer(projected, speeds, TotalMetres(smoothed));
+        }
 
         // Drawn last and always from the current property value, so it does not matter in which order
         // the tracks were assigned: the comparison routes end up on top.

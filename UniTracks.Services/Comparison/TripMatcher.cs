@@ -200,23 +200,17 @@ public static class TripMatcher
                 continue;
             }
 
-            double effortSimilarity = EffortModel.EffortSimilarity(target.EffortScore, candidate.EffortScore);
-            if (effortSimilarity < effective.EffortMinimumScoreSimilarity)
-            {
-                continue;
-            }
-
             // Climbing character: figures in so a flat 10 km is not sold as the twin of a 10 km
-            // with 400 m of ascent that happens to average out the same.
+            // with 400 m of ascent. Pace is deliberately not a match criterion: a faster and a
+            // slower training day are exactly the two performances an athlete wants to compare.
             double climbSimilarity = RelativeSimilarity(
                 ClimbDensity(target),
                 ClimbDensity(candidate));
 
             bool sameTripType = SharesTripType(target, candidate, effective);
 
-            double score = 0.35 * distanceSimilarity
-                + 0.40 * effortSimilarity
-                + 0.10 * climbSimilarity
+            double score = 0.45 * distanceSimilarity
+                + 0.40 * climbSimilarity
                 + effective.EffortTripTypeWeight * (sameTripType ? 1 : 0);
 
             double effortDelta = candidate.EffortScore - target.EffortScore;
@@ -226,7 +220,7 @@ public static class TripMatcher
                 Candidate = candidate,
                 Kind = TripMatchKind.ComparableEffort,
                 Score = score,
-                Label = Label(effortSimilarity, effective, sameTripType, candidate.TripIdentifier),
+                Label = Label(distanceSimilarity, climbSimilarity, effective, sameTripType, candidate.TripIdentifier),
                 EffortDeltaMetersPerSecond = effortDelta,
             });
         }
@@ -299,14 +293,16 @@ public static class TripMatcher
 
     /// <summary>Wording for a comparable-effort hit, so the list explains what it is rather than scoring it.</summary>
     private static string Label(
-        double effortSimilarity,
+        double distanceSimilarity,
+        double climbSimilarity,
         TripSimilarityOptions options,
         bool sameTripType,
         string candidateIdentifier)
     {
-        string basis = effortSimilarity >= options.EffortStrongScoreSimilarity
-            ? "Vergleichbare Leistung"
-            : "Ähnlicher Umfang";
+        string basis = distanceSimilarity >= options.EffortStrongDistanceSimilarity
+            && climbSimilarity >= options.EffortStrongClimbSimilarity
+                ? "Sehr ähnlicher Umfang"
+                : "Ähnlicher Umfang";
 
         // Same family, different discipline (a trail run against a flat run). Worth naming, because it
         // is a fair comparison but not a like-for-like one.

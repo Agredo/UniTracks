@@ -27,7 +27,10 @@ public sealed record RouteAttempt
     /// <summary>1-based position in chronological order.</summary>
     public required int Number { get; init; }
 
-    /// <summary>Seconds per equivalent kilometre; the value attempts are ranked by.</summary>
+    /// <summary>Actual seconds per kilometre; the value attempts are ranked by.</summary>
+    public required double PaceSecondsPerKilometer { get; init; }
+
+    /// <summary>Seconds per model-adjusted kilometre, shown only as a clearly labelled estimate.</summary>
     public required double EquivalentPaceSecondsPerKilometer { get; init; }
 
     /// <summary>Seconds per kilometre slower than the best attempt of the same trip type.</summary>
@@ -87,7 +90,7 @@ public sealed record RouteHistory
     public RouteAttempt? Best { get; init; }
 
     /// <summary>
-    /// Change in equivalent pace per 30 days, from a least-squares fit over the attempts of the
+    /// Change in actual pace per 30 days, from a least-squares fit over the attempts of the
     /// current trip's own type. Negative means getting faster. Zero when there are too few of them.
     /// </summary>
     public double TrendSecondsPerKilometerPerMonth { get; init; }
@@ -95,7 +98,7 @@ public sealed record RouteHistory
     /// <summary>Short German verdict on the trend, e.g. "Wird schneller".</summary>
     public required string TrendLabel { get; init; }
 
-    /// <summary>One line for the section header, e.g. "4× gelaufen · Bestzeit 24:12".</summary>
+    /// <summary>One line for the section header, e.g. "4× auf dieser Strecke · Beste Pace 5:02 /km".</summary>
     public required string Headline { get; init; }
 
     /// <summary>
@@ -103,6 +106,11 @@ public sealed record RouteHistory
     /// trip's own type.
     /// </summary>
     public double FirstToLatestSecondsPerKilometer { get; init; }
+
+    /// <summary>Median of the most recent same-type attempts, limited to the last five.</summary>
+    public double RecentMedianPaceSecondsPerKilometer { get; init; }
+
+    public int RecentMedianAttemptCount { get; init; }
 }
 
 /// <summary>
@@ -165,7 +173,7 @@ public static class RouteHistoryBuilder
             {
                 Attempts = Array.Empty<RouteAttempt>(),
                 TrendLabel = string.Empty,
-                Headline = "Noch keine Vergleichsfahrten",
+                Headline = "Noch keine Vergleichs-Trips",
             };
         }
 
@@ -177,7 +185,10 @@ public static class RouteHistoryBuilder
                 Entry = entry,
                 Index = index,
                 IsSameTripType = IsSameTripType(currentIdentifier, entry.Fingerprint),
-                Pace = EffortModel.EquivalentPaceSecondsPerKilometer(
+                Pace = TripDisplay.SecondsPerKilometer(
+                    entry.Fingerprint.DistanceMeters,
+                    entry.Fingerprint.MovingSeconds),
+                EquivalentPace = EffortModel.EquivalentPaceSecondsPerKilometer(
                     entry.Fingerprint.DistanceMeters,
                     entry.Fingerprint.MovingSeconds,
                     entry.Fingerprint.ElapsedSeconds,
@@ -201,7 +212,8 @@ public static class RouteHistoryBuilder
                 Trip = p.Entry.Trip,
                 Fingerprint = p.Entry.Fingerprint,
                 Number = p.Index + 1,
-                EquivalentPaceSecondsPerKilometer = p.Pace,
+                PaceSecondsPerKilometer = p.Pace,
+                EquivalentPaceSecondsPerKilometer = p.EquivalentPace,
                 DeltaToBestSeconds = best > 0 && p.Pace > 0 ? p.Pace - best : 0,
                 DeltaToPreviousSeconds = previousSameTypePace > 0 && p.Pace > 0 ? p.Pace - previousSameTypePace : 0,
                 IsSameTripType = p.IsSameTripType,
@@ -225,10 +237,16 @@ public static class RouteHistoryBuilder
 
         double trend = Trend(own);
         double firstToLatest = own.Count >= 2
-            && own[0].EquivalentPaceSecondsPerKilometer > 0
-            && own[^1].EquivalentPaceSecondsPerKilometer > 0
-                ? own[^1].EquivalentPaceSecondsPerKilometer - own[0].EquivalentPaceSecondsPerKilometer
+            && own[0].PaceSecondsPerKilometer > 0
+            && own[^1].PaceSecondsPerKilometer > 0
+                ? own[^1].PaceSecondsPerKilometer - own[0].PaceSecondsPerKilometer
                 : 0;
+        var recent = own
+            .Where(attempt => attempt.PaceSecondsPerKilometer > 0)
+            .TakeLast(5)
+            .Select(attempt => attempt.PaceSecondsPerKilometer)
+            .Order()
+            .ToList();
 
         return new RouteHistory
         {
@@ -238,8 +256,10 @@ public static class RouteHistoryBuilder
             Best = bestAttempt,
             TrendSecondsPerKilometerPerMonth = trend,
             TrendLabel = TrendLabel(own.Count, trend),
-            Headline = Headline(own.Count, bestAttempt, attempts.Count - own.Count),
+            Headline = Headline(currentTrip.TripType, own.Count, bestAttempt, attempts.Count - own.Count),
             FirstToLatestSecondsPerKilometer = firstToLatest,
+            RecentMedianPaceSecondsPerKilometer = Median(recent),
+            RecentMedianAttemptCount = recent.Count,
         };
     }
 
@@ -258,11 +278,11 @@ public static class RouteHistoryBuilder
         return string.Equals(currentIdentifier, candidate.TripIdentifier, StringComparison.OrdinalIgnoreCase);
     }
 
-    /// <summary>Least-squares slope of equivalent pace against time, normalized to 30 days.</summary>
+    /// <summary>Least-squares slope of actual pace against time, normalized to 30 days.</summary>
     private static double Trend(IReadOnlyList<RouteAttempt> attempts)
     {
         var usable = attempts
-            .Where(attempt => attempt.EquivalentPaceSecondsPerKilometer > 0)
+            .Where(attempt => attempt.PaceSecondsPerKilometer > 0)
             .ToList();
 
         if (usable.Count < MinimumAttemptsForTrend)
@@ -272,7 +292,7 @@ public static class RouteHistoryBuilder
 
         var origin = usable[0].Trip.StartTime;
         var xs = usable.Select(attempt => (attempt.Trip.StartTime - origin).TotalDays).ToList();
-        var ys = usable.Select(attempt => attempt.EquivalentPaceSecondsPerKilometer).ToList();
+        var ys = usable.Select(attempt => attempt.PaceSecondsPerKilometer).ToList();
 
         double meanX = xs.Average();
         double meanY = ys.Average();
@@ -299,7 +319,7 @@ public static class RouteHistoryBuilder
     {
         if (attemptCount < MinimumAttemptsForTrend)
         {
-            return attemptCount > 1 ? "Noch zu wenige Läufe für einen Trend" : string.Empty;
+            return attemptCount > 1 ? "Noch zu wenige Trips für einen Trend" : string.Empty;
         }
 
         return trend switch
@@ -310,30 +330,45 @@ public static class RouteHistoryBuilder
         };
     }
 
-    private static string Headline(int ownTypeCount, RouteAttempt? best, int otherTypeCount)
+    private static string Headline(
+        TripType? tripType,
+        int ownTypeCount,
+        RouteAttempt? best,
+        int otherTypeCount)
     {
         if (ownTypeCount == 0 && otherTypeCount == 0)
         {
-            return "Noch keine Vergleichsfahrten";
+            return "Noch keine Vergleichs-Trips";
         }
 
-        string count = ownTypeCount == 1 ? "1× gelaufen" : $"{ownTypeCount}× gelaufen";
+        string count = ownTypeCount == 1 ? "1× auf dieser Strecke" : $"{ownTypeCount}× auf dieser Strecke";
 
         if (best is null)
         {
             return otherTypeCount > 0 ? $"{count} · +{otherTypeCount} anderer Typ" : count;
         }
 
-        var moving = TimeSpan.FromSeconds(best.Fingerprint.MovingSeconds);
-        string bestTime = moving.TotalHours >= 1
-            ? moving.ToString(@"h\:mm\:ss")
-            : moving.ToString(@"mm\:ss");
+        string bestLabel = TripDisplay.IsPace(tripType) ? "Beste Pace" : "Bestes Ø-Tempo";
+        string bestRate = TripDisplay.FormatRateWithUnit(tripType, best.PaceSecondsPerKilometer);
 
-        string headline = $"{count} · Bestzeit {bestTime}";
+        string headline = $"{count} · {bestLabel} {bestRate}";
 
         // Say out loud that the list is longer than the count, otherwise the two numbers contradict.
         return otherTypeCount > 0
             ? $"{headline} · +{otherTypeCount} anderer Typ"
             : headline;
+    }
+
+    private static double Median(IReadOnlyList<double> ordered)
+    {
+        if (ordered.Count == 0)
+        {
+            return 0;
+        }
+
+        int middle = ordered.Count / 2;
+        return ordered.Count % 2 == 1
+            ? ordered[middle]
+            : (ordered[middle - 1] + ordered[middle]) / 2.0;
     }
 }

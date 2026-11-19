@@ -117,6 +117,8 @@ public class GpsDataStorageService : IGpsDataStorageService
                 var (moving, stopped) = TripMetricsCalculator.ComputeMovingAndStopped(currentTrip.Locations);
                 currentTrip.MovingTime = moving.TotalSeconds;
                 currentTrip.StoppedTime = stopped.TotalSeconds;
+                currentTrip.ElevationGain =
+                    TripMetricsCalculator.ComputeElevationGain(currentTrip.Locations);
             }
 
             currentTrip.AverageSpeed = TripMetrics.AverageSpeedMetersPerSecond(currentTrip, currentTrip.Locations);

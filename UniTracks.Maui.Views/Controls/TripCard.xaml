@@ -85,7 +85,10 @@
                 <Grid x:Name="StatsGrid" ColumnDefinitions="*,*,*" ColumnSpacing="8">
                     <Border Grid.Column="0" Style="{StaticResource ChipBorder}">
                         <VerticalStackLayout Spacing="2">
-                            <Label Style="{StaticResource StatLabel}" Text="DAUER" />
+                            <Label
+                                x:Name="DurationStatLabel"
+                                Style="{StaticResource StatLabel}"
+                                Text="DAUER" />
                             <Label
                                 x:Name="DurationValueLabel"
                                 FontFamily="OpenSansSemibold"
@@ -95,7 +98,10 @@
                     </Border>
                     <Border Grid.Column="1" Style="{StaticResource ChipBorder}">
                         <VerticalStackLayout Spacing="2">
-                            <Label Style="{StaticResource StatLabel}" Text="&#xD8; KM/H" />
+                            <Label
+                                x:Name="AverageSpeedStatLabel"
+                                Style="{StaticResource StatLabel}"
+                                Text="&#xD8; KM/H" />
                             <Label
                                 x:Name="AverageSpeedValueLabel"
                                 FontFamily="OpenSansSemibold"
@@ -105,9 +111,9 @@
                     </Border>
                     <Border Grid.Column="2" Style="{StaticResource ChipBorder}">
                         <VerticalStackLayout Spacing="2">
-                            <Label Style="{StaticResource StatLabel}" Text="MAX KM/H" />
+                            <Label Style="{StaticResource StatLabel}" Text="HÖHENMETER" />
                             <Label
-                                x:Name="MaxSpeedValueLabel"
+                                x:Name="ElevationGainValueLabel"
                                 FontFamily="OpenSansSemibold"
                                 FontSize="15"
                                 Text="-" />
@@ -141,8 +147,9 @@
                     </HorizontalStackLayout>
                     <HorizontalStackLayout x:Name="ElevationBlock" IsVisible="False" Spacing="4">
                         <Label
+                            x:Name="ElevationIconLabel"
                             FontSize="13"
-                            Text="&#x25B2;"
+                            Text="&#x2195;"
                             TextColor="{StaticResource TextMuted}"
                             VerticalTextAlignment="Center" />
                         <Label

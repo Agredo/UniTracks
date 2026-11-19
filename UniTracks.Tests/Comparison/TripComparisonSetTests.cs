@@ -42,7 +42,7 @@ public class TripComparisonSetTests
         Assert.Equal(66.7, set.Ranking[2].DeltaSecondsPerKilometer, 1);
 
         Assert.Equal(133.3, set.PaceSpreadSecondsPerKilometer, 1);
-        Assert.Equal("Schnell war der schnellste von 3 Läufen", set.Verdict);
+        Assert.Equal("Schnell war der schnellste von 3 Trips", set.Verdict);
         Assert.Contains("Schnell", set.VerdictDetail);
     }
 
@@ -82,7 +82,7 @@ public class TripComparisonSetTests
             Side("Basis", distanceMeters: 3000, movingSeconds: 1000),
             Side("Ohne Daten", distanceMeters: 3000, movingSeconds: 900) with
             {
-                EquivalentPaceSecondsPerKilometer = 0,
+                MovingSeconds = 0,
             },
             Side("Zweitbeste", distanceMeters: 3000, movingSeconds: 1100),
         };
@@ -111,9 +111,9 @@ public class TripComparisonSetTests
 
         var set = TripComparisonCalculator.CompareSet(sides);
 
-        Assert.Equal("Mai war der schnellste von 3 Läufen", set.Verdict);
+        Assert.Equal("Mai war der schnellste von 3 Trips", set.Verdict);
         Assert.Contains("Mai war Ø 40 s/km schneller als März", set.VerdictDetail);
-        Assert.Contains("zwischen schnellstem und langsamstem Lauf liegen 40 s/km", set.VerdictDetail);
+        Assert.Contains("zwischen schnellstem und langsamstem Trip liegen 40 s/km", set.VerdictDetail);
         Assert.Null(set.FairnessNote);
     }
 
@@ -245,6 +245,42 @@ public class TripComparisonSetTests
         Assert.Equal(
             Enumerable.Range(0, TripComparisonPalette.MaxMembers),
             set.Members.Select(member => member.Index));
+    }
+
+    [Fact]
+    public void RankingUsesActualPace_NotTheClimbAdjustedEstimate()
+    {
+        var actualFast = Side("Tatsächlich schnell", 3000, 900) with
+        {
+            EquivalentPaceSecondsPerKilometer = 500,
+        };
+        var modelFast = Side("Nur im Modell schnell", 3000, 1000) with
+        {
+            EquivalentPaceSecondsPerKilometer = 250,
+        };
+
+        var set = TripComparisonCalculator.CompareSet(new[] { actualFast, modelFast });
+
+        Assert.Equal("Tatsächlich schnell", set.Ranking[0].Member.Name);
+    }
+
+    [Fact]
+    public void FasterFlagsUseActualPace_LikeTheVerdict()
+    {
+        var a = Side("Hügelig", 3000, 900) with
+        {
+            EquivalentPaceSecondsPerKilometer = 220,
+        };
+        var b = Side("Flach", 3000, 870) with
+        {
+            EquivalentPaceSecondsPerKilometer = 300,
+        };
+
+        var comparison = TripComparisonCalculator.Compare(a, b);
+
+        Assert.True(comparison.BIsFaster);
+        Assert.False(comparison.AIsFaster);
+        Assert.Contains("Flach war schneller", comparison.Verdict);
     }
 
     private static TripComparisonSide Side(string name, double distanceMeters, double movingSeconds)

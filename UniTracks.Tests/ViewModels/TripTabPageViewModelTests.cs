@@ -14,7 +14,9 @@ public sealed class TripTabPageViewModelTests
 {
     private sealed class Fixture
     {
-        public Fixture(Action<InMemoryRepository>? seed = null, Action<FakeTripFilterSettings>? seedFilters = null)
+        public Fixture(
+            Action<InMemoryRepository>? seed = null,
+            Action<FakeTripFilterSettings>? seedFilters = null)
         {
             // The constructor loads the trips, so the seed has to be in place beforehand.
             seed?.Invoke(Repository);

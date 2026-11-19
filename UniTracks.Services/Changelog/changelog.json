@@ -7,6 +7,18 @@
       "changes": [
         {
           "kind": "improvement",
+          "text": "Trip-Zusammenfassung und Vergleich sind sportgerechter: Die Karten zeigen Bewegungszeit, Pace oder Tempo in km/h und echte kumulierte Höhenmeter. Der Vergleich stellt Rohwerte in den Vordergrund, kennzeichnet die Höhenkorrektur ausdrücklich als Modell und zeigt bei jedem Delta klar, ob Trip B tatsächlich besser oder schlechter war."
+        },
+        {
+          "kind": "improvement",
+          "text": "Trip-Vergleiche sind genauer lesbar: Gleich- und ähnlich Strecken bleiben getrennt, \"Vergleichbarer Umfang\" sucht jetzt nach ähnlicher Distanz und ähnlich viel Anstieg statt nach gleichem Tempo. Die Karte nutzt pro Trip eine eindeutige Farbe, das Diagramm hat lesbare Kilometer- und Tempo-Achsen und Kilometer-Splits bleiben unglättet."
+        },
+        {
+          "kind": "fix",
+          "text": "Die zuletzt gewählten Aktivitätstypen auf der Record-Seite bleiben über einen App-Neustart erhalten. Die Chips umbrechen bei langen Namen, zeigen Symbol und Auswahl deutlich und bleiben bis zu vier Einträgen lang."
+        },
+        {
+          "kind": "improvement",
           "text": "Alle Bibliotheken, auf denen die App aufbaut, sind auf dem neuesten Stand: .NET MAUI 11.0.10, CommunityToolkit.Maui 17.0.0, Mapsui 5.2.0, SkiaSharp 3.119.4 und die Agredo-Bibliotheken 1.3.0. Das bringt Fehlerbehebungen und schnellere Bedienoberflächen mit, an der Bedienung selbst ändert sich nichts."
         }
       ]

@@ -83,13 +83,13 @@ public partial class HelpPageViewModel : ObservableObject
             {
                 Title = "Trip nachträglich bearbeiten",
                 Icon = "✏️",
-                Body = "In der Trip-Übersicht öffnet der Bearbeiten-Dialog Name, Sportart und Notiz zum Ändern. Wechselst du die Sportart, gilt der Trip ab sofort als dieser Lauftyp: Vorschläge für ähnliche Strecken, Vergleich und Bestzeiten richten sich danach neu aus, weil der Streckenabdruck mit der neuen Sportart neu berechnet wird.",
+                Body = "In der Trip-Übersicht öffnet der Bearbeiten-Dialog Name, Sportart und Notiz zum Ändern. Wechselst du die Sportart, gilt der Trip ab sofort als dieser Aktivitätstyp: Vorschläge, Vergleich und Bestleistung richten sich danach neu aus, weil der Streckenabdruck mit der neuen Sportart neu berechnet wird.",
             },
             new HelpItem
             {
                 Title = "Lange Trip-Liste",
                 Icon = "📜",
-                Body = "Die Trip-Liste zeigt die letzten 15 Läufe und lädt beim Scrollen jeweils 15 weitere nach; passt der erste Block aufs Display, steht unten der Knopf »Weitere Trips laden«. So bleibt der Tab auch mit Hunderten von Trips schnell, weil nur die Karten gebaut werden, die du gerade siehst.",
+                Body = "Die Trip-Liste zeigt die letzten 15 Trips und lädt beim Scrollen jeweils 15 weitere nach; passt der erste Block aufs Display, steht unten der Knopf »Weitere Trips laden«. Die Karten zeigen Distanz, Bewegungszeit, sportgerechtes Tempo und echte kumulierte Höhenmeter. So bleibt der Tab auch mit Hunderten von Trips schnell, weil nur die Karten gebaut werden, die du gerade siehst.",
             },
             new HelpItem
             {
@@ -102,15 +102,15 @@ public partial class HelpPageViewModel : ObservableObject
                 Title = "Vergleichen starten",
                 Icon = "🔀",
                 Body = "Öffne einen Trip und tippe auf »Vergleichen«. Die Seite schlägt die anderen Trips in drei Gruppen vor:\n" +
-                       "• »Gleiche Strecke« — exakt dieselbe Strecke; diese Läufe zählen zur Bestzeit.\n" +
-                       "• »Ähnliche Strecken« — ganz oder teilweise dieselben Wege.\n" +
-                       "• »Vergleichbarer Umfang« — andere Strecken mit ähnlicher Länge und Anstrengung, gedacht für den Leistungsvergleich.",
+                       "• »Gleiche Strecke« — dieselbe Strecke; nur diese Trips zählen zur Bestleistung und zum Trend.\n" +
+                       "• »Ähnliche Strecken« — ganz oder teilweise dieselben Wege; sie werden nicht als Wiederholung gezählt.\n" +
+                       "• »Vergleichbarer Umfang« — andere Strecken mit ähnlicher Distanz und ähnlichem Höhenprofil; bewusst auch mit anderem Tempo.",
             },
             new HelpItem
             {
                 Title = "Mehrere Läufe auf einmal vergleichen",
                 Icon = "📊",
-                Body = "Du musst dich nicht auf zwei Läufe beschränken: Tippe in einer der Listen mehrere Läufe an (bis zu acht) und starte mit »Auswahl vergleichen«. Der schnellste Lauf wird dabei automatisch die Basis, gegen die alle anderen gerechnet werden — so siehst du über Monate hinweg, wie du dich auf derselben Runde entwickelt hast.",
+                Body = "Du musst dich nicht auf zwei Trips beschränken: Tippe unter »Gleiche Strecke« auf »Auswählen«, markiere zwei bis acht Trips und starte mit »Auswahl vergleichen«. Der schnellste Trip wird dabei automatisch die Basis, gegen die alle anderen gerechnet werden — so siehst du über Monate hinweg, wie du dich auf derselben Runde entwickelt hast.",
             },
             new HelpItem
             {
@@ -122,16 +122,16 @@ public partial class HelpPageViewModel : ObservableObject
             {
                 Title = "Was der Vergleich zeigt",
                 Icon = "📈",
-                Body = "• Die Strecken übereinander auf der Karte — jeder Lauf in eigener Farbe, die Färbung folgt dem Tempo.\n" +
-                       "• Eine Rangliste, sortiert nach steigungsbereinigter Pace, mit Zeit, Pace und der Abweichung Δ zur Basis.\n" +
-                       "• Kennzahlen und den Pace-Verlauf aller Läufe auf einer gemeinsamen Skala.\n" +
-                       "• Kilometer-Splits für die gemeinsam gelaufenen Kilometer — dort siehst du je Kilometer, wer schneller war.",
+                Body = "• Die Strecken übereinander auf der Karte — jeder Trip in einer eigenen Farbe und mit derselben Farbbedeutung.\n" +
+                       "• Eine Rangliste nach tatsächlichem Tempo, mit Bewegungszeit und Abweichung Δ zur Basis.\n" +
+                       "• Rohes Tempo und eine separat gekennzeichnete Modell-Pace; außerdem ein Diagramm mit sichtbaren Kilometer- und Tempowerten, ohne geglättete Vergleichskurve.\n" +
+                       "• Exakte Kilometer-Splits für die gemeinsamen Kilometer — dort siehst du je Kilometer, wer schneller war.",
             },
             new HelpItem
             {
                 Title = "Lauftyp und Fairness",
                 Icon = "⚖️",
-                Body = "Verglichen wird zuerst nur innerhalb desselben Lauftyps: Laufen bleibt unter Laufen. Der Schalter »Alle Lauftypen einbeziehen« nimmt Walk und Trailrun dazu; Bestzeit und Trend bleiben trotzdem auf deinen eigenen Lauftyp bezogen. Wenn Länge, Höhenmeter oder Pausen den Vergleich unfair machen, sagt die App es dir oben im Ergebnis.",
+                Body = "Verglichen wird zuerst nur innerhalb desselben Aktivitätstyps: Laufen bleibt bei Laufen. »Andere Aktivitätstypen einbeziehen« nimmt etwa Walk oder Trailrun derselben Sportart dazu; Bestleistung und Trend bleiben auf deinen eigenen Typ bezogen. Roh-Pace ist die Hauptaussage, die Höhenkorrektur ist nur ein Modell. Länge, Höhenmeter, Pause, Puls und Wetter bleiben als Kontext sichtbar; relevante Unterschiede warnt die App oben im Ergebnis.",
             },
         },
     };

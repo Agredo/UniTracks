@@ -190,6 +190,18 @@ public class TripMatcherTripTypeTests
     }
 
     [Fact]
+    public void ComparableEffort_DoesNotRequireSimilarPace()
+    {
+        var target = FixedFingerprint(Run, 50.0, 8.0, movingSeconds: 2000);
+        var slower = FixedFingerprint(Run, 51.0, 9.0, "langsamer", movingSeconds: 5000);
+
+        var matches = TripMatcher.FindComparableEffort(target, new[] { slower });
+
+        Assert.Single(matches);
+        Assert.Equal(slower.TripID, matches[0].Candidate.TripID);
+    }
+
+    [Fact]
     public void ComparableEffort_NamesTheDeviatingType()
     {
         var options = TripSimilarityOptions.Default.WithTripTypeFilter(includeAllTripTypes: true);
@@ -302,9 +314,14 @@ public class TripMatcherTripTypeTests
         return TripFingerprintBuilder.Build(trip, type?.Instance) ?? throw new InvalidOperationException("fingerprint");
     }
 
-    private static TripFingerprint FixedFingerprint(TripTypeRunFixture? type, double latitude, double longitude, string name = "ziel")
+    private static TripFingerprint FixedFingerprint(
+        TripTypeRunFixture? type,
+        double latitude,
+        double longitude,
+        string name = "ziel",
+        double movingSeconds = 3000)
     {
-        var trip = ComparisonFixtures.Fixed(Guid.NewGuid(), name, type?.Instance, latitude, longitude, 10_000, 3000);
+        var trip = ComparisonFixtures.Fixed(Guid.NewGuid(), name, type?.Instance, latitude, longitude, 10_000, movingSeconds);
         return TripFingerprintBuilder.Build(trip, type?.Instance) ?? throw new InvalidOperationException("fingerprint");
     }
 

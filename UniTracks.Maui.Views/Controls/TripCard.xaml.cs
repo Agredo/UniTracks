@@ -29,7 +29,7 @@ public partial class TripCard : Microsoft.Maui.Controls.ContentView
     [BindableProperty]
     public partial DateTimeOffset TripEndDateTime { get; set; }
 
-    [BindableProperty(PropertyChangedMethodName = nameof(OnMaxSpeedPropertyChanged))]
+    [BindableProperty]
     public partial double MaxSpeed { get; set; }
 
     [BindableProperty]
@@ -43,6 +43,12 @@ public partial class TripCard : Microsoft.Maui.Controls.ContentView
 
     [BindableProperty(PropertyChangedMethodName = nameof(OnDurationPropertyChanged))]
     public partial TimeSpan Duration { get; set; }
+
+    [BindableProperty(PropertyChangedMethodName = nameof(OnMovingTimePropertyChanged))]
+    public partial double? MovingTime { get; set; }
+
+    [BindableProperty(PropertyChangedMethodName = nameof(OnElevationGainPropertyChanged))]
+    public partial double? ElevationGain { get; set; }
 
     [BindableProperty(PropertyChangedMethodName = nameof(OnTripTypePropertyChanged))]
     public partial TripTypeModel? TripType { get; set; }
@@ -74,16 +80,10 @@ public partial class TripCard : Microsoft.Maui.Controls.ContentView
         ((TripCard)bindable).SetNameLabelText();
     }
 
-    private static void OnMaxSpeedPropertyChanged(BindableObject bindable, object oldValue, object newValue)
-    {
-        var tripCard = (TripCard)bindable;
-        tripCard.MaxSpeedValueLabel.Text = ToKilometersPerHour((double)newValue);
-    }
-
     private static void OnAverageSpeedPropertyChanged(BindableObject bindable, object oldValue, object newValue)
     {
         var tripCard = (TripCard)bindable;
-        tripCard.AverageSpeedValueLabel.Text = ToKilometersPerHour((double)newValue);
+        tripCard.UpdateAverageRate();
         tripCard.UpdateCompactStats();
     }
 
@@ -107,8 +107,23 @@ public partial class TripCard : Microsoft.Maui.Controls.ContentView
     private static void OnDurationPropertyChanged(BindableObject bindable, object oldValue, object newValue)
     {
         var tripCard = (TripCard)bindable;
-        tripCard.DurationValueLabel.Text = FormatDuration((TimeSpan)newValue);
+        tripCard.UpdateDuration();
         tripCard.UpdateCompactStats();
+    }
+
+    private static void OnMovingTimePropertyChanged(BindableObject bindable, object oldValue, object newValue)
+    {
+        var tripCard = (TripCard)bindable;
+        tripCard.UpdateDuration();
+        tripCard.UpdateCompactStats();
+    }
+
+    private static void OnElevationGainPropertyChanged(BindableObject bindable, object oldValue, object newValue)
+    {
+        var tripCard = (TripCard)bindable;
+        tripCard.ElevationGainValueLabel.Text = newValue is double value
+            ? Math.Round(Math.Max(0, value)).ToString("0", GermanCulture) + " m"
+            : "-";
     }
 
     private static void OnTripTypePropertyChanged(BindableObject bindable, object oldValue, object newValue)
@@ -120,6 +135,8 @@ public partial class TripCard : Microsoft.Maui.Controls.ContentView
 
         tripCard.TypeBadge.IsVisible = type is not null;
         tripCard.TypeBadgeLabel.Text = type?.Name.ToUpper(GermanCulture) ?? string.Empty;
+        tripCard.UpdateAverageRate();
+        tripCard.UpdateCompactStats();
     }
 
     private static void OnWeatherPropertyChanged(BindableObject bindable, object oldValue, object newValue)
@@ -170,7 +187,8 @@ public partial class TripCard : Microsoft.Maui.Controls.ContentView
 
         if (tripCard.MaxAltitude is { } max && tripCard.MinAltitude is { } min && max - min >= 25)
         {
-            tripCard.ElevationLabel.Text = $"{Math.Round(max - min)} m";
+            tripCard.ElevationLabel.Text =
+                $"{Math.Round(min).ToString("0", GermanCulture)}–{Math.Round(max).ToString("0", GermanCulture)} m";
             tripCard.ElevationBlock.IsVisible = true;
         }
         else
@@ -222,7 +240,8 @@ public partial class TripCard : Microsoft.Maui.Controls.ContentView
             return;
         }
 
-        CompactStatsLabel.Text = $"· {FormatDuration(Duration)} · {ToKilometersPerHour(AverageSpeed)} km/h";
+        CompactStatsLabel.Text =
+            $"· {DisplayedDuration()} · {TripDisplay.FormatRateWithUnit(TripType, SecondsPerKilometer())}";
     }
 
     private void SetNameLabelText()
@@ -236,8 +255,23 @@ public partial class TripCard : Microsoft.Maui.Controls.ContentView
         ? duration.ToString(@"h\:mm\:ss", GermanCulture)
         : duration.ToString(@"mm\:ss", GermanCulture);
 
-    private static string ToKilometersPerHour(double metersPerSecond)
+    private void UpdateDuration()
     {
-        return Math.Round(metersPerSecond * 3.6, 1).ToString("0.0", GermanCulture);
+        bool hasMovingTime = MovingTime > 0;
+        DurationStatLabel.Text = hasMovingTime ? "BEWEGUNG" : "DAUER";
+        DurationValueLabel.Text = DisplayedDuration();
     }
+
+    private string DisplayedDuration() => MovingTime > 0
+        ? FormatDuration(TimeSpan.FromSeconds(MovingTime.Value))
+        : FormatDuration(Duration);
+
+    private void UpdateAverageRate()
+    {
+        AverageSpeedStatLabel.Text = TripDisplay.RateLabel(TripType);
+        AverageSpeedValueLabel.Text = TripDisplay.FormatRate(TripType, SecondsPerKilometer());
+    }
+
+    private double SecondsPerKilometer() =>
+        AverageSpeed > 0 ? 1000.0 / AverageSpeed : 0;
 }

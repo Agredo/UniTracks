@@ -169,6 +169,7 @@ public sealed class GpsDataStorageServiceTests
         Assert.Equal(12, trip.MovingTime!.Value, 3);
         Assert.Equal(0, trip.StoppedTime!.Value, 3);
         Assert.Equal(trip.Distance!.Value / trip.MovingTime!.Value, trip.AverageSpeed!.Value, 6);
+        Assert.Equal(0, trip.ElevationGain!.Value);
         Assert.Equal(TripMetrics.ElapsedSeconds(trip), trip.TotalTime!.Value, 3);
     }
 
